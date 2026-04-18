@@ -65,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
                     _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
                     _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
                     _buildFloatingActionButton(),
-                    _buildNavItem(2, Icons.account_balance_wallet_rounded, 'Laporan'),
+                    _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
                     _buildNavItem(3, Icons.person_rounded, 'Profil'),
                   ],
                 ),
@@ -82,25 +82,30 @@ class _MainScreenState extends State<MainScreen> {
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-            size: 24,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: isSelected ? BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              KineticVaultTheme.primary.withValues(alpha: 0.1),
+              KineticVaultTheme.secondary.withValues(alpha: 0.1),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 4),
-          if (isSelected)
-            Container(
-              width: 4,
-              height: 4,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: KineticVaultTheme.primary,
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: KineticVaultTheme.primary.withValues(alpha: 0.1),
+              blurRadius: 10,
             ),
-        ],
+          ],
+        ) : null,
+        child: Icon(
+          icon,
+          color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+          size: 24,
+        ),
       ),
     );
   }

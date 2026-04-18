@@ -29,7 +29,7 @@ class AppTransactionItem extends StatelessWidget {
           children: [
             AppIconContainer(
               icon: isExpense ? Icons.coffee : Icons.shopping_bag,
-              color: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
+              color:  KineticVaultTheme.surfaceContainerHigh,
               shape: AppIconShape.rounded,
               size: 40,
               opacity: 1.0,
