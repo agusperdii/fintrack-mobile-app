@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../atoms/glass_card.dart';
+import '../atoms/app_heading.dart';
 import '../organisms/app_header.dart';
+import '../molecules/app_stat_item.dart';
+import '../molecules/app_weekly_summary_item.dart';
 import 'placeholder_page.dart';
 
 class SummaryPage extends StatelessWidget {
@@ -31,32 +33,25 @@ class SummaryPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const AppHeading(
                       'TOTAL PENGELUARAN BULAN INI',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2.0,
-                        color: KineticVaultTheme.onSurfaceVariant,
-                      ),
+                      size: AppHeadingSize.caption,
+                      color: KineticVaultTheme.onSurfaceVariant,
+                      isBold: true,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    const AppHeading(
                       'Rp5.200.000',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: KineticVaultTheme.onSurface,
-                      ),
+                      size: AppHeadingSize.h1,
                     ),
                     const SizedBox(height: 16),
                     const Divider(color: KineticVaultTheme.outlineVariant),
                     const SizedBox(height: 16),
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildSummaryStat('Target', 'Rp6.000.000'),
-                        _buildSummaryStat('Sisa', 'Rp800.000'),
+                        AppStatItem(label: 'Target', value: 'Rp6.000.000'),
+                        AppStatItem(label: 'Sisa', value: 'Rp800.000'),
                       ],
                     ),
                   ],
@@ -64,93 +59,46 @@ class SummaryPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            Text(
+            const AppHeading(
               'Detail Mingguan',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: KineticVaultTheme.onSurface,
-              ),
+              size: AppHeadingSize.h3,
             ),
             const SizedBox(height: 16),
-            _buildWeeklyCard(context, 'Minggu 1', 'Rp1.200.000', 0.8),
-            const SizedBox(height: 12),
-            _buildWeeklyCard(context, 'Minggu 2', 'Rp1.500.000', 0.9),
-            const SizedBox(height: 12),
-            _buildWeeklyCard(context, 'Minggu 3', 'Rp2.500.000', 1.2), // Over budget
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummaryStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            color: KineticVaultTheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: KineticVaultTheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeeklyCard(BuildContext context, String title, String amount, double progress) {
-    final isOverBudget = progress > 1.0;
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: 'Detail $title')),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.bold,
-                    color: KineticVaultTheme.onSurface,
-                  ),
-                ),
-                Text(
-                  amount,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.bold,
-                    color: isOverBudget ? KineticVaultTheme.error : KineticVaultTheme.onSurface,
-                  ),
-                ),
-              ],
+            AppWeeklySummaryItem(
+              title: 'Minggu 1',
+              amount: 'Rp1.200.000',
+              progress: 0.8,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PlaceholderPage(featureName: 'Detail Minggu 1')),
+                );
+              },
             ),
             const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress > 1.0 ? 1.0 : progress,
-              backgroundColor: KineticVaultTheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isOverBudget ? KineticVaultTheme.error : KineticVaultTheme.primary,
-              ),
+            AppWeeklySummaryItem(
+              title: 'Minggu 2',
+              amount: 'Rp1.500.000',
+              progress: 0.9,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PlaceholderPage(featureName: 'Detail Minggu 2')),
+                );
+              },
             ),
+            const SizedBox(height: 12),
+            AppWeeklySummaryItem(
+              title: 'Minggu 3',
+              amount: 'Rp2.500.000',
+              progress: 1.2,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PlaceholderPage(featureName: 'Detail Minggu 3')),
+                );
+              },
+            ), 
           ],
         ),
       ),

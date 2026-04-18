@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/app_data.dart';
+import '../atoms/app_heading.dart';
 
-class AnalysisChartItem extends StatelessWidget {
+class AppAnalysisChartItem extends StatelessWidget {
   final AnalysisData data;
 
-  const AnalysisChartItem({super.key, required this.data});
+  const AppAnalysisChartItem({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -32,23 +32,17 @@ class AnalysisChartItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
+              AppHeading(
                 data.label,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: KineticVaultTheme.onSurface,
-                ),
+                size: AppHeadingSize.subtitle,
+                isBold: false,
               ),
             ],
           ),
-          Text(
+          AppHeading(
             KineticVaultTheme.formatCurrency(data.amount),
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: KineticVaultTheme.onSurface,
-            ),
+            size: AppHeadingSize.subtitle,
+            isBold: true,
           ),
         ],
       ),

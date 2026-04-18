@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/service_locator.dart';
 import '../atoms/ambient_glow.dart';
 import '../atoms/glass_card.dart';
+import '../atoms/app_button.dart';
 
 class SpendingTargetPage extends StatefulWidget {
   const SpendingTargetPage({super.key});
@@ -14,32 +15,16 @@ class SpendingTargetPage extends StatefulWidget {
 
 class _SpendingTargetPageState extends State<SpendingTargetPage> {
   final _amountController = TextEditingController();
-  String _selectedPeriod = 'Bulanan';
+  late String _selectedPeriod;
   bool _isSaving = false;
-  bool _isLoading = true;
-
-  final List<double> _quickAmounts = [1000000, 2000000, 5000000, 10000000];
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentTarget();
-  }
-
-  Future<void> _loadCurrentTarget() async {
-    try {
-      final data = await sl.financeRepository.getSpendingTarget();
-      if (mounted) {
-        setState(() {
-          double amount = data['amount'];
-          _amountController.text = amount > 0 ? amount.toStringAsFixed(0) : '';
-          _selectedPeriod = data['period'];
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    // Ambil initial value dari Provider (SSOT)
+    final target = sl.financeProvider.spendingTarget;
+    _amountController.text = target?['amount']?.toStringAsFixed(0) ?? '';
+    _selectedPeriod = target?['period'] ?? 'Bulanan';
   }
 
   @override
@@ -48,8 +33,9 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     super.dispose();
   }
 
-  void _saveTarget() {
-    if (_amountController.text.isEmpty) {
+  Future<void> _saveTarget() async {
+    final amount = double.tryParse(_amountController.text);
+    if (amount == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Masukkan nominal target pengeluaran')),
       );
@@ -58,30 +44,23 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
     setState(() => _isSaving = true);
     
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Target pengeluaran berhasil disimpan'),
-            backgroundColor: KineticVaultTheme.tertiary,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    });
+    // Update ke Provider
+    await sl.financeProvider.updateSpendingTarget(amount, _selectedPeriod);
+    
+    if (mounted) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Target pengeluaran berhasil disimpan'),
+          backgroundColor: KineticVaultTheme.tertiary,
+        ),
+      );
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: KineticVaultTheme.background,
-        body: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
-      );
-    }
-
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
       appBar: AppBar(
@@ -164,77 +143,19 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                // Quick Amounts
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _quickAmounts.map((amt) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ActionChip(
-                          label: Text(
-                            KineticVaultTheme.formatCurrency(amt),
-                            style: GoogleFonts.inter(
-                              fontSize: 12, 
-                              fontWeight: FontWeight.bold,
-                              color: KineticVaultTheme.onSurface,
-                            ),
-                          ),
-                          backgroundColor: KineticVaultTheme.surfaceContainerHighest,
-                          side: BorderSide.none,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                          onPressed: () {
-                            setState(() {
-                              _amountController.text = amt.toStringAsFixed(0);
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
                 const SizedBox(height: 48),
-                GlassCard(
-                  padding: const EdgeInsets.all(24),
+                const GlassCard(
+                  padding: EdgeInsets.all(24),
                   borderRadius: 16,
-                  child: Column(
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: KineticVaultTheme.primary.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.info_outline, color: KineticVaultTheme.primary, size: 20),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Kenapa Atur Target?',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: KineticVaultTheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Target membantu Anda mencapai tujuan finansial lebih cepat dengan membatasi pengeluaran berlebih.',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: KineticVaultTheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      Icon(Icons.info_outline, color: KineticVaultTheme.primary, size: 20),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Target membantu Anda membatasi pengeluaran berlebih.',
+                          style: TextStyle(fontSize: 12, color: KineticVaultTheme.onSurfaceVariant),
+                        ),
                       ),
                     ],
                   ),
@@ -275,26 +196,10 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
             bottom: 32,
             left: 24,
             right: 24,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _saveTarget,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: KineticVaultTheme.primary,
-                foregroundColor: KineticVaultTheme.onPrimaryFixed,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                elevation: 20,
-                shadowColor: KineticVaultTheme.primary.withValues(alpha: 0.4),
-              ),
-              child: _isSaving
-                  ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: KineticVaultTheme.onPrimaryFixed))
-                  : Text(
-                      'SIMPAN TARGET',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+            child: AppButton(
+              label: 'SIMPAN TARGET',
+              isLoading: _isSaving,
+              onTap: _saveTarget,
             ),
           ),
         ],

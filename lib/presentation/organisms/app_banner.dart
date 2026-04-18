@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
+import '../atoms/app_heading.dart';
+import '../atoms/app_icon_container.dart';
 
-class BannerWidget extends StatelessWidget {
+class AppBanner extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
   final Color color;
 
-  const BannerWidget({
+  const AppBanner({
     super.key,
     required this.title,
     required this.subtitle,
@@ -28,33 +29,25 @@ class BannerWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
+          AppIconContainer(
+            icon: icon,
+            color: color,
+            size: 48,
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                AppHeading(
                   title,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: KineticVaultTheme.onSurface,
-                  ),
+                  size: AppHeadingSize.subtitle,
                 ),
-                Text(
+                AppHeading(
                   subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: KineticVaultTheme.onSurfaceVariant,
-                  ),
+                  size: AppHeadingSize.caption,
+                  color: KineticVaultTheme.onSurfaceVariant,
+                  isBold: false,
                 ),
               ],
             ),

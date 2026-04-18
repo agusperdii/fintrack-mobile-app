@@ -4,6 +4,10 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/service_locator.dart';
 import '../atoms/glass_card.dart';
 import '../atoms/ambient_glow.dart';
+import '../atoms/app_heading.dart';
+import '../atoms/app_button.dart';
+import '../atoms/app_progress_bar.dart';
+import '../atoms/app_icon_container.dart';
 import 'transaction_success_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -76,25 +80,19 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
           onPressed: () => Navigator.pop(context), 
         ),
-        title: Text(
+        title: AppHeading(
           'Tambah Transaksi',
-          style: GoogleFonts.plusJakartaSans(
-            color: KineticVaultTheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          size: AppHeadingSize.h3,
+          color: KineticVaultTheme.onSurface,
         ),
         actions: [
-          Center(
+          const Center(
             child: Padding(
-              padding: const EdgeInsets.only(right: 24.0),
-              child: Text(
+              padding: EdgeInsets.only(right: 24.0),
+              child: AppHeading(
                 'NEON',
-                style: GoogleFonts.plusJakartaSans(
-                  color: KineticVaultTheme.primary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                ),
+                size: AppHeadingSize.h3,
+                color: KineticVaultTheme.primary,
               ),
             ),
           ),
@@ -118,14 +116,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
+                const AppHeading(
                   'JUMLAH NOMINAL',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2.0,
-                    color: KineticVaultTheme.onSurfaceVariant,
-                  ),
+                  size: AppHeadingSize.caption,
+                  color: KineticVaultTheme.onSurfaceVariant,
+                  isBold: true,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -133,13 +128,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
+                    const AppHeading(
                       'Rp',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: KineticVaultTheme.primary,
-                      ),
+                      size: AppHeadingSize.h2,
+                      color: KineticVaultTheme.primary,
                     ),
                     const SizedBox(width: 8),
                     IntrinsicWidth(
@@ -194,21 +186,15 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const AppHeading(
                       'Pilih Kategori',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: KineticVaultTheme.onSurface,
-                      ),
+                      size: AppHeadingSize.h3,
                     ),
-                    Text(
+                    const AppHeading(
                       'Lihat Semua',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: KineticVaultTheme.primary,
-                      ),
+                      size: AppHeadingSize.subtitle,
+                      color: KineticVaultTheme.primary,
+                      isBold: true,
                     ),
                   ],
                 ),
@@ -240,30 +226,18 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected 
-                                  ? KineticVaultTheme.primary.withValues(alpha: 0.2)
-                                  : KineticVaultTheme.surfaceContainerHigh,
-                              ),
-                              child: Icon(
-                                cat['icon'],
-                                color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-                                size: 24,
-                              ),
+                            AppIconContainer(
+                              icon: cat['icon'],
+                              color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                              size: 48,
+                              opacity: isSelected ? 0.2 : 0.1,
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            AppHeading(
                               cat['name'].toUpperCase(),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
-                                color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-                              ),
+                              size: AppHeadingSize.caption,
+                              color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                              isBold: true,
                             ),
                           ],
                         ),
@@ -289,9 +263,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             children: [
                               const Icon(Icons.calendar_today, color: KineticVaultTheme.secondary, size: 18),
                               const SizedBox(width: 8),
-                              Text(
+                              const AppHeading(
                                 'Waktu & Tanggal',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold),
+                                size: AppHeadingSize.subtitle,
+                                isBold: true,
                               ),
                             ],
                           ),
@@ -317,9 +292,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             children: [
                               const Icon(Icons.description, color: KineticVaultTheme.tertiary, size: 18),
                               const SizedBox(width: 8),
-                              Text(
+                              const AppHeading(
                                 'Catatan',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold),
+                                size: AppHeadingSize.subtitle,
+                                isBold: true,
                               ),
                             ],
                           ),
@@ -359,45 +335,34 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              AppHeading(
                                 'Progress Tabungan',
-                                style: GoogleFonts.plusJakartaSans(
-                                  color: KineticVaultTheme.tertiary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                size: AppHeadingSize.subtitle,
+                                color: KineticVaultTheme.tertiary,
+                                isBold: true,
                               ),
-                              Text(
+                              AppHeading(
                                 'Sisa budget makan kamu masih aman!',
-                                style: GoogleFonts.inter(
-                                  color: KineticVaultTheme.onSurfaceVariant,
-                                  fontSize: 11,
-                                ),
+                                size: AppHeadingSize.caption,
+                                color: KineticVaultTheme.onSurfaceVariant,
+                                isBold: false,
                               ),
                             ],
                           ),
-                          Text(
+                          const AppHeading(
                             '82%',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: KineticVaultTheme.onSurface,
-                            ),
+                            size: AppHeadingSize.h3,
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: 0.82,
-                          minHeight: 6,
-                          backgroundColor: KineticVaultTheme.surfaceContainerHighest,
-                          valueColor: const AlwaysStoppedAnimation<Color>(KineticVaultTheme.tertiary),
-                        ),
+                      const AppProgressBar(
+                        value: 0.82,
+                        color: KineticVaultTheme.tertiary,
+                        height: 6,
                       ),
                     ],
                   ),
@@ -419,26 +384,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   end: Alignment.bottomCenter,
                 ),
               ),
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: KineticVaultTheme.primary,
-                  foregroundColor: KineticVaultTheme.onPrimaryFixed,
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                  elevation: 20,
-                  shadowColor: KineticVaultTheme.primary.withValues(alpha: 0.4),
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(
-                        'SIMPAN TRANSAKSI',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+              child: AppButton(
+                label: 'SIMPAN TRANSAKSI',
+                isLoading: _isSubmitting,
+                onTap: _submitData,
               ),
             ),
           ),
