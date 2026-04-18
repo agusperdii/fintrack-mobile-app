@@ -24,6 +24,22 @@ class KineticVaultTheme {
   static const Color outline = Color(0xFF74757A);
   static const Color outlineVariant = Color(0xFF46484D);
 
+  static String formatCurrency(double amount) {
+    // Basic formatting for IDR
+    final String sign = amount < 0 ? '-' : '';
+    final String absoluteValue = amount.abs().toStringAsFixed(0);
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = absoluteValue.length - 1; i >= 0; i--) {
+      if (count > 0 && count % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(absoluteValue[i]);
+      count++;
+    }
+    return 'Rp $sign${buffer.toString().split('').reversed.join('')}';
+  }
+
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, primaryFixed],
     begin: Alignment.topLeft,

@@ -2,17 +2,23 @@ class AppData {
   final double balance;
   final List<Transaction> recentTransactions;
   final List<AnalysisData> analysis;
+  final double? spendingTarget;
+  final String? targetPeriod;
 
   AppData({
     required this.balance,
     required this.recentTransactions,
     required this.analysis,
+    this.spendingTarget,
+    this.targetPeriod,
   });
 
   // Dummy data generator
   static AppData getDummyData() {
     return AppData(
       balance: 15450000,
+      spendingTarget: 5000000,
+      targetPeriod: 'Bulanan',
       recentTransactions: [
         Transaction(title: 'Belanja Bulanan', amount: -500000, category: 'Food', date: '2026-04-10'),
         Transaction(title: 'Gaji Bulanan', amount: 10000000, category: 'Salary', date: '2026-04-01'),

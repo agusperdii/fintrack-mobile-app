@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'services/api_service.dart';
 import 'theme/kinetic_vault_theme.dart';
 import 'widgets/ambient_glow.dart';
+import 'spending_target_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,11 +14,13 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late Future<Map<String, String>> _profileFuture;
+  late Future<Map<String, dynamic>> _targetFuture;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = ApiService.getUserProfile();
+    _targetFuture = ApiService.getSpendingTarget();
   }
 
   @override
@@ -79,14 +82,18 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      body: FutureBuilder<Map<String, String>>(
-        future: _profileFuture,
+      body: FutureBuilder<List<dynamic>>(
+        future: Future.wait([_profileFuture, _targetFuture]),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
+
+          final targetData = snapshot.data![1] as Map<String, dynamic>;
+          final targetAmount = targetData['amount'] as double;
+          final targetPeriod = targetData['period'] as String;
 
           // Using mock data from HTML instead of API to match design exactly
           const userName = 'Leonardo Da’vinci';
@@ -216,7 +223,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {},
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SpendingTargetPage()),
+                        );
+                        // Refresh data after returning
+                        setState(() {
+                          _targetFuture = ApiService.getSpendingTarget();
+                        });
+                      },
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -245,7 +261,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Atur target pengeluaran',
+                                      'Target Pengeluaran',
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -253,10 +269,11 @@ class _ProfilePageState extends State<ProfilePage> {
                                       ),
                                     ),
                                     Text(
-                                      'Kendali finansial di tanganmu',
+                                      '${KineticVaultTheme.formatCurrency(targetAmount)} / $targetPeriod',
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
-                                        color: KineticVaultTheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                        color: KineticVaultTheme.primary,
                                       ),
                                     ),
                                   ],

@@ -55,4 +55,14 @@ class ApiService {
       'avatar': 'https://i.pravatar.cc/300',
     };
   }
+
+  /// Fetch spending target
+  static Future<Map<String, dynamic>> getSpendingTarget() async {
+    await Future.delayed(_delay);
+    final data = AppData.getDummyData();
+    return {
+      'amount': data.spendingTarget ?? 0.0,
+      'period': data.targetPeriod ?? 'Bulanan',
+    };
+  }
 }
