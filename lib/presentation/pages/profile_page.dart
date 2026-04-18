@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'services/api_service.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'widgets/ambient_glow.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/service_locator.dart';
+import '../atoms/ambient_glow.dart';
+import '../organisms/app_header.dart';
 import 'spending_target_page.dart';
+import 'placeholder_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,69 +21,22 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _profileFuture = ApiService.getUserProfile();
-    _targetFuture = ApiService.getSpendingTarget();
+    _profileFuture = sl.financeRepository.getUserProfile();
+    _targetFuture = sl.financeRepository.getSpendingTarget();
+  }
+
+  void _navigateToPlaceholder(String feature) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(72),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          color: KineticVaultTheme.background,
-          child: SafeArea(
-            bottom: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: KineticVaultTheme.surfaceContainerHighest,
-                        border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuCTNhk8aetsWVOgR4RQisJGd8tGKvajRnSSKLj4DMHsOL2MZ1TC75GZYRHNKzOSdkaXB3Zyq9dNc-Md9dj24rhAsAS4H8IJVrM9epttGZUiZuvV0RRdXZ3H2Z6FsNCjmUEetFThNZmmky2O53rlK9PtrBwXyklcvoRsC_BEWX_DrXUT8C-kr1ASZKVKVrbV3OVF1GiLD1enFvqJwERAo3TBAsYVhOkH6bY8zmikfPvW7Zn3nxUMIDxCk6NROMPYRrBjoBBQjMMWrww'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ShaderMask(
-                      shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
-                      child: Text(
-                        'The Kinetic Vault',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.notifications_outlined, 
-                    color: KineticVaultTheme.primary, 
-                    size: 20
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      appBar: const AppHeader(title: 'Profil'),
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait([_profileFuture, _targetFuture]),
         builder: (context, snapshot) {
@@ -91,15 +46,11 @@ class _ProfilePageState extends State<ProfilePage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
+          final profile = snapshot.data![0] as Map<String, String>;
           final targetData = snapshot.data![1] as Map<String, dynamic>;
+          
           final targetAmount = targetData['amount'] as double;
           final targetPeriod = targetData['period'] as String;
-
-          // Using mock data from HTML instead of API to match design exactly
-          const userName = 'Leonardo Da’vinci';
-          const userHandle = '@agusperdii';
-          const userEmail = 'leonardo.davinci@kineticvault.com';
-          const avatarUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiFGzVgecqCYvbjM6FhDdTQVz1EKQsOleuJYWkMVimedbVz2KlbE9qZRle-eJwhTo_mV7NS_eR4jGNdnWrVD_7msFNNylsPL2r2IrK7FgJONfpwhwisWyxPR5Ot-qLnPQ2xmgXgL-AfGcZGchFV402cdgb0LuGOY4PmolelofW2jEO-eVSthHdXkjuMqhhA0_8Oq92iwdV59onMMEpwCeeIo0A90nzAnmh2Za2yRGwbwrxJAKJCkq0jwF4Ra2ylZExQgsJRg2tpDQ';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
@@ -149,13 +100,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                                 child: CircleAvatar(
                                   radius: 38,
-                                  backgroundImage: const NetworkImage(avatarUrl),
+                                  backgroundImage: NetworkImage(profile['avatar']!),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              userName,
+                              profile['name']!,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
@@ -164,7 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              userHandle,
+                              profile['handle'] ?? '@user',
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -173,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              userEmail,
+                              profile['email']!,
                               style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -230,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                         // Refresh data after returning
                         setState(() {
-                          _targetFuture = ApiService.getSpendingTarget();
+                          _targetFuture = sl.financeRepository.getSpendingTarget();
                         });
                       },
                       borderRadius: BorderRadius.circular(8),
@@ -316,20 +267,24 @@ class _ProfilePageState extends State<ProfilePage> {
                         icon: Icons.person_outline_rounded,
                         title: 'Edit nama',
                         isTop: true,
+                        onTap: () => _navigateToPlaceholder('Edit Nama'),
                       ),
                       _buildProfileItem(
                         icon: Icons.alternate_email_rounded,
                         title: 'Ganti username',
+                        onTap: () => _navigateToPlaceholder('Ganti Username'),
                       ),
                       _buildProfileItem(
                         icon: Icons.lock_reset_rounded,
                         title: 'Ganti password',
+                        onTap: () => _navigateToPlaceholder('Ganti Password'),
                       ),
                       _buildProfileItem(
                         icon: Icons.delete_forever_rounded,
                         title: 'Hapus akun saya',
                         isDestructive: true,
                         isBottom: true,
+                        onTap: () => _navigateToPlaceholder('Hapus Akun'),
                       ),
                     ],
                   ),
@@ -342,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {},
+                      onTap: () => _navigateToPlaceholder('Logout'),
                       borderRadius: BorderRadius.circular(100),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
@@ -381,6 +336,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileItem({
     required IconData icon,
     required String title,
+    required VoidCallback onTap,
     bool isDestructive = false,
     bool isTop = false,
     bool isBottom = false,
@@ -388,7 +344,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.vertical(
           top: isTop ? const Radius.circular(8) : Radius.zero,
           bottom: isBottom ? const Radius.circular(8) : Radius.zero,

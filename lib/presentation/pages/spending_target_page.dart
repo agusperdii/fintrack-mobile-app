@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'widgets/ambient_glow.dart';
-import 'widgets/glass_card.dart';
-import 'services/api_service.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/service_locator.dart';
+import '../atoms/ambient_glow.dart';
+import '../atoms/glass_card.dart';
 
 class SpendingTargetPage extends StatefulWidget {
   const SpendingTargetPage({super.key});
@@ -28,7 +28,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
   Future<void> _loadCurrentTarget() async {
     try {
-      final data = await ApiService.getSpendingTarget();
+      final data = await sl.financeRepository.getSpendingTarget();
       if (mounted) {
         setState(() {
           double amount = data['amount'];

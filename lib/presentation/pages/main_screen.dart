@@ -1,0 +1,138 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import 'dashboard_screen.dart';
+import 'analisa_page.dart';
+import 'profile_page.dart';
+import 'summary_page.dart';
+import 'add_transaction_page.dart';
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    const DashboardPage(),
+    const AnalisaPage(),
+    const SummaryPage(),
+    const ProfilePage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: KineticVaultTheme.background,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _selectedIndex,
+            children: _pages,
+          ),
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 32,
+            child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
+                    _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
+                    _buildFloatingActionButton(),
+                    _buildNavItem(2, Icons.account_balance_wallet_rounded, 'Laporan'),
+                    _buildNavItem(3, Icons.person_rounded, 'Profil'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+            size: 24,
+          ),
+          const SizedBox(height: 4),
+          if (isSelected)
+            Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: KineticVaultTheme.primary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddTransactionPage()),
+        );
+      },
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: KineticVaultTheme.primaryGradient,
+          boxShadow: [
+            BoxShadow(
+              color: KineticVaultTheme.primary.withValues(alpha: 0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: KineticVaultTheme.onPrimaryFixed,
+          size: 32,
+        ),
+      ),
+    );
+  }
+}

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'services/api_service.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'widgets/glass_card.dart';
-import 'widgets/ambient_glow.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/service_locator.dart';
+import '../atoms/glass_card.dart';
+import '../atoms/ambient_glow.dart';
 import 'transaction_success_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -45,7 +45,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final success = await ApiService.addTransaction(
+      final success = await sl.financeRepository.addTransaction(
         title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
         amount: double.parse(_amountController.text) * (_type == 'Expense' ? -1 : 1),
         category: _selectedCategory,
@@ -74,7 +74,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
-          onPressed: () => Navigator.pop(context), // This closes the modal
+          onPressed: () => Navigator.pop(context), 
         ),
         title: Text(
           'Tambah Transaksi',

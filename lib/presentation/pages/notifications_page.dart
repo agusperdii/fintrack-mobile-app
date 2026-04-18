@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'widgets/glass_card.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'widgets/ambient_glow.dart';
+import '../../core/theme/app_theme.dart';
+import '../atoms/glass_card.dart';
+import '../atoms/ambient_glow.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'widgets/balance_card.dart';
-import 'services/api_service.dart';
-import 'models/app_data.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'notifications_page.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/utils/service_locator.dart';
+import '../../data/models/app_data.dart';
+import '../organisms/balance_card.dart';
+import '../organisms/app_header.dart';
+import 'placeholder_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -24,58 +25,22 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _refreshData() {
     setState(() {
-      _dashboardDataFuture = ApiService.getDashboardData();
+      _dashboardDataFuture = sl.financeRepository.getDashboardData();
     });
+  }
+
+  void _navigateToPlaceholder(String feature) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppBar(
-        backgroundColor: KineticVaultTheme.background,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: KineticVaultTheme.surfaceContainer,
-                image: const DecorationImage(
-                  image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuBMPbqgPW0U1I0ZLTEdyp4cMS9mMTL9aOZnhYRlJg_1r-fji7TncBWRh_5UtIydurWHahNW0HuUvVxmgOoxZ1zNdy6jeoDVZTdamUIKzg30UsXOIdNYaXkrq2kMPsMUSgyPaZrTziXTS-qT6GIjQUOzpBzq7Jsl3Sgnhm3bIsYs_ANLI58aEINqkI-Eh1o4mpHYTHrnc7bz5SEKFjUsLbjfpzeO4-S4tzjJKDK_DMBii_xy_idr26SoZuBB7Y39ig1w_8n_3u2h8dY'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            ShaderMask(
-              shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
-              child: Text(
-                'The Kinetic Vault',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: KineticVaultTheme.primary, size: 20),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsPage()),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: const AppHeader(),
       body: FutureBuilder<AppData>(
         future: _dashboardDataFuture,
         builder: (context, snapshot) {
@@ -124,15 +89,18 @@ class _DashboardPageState extends State<DashboardPage> {
                         icon: Icons.call_made,
                         label: 'Pengeluaran',
                         color: KineticVaultTheme.error,
+                        onTap: () => _navigateToPlaceholder('Detail Pengeluaran'),
                       ),
                       _buildGradientAction(
                         icon: Icons.receipt_long,
                         label: 'Scan Struk',
+                        onTap: () => _navigateToPlaceholder('Scan Struk AI'),
                       ),
                       _buildCircularAction(
                         icon: Icons.call_received,
                         label: 'Pemasukan',
                         color: KineticVaultTheme.tertiary,
+                        onTap: () => _navigateToPlaceholder('Detail Pemasukan'),
                       ),
                     ],
                   ),
@@ -151,12 +119,15 @@ class _DashboardPageState extends State<DashboardPage> {
                           color: KineticVaultTheme.onSurface,
                         ),
                       ),
-                      Text(
-                        'Semua Riwayat',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: KineticVaultTheme.primary,
+                      GestureDetector(
+                        onTap: () => _navigateToPlaceholder('Semua Riwayat'),
+                        child: Text(
+                          'Semua Riwayat',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: KineticVaultTheme.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -188,117 +159,135 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildCircularAction({required IconData icon, required String label, required Color color}) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: KineticVaultTheme.surfaceContainerHighest,
+  Widget _buildCircularAction({
+    required IconData icon, 
+    required String label, 
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: KineticVaultTheme.surfaceContainerHighest,
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: KineticVaultTheme.onSurfaceVariant,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: KineticVaultTheme.onSurfaceVariant,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildGradientAction({required IconData icon, required String label}) {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: KineticVaultTheme.primaryGradient,
-            boxShadow: [
-              BoxShadow(
-                color: KineticVaultTheme.primary.withValues(alpha: 0.3),
-                blurRadius: 15,
-              ),
-            ],
+  Widget _buildGradientAction({
+    required IconData icon, 
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: KineticVaultTheme.primaryGradient,
+              boxShadow: [
+                BoxShadow(
+                  color: KineticVaultTheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                ),
+              ],
+            ),
+            child: const Icon(Icons.receipt_long, color: KineticVaultTheme.onPrimaryFixed, size: 24),
           ),
-          child: const Icon(Icons.receipt_long, color: KineticVaultTheme.onPrimaryFixed, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: KineticVaultTheme.onSurface,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: KineticVaultTheme.onSurface,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildHistoryItem(Transaction tx) {
     final isExpense = tx.amount < 0;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: KineticVaultTheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () => _navigateToPlaceholder('Detail Transaksi'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: KineticVaultTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: KineticVaultTheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isExpense ? Icons.coffee : Icons.shopping_bag,
+                color: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
+                size: 20,
+              ),
             ),
-            child: Icon(
-              isExpense ? Icons.coffee : Icons.shopping_bag,
-              color: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: KineticVaultTheme.onSurface,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tx.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: KineticVaultTheme.onSurface,
+                    ),
                   ),
-                ),
-                Text(
-                  '${tx.date} • 09:41',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    color: KineticVaultTheme.onSurfaceVariant,
+                  Text(
+                    '${tx.date} • 09:41',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10,
+                      color: KineticVaultTheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Text(
-            '${isExpense ? "-" : "+"}Rp${tx.amount.abs().toStringAsFixed(0)}',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: KineticVaultTheme.onSurface,
+            Text(
+              '${isExpense ? "-" : "+"} ${KineticVaultTheme.formatCurrency(tx.amount.abs())}',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: KineticVaultTheme.onSurface,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

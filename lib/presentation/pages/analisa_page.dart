@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'theme/kinetic_vault_theme.dart';
-import 'widgets/glass_card.dart';
-import 'widgets/ambient_glow.dart';
+import '../../core/theme/app_theme.dart';
+import '../atoms/glass_card.dart';
+import '../atoms/ambient_glow.dart';
+import '../organisms/app_header.dart';
+import 'placeholder_page.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -12,49 +14,18 @@ class AnalisaPage extends StatefulWidget {
 }
 
 class _AnalisaPageState extends State<AnalisaPage> {
+  void _navigateToPlaceholder(String feature) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppBar(
-        backgroundColor: KineticVaultTheme.background,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.2), width: 2),
-                image: const DecorationImage(
-                  image: NetworkImage('https://lh3.googleusercontent.com/aida-public/AB6AXuB4484-TFf7yc7icxQ_yqrdT5pkDeT3QwX3GftAiTx2d4Aqj-u5Bl6x0Apg_yL1E3XujsEMnjvmWSPhMHcgni4amYSSCdFRSuSXwZduYuMwpxpOMMuIoHe9r9O-ukjIH0LSLLqd7mrfCFCEfPZR3evY8fuUh6psnlaoF3fwhvtro5PGnLkQAvVwe0v_0IeYsrwYGTC1bWxBxzoHxSbgIh_ZXBHaC1Rr0tbqQnpuqmy8P339f2CsnM6ZZQdGubKANOBgIR6er6yTakw'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            ShaderMask(
-              shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
-              child: Text(
-                'The Kinetic Vault',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: KineticVaultTheme.primary, size: 20),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      appBar: const AppHeader(title: 'Analisa'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
         child: Column(
@@ -105,12 +76,15 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     color: KineticVaultTheme.onSurface,
                   ),
                 ),
-                Text(
-                  'Lihat Semua',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: KineticVaultTheme.primary,
+                GestureDetector(
+                  onTap: () => _navigateToPlaceholder('Semua Kategori'),
+                  child: Text(
+                    'Lihat Semua',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: KineticVaultTheme.primary,
+                    ),
                   ),
                 ),
               ],
@@ -315,7 +289,7 @@ class _AnalisaPageState extends State<AnalisaPage> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: () {},
+                onTap: () => _navigateToPlaceholder('Detail Penghematan'),
                 borderRadius: BorderRadius.circular(100),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -350,82 +324,85 @@ class _AnalisaPageState extends State<AnalisaPage> {
     required String status,
     required Color accentColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () => _navigateToPlaceholder('Analisa $title'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: KineticVaultTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: accentColor, size: 20),
                     ),
-                    child: Icon(icon, color: accentColor, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    title,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: KineticVaultTheme.onSurface,
+                    const SizedBox(width: 12),
+                    Text(
+                      title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: KineticVaultTheme.onSurface,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Text(
-                amount,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: KineticVaultTheme.onSurface,
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 4,
-              backgroundColor: KineticVaultTheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                Text(
+                  amount,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: KineticVaultTheme.onSurface,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                limit,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: KineticVaultTheme.onSurfaceVariant,
-                ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: KineticVaultTheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
               ),
-              Text(
-                status.toUpperCase(),
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: status == 'Aman' || status == 'Stabil' ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  limit,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: KineticVaultTheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Text(
+                  status.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: status == 'Aman' || status == 'Stabil' ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -492,18 +469,21 @@ class _AnalisaPageState extends State<AnalisaPage> {
   }
 
   Widget _buildToggleButton(String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive ? KineticVaultTheme.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: isActive ? KineticVaultTheme.onPrimaryFixed : KineticVaultTheme.onSurfaceVariant,
+    return GestureDetector(
+      onTap: () => _navigateToPlaceholder('Filter $label'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? KineticVaultTheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          label.toUpperCase(),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: isActive ? KineticVaultTheme.onPrimaryFixed : KineticVaultTheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -514,7 +494,7 @@ class TrendLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         colors: [KineticVaultTheme.primary, KineticVaultTheme.secondary],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.stroke
