@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/service_locator.dart';
 import '../atoms/glass_card.dart';
 import '../atoms/app_heading.dart';
 import '../organisms/app_header.dart';
@@ -12,38 +13,48 @@ class SummaryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
-      appBar: const AppHeader(title: 'The Kinetic Vault'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const AppEditorialHeader(
-              category: 'Archive Collection',
-              title: 'Ringkasan Transaksi',
+    return ListenableBuilder(
+      listenable: sl.financeProvider,
+      builder: (context, _) {
+        final provider = sl.financeProvider;
+        
+        return Scaffold(
+          backgroundColor: KineticVaultTheme.background,
+          appBar: AppHeader(
+            title: 'The Kinetic Vault',
+            avatarUrl: provider.userProfile?['avatar'],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AppEditorialHeader(
+                  category: 'Archive Collection',
+                  title: 'Ringkasan Transaksi',
+                ),
+                const SizedBox(height: 20),
+                const _ArchiveHero(),
+                const SizedBox(height: 32),
+                const _YearGroupHeader(year: '2026', color: KineticVaultTheme.secondary),
+                const SizedBox(height: 16),
+                _buildArchiveList(context, [
+                  {'month': 'Maret 2026', 'tx': 1476, 'progress': 0.85},
+                  {'month': 'Februari 2026', 'tx': 1242, 'progress': 0.7},
+                  {'month': 'Januari 2026', 'tx': 980, 'progress': 0.6},
+                ]),
+                const SizedBox(height: 32),
+                const _YearGroupHeader(year: '2025', color: KineticVaultTheme.outline),
+                const SizedBox(height: 16),
+                _buildArchiveList(context, [
+                  {'month': 'Desember 2025', 'tx': 1104, 'progress': 0.9},
+                  {'month': 'November 2025', 'tx': 892, 'progress': 0.5},
+                ]),
+              ],
             ),
-            const SizedBox(height: 20),
-            const _ArchiveHero(),
-            const SizedBox(height: 32),
-            const _YearGroupHeader(year: '2026', color: KineticVaultTheme.secondary),
-            const SizedBox(height: 16),
-            _buildArchiveList(context, [
-              {'month': 'Maret 2026', 'tx': 1476, 'progress': 0.85},
-              {'month': 'Februari 2026', 'tx': 1242, 'progress': 0.7},
-              {'month': 'Januari 2026', 'tx': 980, 'progress': 0.6},
-            ]),
-            const SizedBox(height: 32),
-            const _YearGroupHeader(year: '2025', color: KineticVaultTheme.outline),
-            const SizedBox(height: 16),
-            _buildArchiveList(context, [
-              {'month': 'Desember 2025', 'tx': 1104, 'progress': 0.9},
-              {'month': 'November 2025', 'tx': 892, 'progress': 0.5},
-            ]),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

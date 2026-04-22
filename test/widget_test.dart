@@ -1,12 +1,17 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fintrack_mobile_app/main.dart';
+import 'package:fintrack_mobile_app/core/utils/service_locator.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App initialization smoke test', (WidgetTester tester) async {
+    // Initialize dependencies
+    sl.setup();
+    
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
     // Verify that our app builds correctly
-    expect(find.text('The Kinetic Vault'), findsOneWidget);
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

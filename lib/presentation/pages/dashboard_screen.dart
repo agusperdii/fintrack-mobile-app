@@ -40,7 +40,7 @@ class _DashboardPageState extends State<DashboardPage> {
       builder: (context, _) {
         final provider = sl.financeProvider;
         
-        if (provider.isLoading && provider.dashboardData == null) {
+        if (provider.isLoading || provider.dashboardData == null) {
           return const Scaffold(
             backgroundColor: KineticVaultTheme.background,
             body: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
@@ -51,7 +51,9 @@ class _DashboardPageState extends State<DashboardPage> {
         
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
-          appBar: const AppHeader(),
+          appBar: AppHeader(
+            avatarUrl: provider.userProfile?['avatar'],
+          ),
           body: RefreshIndicator(
             onRefresh: () => provider.fetchAllData(),
             color: KineticVaultTheme.primary,
@@ -61,7 +63,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Welcome Section (Molecule)
-                  AppGreetingHeader(userName: provider.userProfile?['name']?.split(' ').first ?? 'User'),
+                  AppGreetingHeader(
+                    userName: provider.userProfile?['name']?.split(' ').first ?? 'User',
+                    avatarUrl: provider.userProfile?['avatar'],
+                  ),
                   const SizedBox(height: 24),
 
                   // Hero Balance Card (Organism)

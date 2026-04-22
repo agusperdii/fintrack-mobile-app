@@ -34,8 +34,11 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (context, _) {
         final provider = sl.financeProvider;
         
-        if (provider.isLoading && provider.userProfile == null) {
-          return const Center(child: CircularProgressIndicator());
+        if (provider.isLoading || provider.userProfile == null || provider.spendingTarget == null) {
+          return const Scaffold(
+            backgroundColor: KineticVaultTheme.background,
+            body: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+          );
         }
 
         final profile = provider.userProfile!;
@@ -46,7 +49,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
-          appBar: const AppHeader(title: 'Profil'),
+          appBar: AppHeader(
+            title: 'Profil',
+            avatarUrl: profile['avatar'],
+          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
             child: Column(
