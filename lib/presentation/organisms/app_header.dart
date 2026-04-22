@@ -23,28 +23,35 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: KineticVaultTheme.background,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      toolbarHeight: kToolbarHeight + KineticVaultTheme.spacingM,
       leading: showBackButton
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: KineticVaultTheme.primary, size: 20),
-              onPressed: () => Navigator.pop(context),
+          ? Center(
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: KineticVaultTheme.primary, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
             )
           : null,
       title: Row(
         children: [
           if (!showBackButton) ...[
             AppAvatar(
-              imageUrl: avatarUrl ?? 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMPbqgPW0U1I0ZLTEdyp4cMS9mMTL9aOZnhYRlJg_1r-fji7TncBWRh_5UtIydurWHahNW0HuUvVxmgOoxZ1zNdy6jeoDVZTdamUIKzg30UsXOIdNYaXkrq2kMPsMUSgyPaZrTziXTS-qT6GIjQUOzpBzq7Jsl3Sgnhm3bIsYs_ANLI58aEINqkI-Eh1o4mpHYTHrnc7bz5SEKFjUsLbjfpzeO4-S4tzjJKDK_DMBii_xy_idr26SoZuBB7Y39ig1w_8n_3u2h8dY',
-              size: 32,
+              imageUrl: avatarUrl ?? 'https://i.pravatar.cc/150?u=aida',
+              size: 36,
               showBorder: true,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: KineticVaultTheme.spacingM),
           ],
-          ShaderMask(
-            shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
-            child: AppHeading(
-              title ?? 'The Kinetic Vault',
-              size: AppHeadingSize.h3,
-              color: Colors.white,
+          Expanded(
+            child: ShaderMask(
+              shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
+              child: AppHeading(
+                title ?? 'The Kinetic Vault',
+                size: AppHeadingSize.h3,
+                color: Colors.white,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
@@ -52,7 +59,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         if (showNotification) ...[
           IconButton(
-            icon: const Icon(Icons.notifications_none, color: KineticVaultTheme.primary, size: 22),
+            icon: const Icon(Icons.notifications_none_rounded, color: KineticVaultTheme.primary, size: 24),
             onPressed: () {
               Navigator.push(
                 context,
@@ -60,12 +67,12 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               );
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: KineticVaultTheme.spacingS),
         ],
       ],
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + KineticVaultTheme.spacingM);
 }

@@ -53,12 +53,12 @@ class AppButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: textColor,
-          elevation: variant == AppButtonVariant.primary ? 10 : 0,
-          shadowColor: variant == AppButtonVariant.primary ? bgColor.withValues(alpha: 0.4) : Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+          elevation: variant == AppButtonVariant.primary ? 8 : 0,
+          shadowColor: variant == AppButtonVariant.primary ? bgColor.withValues(alpha: 0.3) : Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: KineticVaultTheme.spacingL),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KineticVaultTheme.radiusFull)),
           side: variant == AppButtonVariant.ghost 
-            ? const BorderSide(color: KineticVaultTheme.primary, width: 1)
+            ? const BorderSide(color: KineticVaultTheme.primary, width: 1.5)
             : BorderSide.none,
         ),
         child: isLoading
@@ -67,15 +67,15 @@ class AppButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: 20),
+                    const SizedBox(width: KineticVaultTheme.spacingS),
                   ],
                   Text(
                     label.toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
-                      fontSize: 13,
+                      letterSpacing: 1.2,
+                      fontSize: 14,
                     ),
                   ),
                 ],

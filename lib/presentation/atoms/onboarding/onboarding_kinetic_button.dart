@@ -20,12 +20,13 @@ class OnboardingKineticButton extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: KineticVaultTheme.primaryGradient,
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(KineticVaultTheme.radiusFull),
         boxShadow: [
           BoxShadow(
-            color: KineticVaultTheme.primary.withValues(alpha: 0.2),
+            color: KineticVaultTheme.primary.withValues(alpha: 0.25),
             blurRadius: 20,
             spreadRadius: 2,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -33,22 +34,23 @@ class OnboardingKineticButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(KineticVaultTheme.radiusFull),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.symmetric(vertical: KineticVaultTheme.spacingL),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  label,
+                  label.toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
                     color: KineticVaultTheme.onPrimaryFixed,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    letterSpacing: 1.1,
                   ),
                 ),
                 if (icon != null) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: KineticVaultTheme.spacingS),
                   Icon(
                     icon,
                     color: KineticVaultTheme.onPrimaryFixed,

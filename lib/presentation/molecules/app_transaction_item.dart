@@ -17,27 +17,29 @@ class AppTransactionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.amount < 0;
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(KineticVaultTheme.radiusL),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: KineticVaultTheme.spacingM,
+          vertical: KineticVaultTheme.spacingM,
+        ),
         decoration: BoxDecoration(
           color: KineticVaultTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(KineticVaultTheme.radiusL),
         ),
         child: Row(
           children: [
             AppIconContainer(
-              icon: isExpense ? Icons.coffee : Icons.shopping_bag,
-              color:  KineticVaultTheme.surfaceContainerHigh,
+              icon: isExpense ? Icons.coffee_rounded : Icons.shopping_bag_rounded,
+              color: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
               shape: AppIconShape.rounded,
-              size: 40,
-              opacity: 1.0,
+              size: 48,
+              opacity: 0.15,
               iconColor: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
             ),
-            // Re-evaluating the above: AppIconContainer default opacity is 0.1, but here it was surfaceContainerHighest.
-            // Let's use it properly.
-            const SizedBox(width: 12),
+            const SizedBox(width: KineticVaultTheme.spacingM),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,8 +49,9 @@ class AppTransactionItem extends StatelessWidget {
                     size: AppHeadingSize.subtitle,
                     isBold: true,
                   ),
+                  const SizedBox(height: KineticVaultTheme.spacingXs),
                   AppHeading(
-                    '${transaction.date} • 09:41',
+                    '${transaction.date} • ${transaction.category}',
                     size: AppHeadingSize.caption,
                     color: KineticVaultTheme.onSurfaceVariant,
                     isBold: false,
@@ -56,10 +59,23 @@ class AppTransactionItem extends StatelessWidget {
                 ],
               ),
             ),
-            AppHeading(
-              '${isExpense ? "-" : "+"} ${KineticVaultTheme.formatCurrency(transaction.amount.abs())}',
-              size: AppHeadingSize.subtitle,
-              isBold: true,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AppHeading(
+                  '${isExpense ? "-" : "+"} ${KineticVaultTheme.formatCurrency(transaction.amount.abs())}',
+                  size: AppHeadingSize.subtitle,
+                  color: isExpense ? KineticVaultTheme.onSurface : KineticVaultTheme.primary,
+                  isBold: true,
+                ),
+                const SizedBox(height: KineticVaultTheme.spacingXs),
+                AppHeading(
+                  'Success',
+                  size: AppHeadingSize.caption,
+                  color: Colors.greenAccent.withValues(alpha: 0.7),
+                  isBold: false,
+                ),
+              ],
             ),
           ],
         ),

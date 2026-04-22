@@ -9,12 +9,18 @@ class AppHeading extends StatelessWidget {
   final AppHeadingSize size;
   final Color? color;
   final bool isBold;
+  final TextAlign? textAlign;
+  final int? maxLines;
+  final TextOverflow? overflow;
 
   const AppHeading(this.text, {
     super.key,
     this.size = AppHeadingSize.h2,
     this.color,
     this.isBold = true,
+    this.textAlign,
+    this.maxLines,
+    this.overflow,
   });
 
   @override
@@ -26,17 +32,23 @@ class AppHeading extends StatelessWidget {
     switch (size) {
       case AppHeadingSize.h1: fontSize = 32; break;
       case AppHeadingSize.h2: fontSize = 24; break;
-      case AppHeadingSize.h3: fontSize = 18; break;
+      case AppHeadingSize.h3: fontSize = 20; break;
       case AppHeadingSize.subtitle: 
-        fontSize = 12; 
-        letterSpacing = 1.5;
-        fontWeight = FontWeight.bold;
+        fontSize = 14; 
+        letterSpacing = 0.5;
+        fontWeight = isBold ? FontWeight.w700 : FontWeight.w500;
         break;
-      case AppHeadingSize.caption: fontSize = 10; break;
+      case AppHeadingSize.caption: 
+        fontSize = 12; 
+        fontWeight = isBold ? FontWeight.w700 : FontWeight.w400;
+        break;
     }
 
     return Text(
       text,
+      textAlign: textAlign,
+      maxLines: maxLines,
+      overflow: overflow,
       style: GoogleFonts.plusJakartaSans(
         fontSize: fontSize,
         fontWeight: fontWeight,

@@ -2,6 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class KineticVaultTheme {
+  // --- Design Tokens (Tailwind-like) ---
+  
+  // Spacing (8px grid)
+  static const double spacingXs = 4.0;
+  static const double spacingS = 8.0;
+  static const double spacingM = 12.0;
+  static const double spacingL = 16.0;
+  static const double spacingXl = 24.0;
+  static const double spacing2xl = 32.0;
+  static const double spacing3xl = 48.0;
+  static const double spacing4xl = 64.0;
+
+  // Border Radius
+  static const double radiusXs = 4.0;
+  static const double radiusS = 8.0;
+  static const double radiusM = 12.0;
+  static const double radiusL = 16.0;
+  static const double radiusXl = 24.0;
+  static const double radius2xl = 32.0;
+  static const double radiusFull = 9999.0;
+
+  // Animations
+  static const Duration durationFast = Duration(milliseconds: 200);
+  static const Duration durationNormal = Duration(milliseconds: 300);
+  static const Duration durationSlow = Duration(milliseconds: 500);
+  static const Curve curveDefault = Curves.easeInOutCubic;
+
   // Brand Colors from Tailwind Config
   static const Color background = Color(0xFF0C0E12);
   static const Color surface = Color(0xFF0C0E12);

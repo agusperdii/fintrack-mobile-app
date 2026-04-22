@@ -20,36 +20,37 @@ class AppHeroAnalysisCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(24),
-      borderRadius: 16,
+      padding: const EdgeInsets.all(KineticVaultTheme.spacingXl),
+      borderRadius: KineticVaultTheme.radiusXl,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           const Positioned(
-            right: -60,
-            top: -60,
-            child: AmbientGlow(size: 160, color: KineticVaultTheme.primary, opacity: 0.1),
+            right: -KineticVaultTheme.spacing4xl,
+            top: -KineticVaultTheme.spacing4xl,
+            child: AmbientGlow(size: 160, color: KineticVaultTheme.primary, opacity: 0.08),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppHeading(
-                'DAILY AVERAGE',
+              AppHeading(
+                'DAILY AVERAGE'.toUpperCase(),
                 size: AppHeadingSize.caption,
                 color: KineticVaultTheme.onSurfaceVariant,
                 isBold: true,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: KineticVaultTheme.spacingS),
               AppHeading(
                 KineticVaultTheme.formatCurrency(averageAmount),
                 size: AppHeadingSize.h1,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: KineticVaultTheme.spacingM),
               AppBadge(
                 label: '${budgetPercentage.toStringAsFixed(0)}% BELOW BUDGET',
-                icon: Icons.trending_down,
+                icon: Icons.trending_down_rounded,
                 variant: AppBadgeVariant.success,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: KineticVaultTheme.spacing2xl),
               SizedBox(
                 height: 80,
                 child: Row(
@@ -57,7 +58,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                   children: dailyValues.map((val) => _buildBar(val, val == dailyValues.reduce((a, b) => a > b ? a : b))).toList(),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: KineticVaultTheme.spacingM),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'].map((day) {
@@ -66,6 +67,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                     day,
                     size: AppHeadingSize.caption,
                     color: isToday ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                    isBold: isToday,
                   );
                 }).toList(),
               ),
@@ -80,13 +82,13 @@ class AppHeroAnalysisCard extends StatelessWidget {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        height: 80 * factor,
+        height: 80 * (factor < 0.1 ? 0.1 : factor),
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticVaultTheme.radiusXs)),
           gradient: isHighlighted ? KineticVaultTheme.primaryGradient : null,
           color: isHighlighted ? null : KineticVaultTheme.surfaceContainerHigh,
           boxShadow: isHighlighted ? [
-            BoxShadow(color: KineticVaultTheme.primary.withValues(alpha: 0.4), blurRadius: 10)
+            BoxShadow(color: KineticVaultTheme.primary.withValues(alpha: 0.3), blurRadius: 10)
           ] : null,
         ),
       ),
