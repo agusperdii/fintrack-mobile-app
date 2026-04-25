@@ -5,7 +5,6 @@ import 'core/utils/service_locator.dart';
 import 'views/pages/main_screen.dart';
 import 'views/pages/login_page.dart';
 import 'controllers/auth_controller.dart';
-import 'controllers/finance_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +31,9 @@ class MyApp extends StatelessWidget {
         theme: KineticVaultTheme.theme,
         home: Consumer<AuthController>(
           builder: (context, auth, _) {
-            return auth.isAuthenticated ? const MainScreen() : const LoginPage();
+            return auth.isAuthenticated
+                ? const MainScreen()
+                : const LoginPage();
           },
         ),
       ),
