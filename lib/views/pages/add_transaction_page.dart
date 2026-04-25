@@ -48,7 +48,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final success = await sl.financeRepository.addTransaction(
+      final success = await sl.financeController.addTransaction(
         title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
         amount: double.parse(_amountController.text),
         category: _selectedCategory,

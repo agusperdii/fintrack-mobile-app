@@ -14,6 +14,12 @@ class FinanceRepository {
   
   Future<Map<String, dynamic>> getSpendingTarget() => remoteDataSource.getSpendingTarget();
 
+  Future<bool> saveSpendingTarget({
+    required double amount,
+    required String period,
+  }) =>
+      remoteDataSource.saveSpendingTarget(amount: amount, period: period);
+
   Future<bool> addTransaction({
     required String title,
     required double amount,

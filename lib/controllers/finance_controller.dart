@@ -42,14 +42,17 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<void> updateSpendingTarget(double amount, String period) async {
-    // Optimistic Update atau API call
-    _spendingTarget = {
-      'amount': amount,
-      'period': period,
-    };
-    notifyListeners();
+    _setLoading(true);
+    final success = await _repository.saveSpendingTarget(
+      amount: amount,
+      period: period,
+    );
     
-    // Di sini nantinya panggil _repository.saveTarget(...)
+    if (success) {
+      await fetchAllData();
+    } else {
+      _setLoading(false);
+    }
   }
 
   Future<bool> addTransaction({

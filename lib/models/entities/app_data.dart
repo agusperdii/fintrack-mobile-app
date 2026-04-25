@@ -2,6 +2,8 @@ enum TransactionType { income, expense }
 
 class AppData {
   final double initialBalance;
+  final double totalIncome;
+  final double totalExpense;
   final List<Transaction> recentTransactions;
   final List<AnalysisData> analysis;
   final double? spendingTarget;
@@ -9,26 +11,39 @@ class AppData {
 
   AppData({
     required this.initialBalance,
+    required this.totalIncome,
+    required this.totalExpense,
     required this.recentTransactions,
     required this.analysis,
     this.spendingTarget,
     this.targetPeriod,
   });
 
-  double get totalIncome => recentTransactions
-      .where((t) => t.type == TransactionType.income)
-      .fold(0, (sum, t) => sum + t.amount);
-
-  double get totalExpense => recentTransactions
-      .where((t) => t.type == TransactionType.expense)
-      .fold(0, (sum, t) => sum + t.amount);
-
   double get balance => initialBalance + totalIncome - totalExpense;
+
+  factory AppData.fromJson(Map<String, dynamic> json) {
+    return AppData(
+      initialBalance: (json['initialBalance'] ?? 0.0).toDouble(),
+      totalIncome: (json['totalIncome'] ?? 0.0).toDouble(),
+      totalExpense: (json['totalExpense'] ?? 0.0).toDouble(),
+      recentTransactions: (json['recentTransactions'] as List)
+          .map((t) => Transaction.fromJson(t))
+          .toList(),
+      analysis: (json['analysis'] as List)
+          .map((a) => AnalysisData.fromJson(a))
+          .toList(),
+      spendingTarget: (json['spendingTarget'] ?? 0.0).toDouble(),
+      targetPeriod: json['targetPeriod'] as String?,
+    );
+  }
+
 
   // Dummy data generator
   static AppData getDummyData() {
     return AppData(
       initialBalance: 0,
+      totalIncome: 10000000,
+      totalExpense: 750000,
       spendingTarget: 5000000,
       targetPeriod: 'Bulanan',
       recentTransactions: [
@@ -81,6 +96,18 @@ class Transaction {
     required this.date,
     required this.type,
   });
+
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    return Transaction(
+      title: json['title'] as String,
+      amount: (json['amount'] ?? 0.0).toDouble(),
+      category: json['category'] as String,
+      date: json['date'] as String,
+      type: json['type'] == 'income'
+          ? TransactionType.income
+          : TransactionType.expense,
+    );
+  }
 }
 
 class AnalysisData {
@@ -93,4 +120,12 @@ class AnalysisData {
     required this.amount,
     required this.colorHex,
   });
+
+  factory AnalysisData.fromJson(Map<String, dynamic> json) {
+    return AnalysisData(
+      label: json['label'] as String,
+      amount: (json['amount'] ?? 0.0).toDouble(),
+      colorHex: json['colorHex'] as String,
+    );
+  }
 }

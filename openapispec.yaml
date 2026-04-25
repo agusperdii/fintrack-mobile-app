@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Finance Management API
+  version: 1.0.0
+  description: API untuk aplikasi manajemen keuangan dengan OCR dan Nudging System
+
+servers:
+  - url: http://localhost:3000/api
+
+paths:
+
+  # ================= AUTH =================
+  /auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        201:
+          description: User registered
+
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: Login success
+
+  /auth/me:
+    get:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Current user data
+
+  # ================= TRANSACTIONS =================
+  /transactions:
+    post:
+      summary: Create transaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        201:
+          description: Transaction created
+
+    get:
+      summary: Get all transactions
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List transactions
+
+  /transactions/{id}:
+    get:
+      summary: Get transaction by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Transaction detail
+
+    put:
+      summary: Update transaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        200:
+          description: Transaction updated
+
+    delete:
+      summary: Delete transaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Transaction deleted
+
+  # ================= OCR =================
+  /receipts/upload:
+    post:
+      summary: Upload receipt image
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Receipt uploaded
+
+  /receipts/{id}:
+    get:
+      summary: Get OCR result
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: OCR result
+
+  /ocr/confirm:
+    post:
+      summary: Confirm OCR to transaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OCRConfirmRequest'
+      responses:
+        201:
+          description: Transaction created from OCR
+
+  # ================= ANALYTICS =================
+  /analytics/summary:
+    get:
+      summary: Get financial summary
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Summary data
+
+  /analytics/trends:
+    get:
+      summary: Get spending trends
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Trends data
+
+  # ================= BUDGET =================
+  /budgets:
+    post:
+      summary: Create budget
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+      responses:
+        201:
+          description: Budget created
+
+    get:
+      summary: Get budgets
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List budgets
+
+  /budgets/{id}:
+    put:
+      summary: Update budget
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+      responses:
+        200:
+          description: Budget updated
+
+  # ================= NUDGES =================
+  /nudges:
+    get:
+      summary: Get nudges
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: List nudges
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    TransactionRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        category_id:
+          type: integer
+        description:
+          type: string
+        transaction_date:
+          type: string
+          format: date
+        source:
+          type: string
+          example: manual
+
+    OCRConfirmRequest:
+      type: object
+      properties:
+        receipt_id:
+          type: integer
+        amount:
+          type: number
+        category_id:
+          type: integer
+        transaction_date:
+          type: string
+          format: date
+
+    BudgetRequest:
+      type: object
+      properties:
+        category_id:
+          type: integer
+        limit_amount:
+          type: number
+        start_date:
+          type: string
+        end_date:
+          type: string
