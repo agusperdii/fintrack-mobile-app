@@ -1,6 +1,6 @@
-import '../../data/data_sources/remote_data_source.dart';
-import '../../data/repositories/finance_repository.dart';
-import '../../presentation/providers/finance_provider.dart';
+import '../../models/data_sources/remote_data_source.dart';
+import '../../models/repositories/finance_repository.dart';
+import '../../controllers/finance_controller.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -9,12 +9,12 @@ class ServiceLocator {
 
   late final RemoteDataSource remoteDataSource;
   late final FinanceRepository financeRepository;
-  late final FinanceProvider financeProvider;
+  late final FinanceController financeController;
 
   void setup() {
     remoteDataSource = RemoteDataSourceImpl();
     financeRepository = FinanceRepository(remoteDataSource: remoteDataSource);
-    financeProvider = FinanceProvider(financeRepository);
+    financeController = FinanceController(financeRepository);
   }
 }
 

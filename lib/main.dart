@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/service_locator.dart';
-import 'presentation/pages/main_screen.dart';
+import 'views/pages/main_screen.dart';
 
 void main() {
   // Initialize Service Locator for scalable backend approach
