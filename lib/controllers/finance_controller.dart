@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/entities/app_data.dart';
 import '../models/repositories/finance_repository.dart';
 
@@ -15,6 +17,20 @@ class FinanceController extends ChangeNotifier {
   List<Map<String, dynamic>>? _monthlySummary;
   bool _isLoading = false;
 
+  // --- Categories ---
+  final List<Map<String, dynamic>> _categories = [
+    {'name': 'Food', 'icon': '🍔', 'isEmoji': true},
+    {'name': 'Salary', 'icon': '💰', 'isEmoji': true},
+    {'name': 'Coffee', 'icon': '☕', 'isEmoji': true},
+    {'name': 'Transport', 'icon': '🚌', 'isEmoji': true},
+    {'name': 'Investment', 'icon': '📈', 'isEmoji': true},
+    {'name': 'Education', 'icon': '📚', 'isEmoji': true},
+    {'name': 'Gift', 'icon': '🎁', 'isEmoji': true},
+    {'name': 'Fun', 'icon': '🎮', 'isEmoji': true},
+    {'name': 'Uang Saku', 'icon': '💸', 'isEmoji': true},
+    {'name': 'Kost/Sewa', 'icon': '🏠', 'isEmoji': true},
+  ];
+
   // --- Getters ---
   AppData? get dashboardData => _dashboardData;
   Map<String, dynamic>? get spendingTarget => _spendingTarget;
@@ -22,6 +38,7 @@ class FinanceController extends ChangeNotifier {
   List<Transaction>? get transactions => _transactions;
   List<Map<String, dynamic>>? get monthlySummary => _monthlySummary;
   bool get isLoading => _isLoading;
+  List<Map<String, dynamic>> get categories => _categories;
   
   void setTransactions(List<Transaction> txs) {
     _transactions = txs;
@@ -35,6 +52,7 @@ class FinanceController extends ChangeNotifier {
         _repository.getDashboardData(),
         _repository.getSpendingTarget(),
         _repository.getUserProfile(),
+        loadCategories(),
       ]);
       _dashboardData = results[0] as AppData;
       _spendingTarget = results[1] as Map<String, dynamic>;
@@ -49,6 +67,8 @@ class FinanceController extends ChangeNotifier {
   Future<void> loadInitialData() async {
     _setLoading(true);
     try {
+      await loadCategories();
+      
       // Start all requests in parallel
       final dashboardFuture = _repository.getDashboardData();
       final targetFuture = _repository.getSpendingTarget();
@@ -94,6 +114,55 @@ class FinanceController extends ChangeNotifier {
       debugPrint("Error loading initial data: $e");
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // --- Category Management ---
+
+  Future<void> loadCategories() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? categoriesJson = prefs.getString('custom_categories');
+      if (categoriesJson != null) {
+        final List<dynamic> decoded = jsonDecode(categoriesJson);
+        final List<Map<String, dynamic>> savedCategories = decoded.cast<Map<String, dynamic>>();
+        
+        // Merge with default categories, avoiding duplicates by name
+        for (var saved in savedCategories) {
+          if (!_categories.any((c) => c['name'] == saved['name'])) {
+            _categories.add(saved);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error loading categories: $e");
+    }
+    notifyListeners();
+  }
+
+  Future<void> addCustomCategory(String name, String icon) async {
+    if (name.isEmpty || icon.isEmpty) return;
+    
+    final newCategory = {'name': name, 'icon': icon, 'isEmoji': true};
+    
+    // Avoid duplicates
+    if (_categories.any((c) => c['name'].toLowerCase() == name.toLowerCase())) {
+      return;
+    }
+
+    _categories.add(newCategory);
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final customOnly = _categories.where((c) {
+        // Simple check to identify custom categories: not in the original hardcoded list
+        final defaultNames = ['Food', 'Salary', 'Coffee', 'Transport', 'Investment', 'Education', 'Gift', 'Fun', 'Uang Saku', 'Kost/Sewa'];
+        return !defaultNames.contains(c['name']);
+      }).toList();
+      await prefs.setString('custom_categories', jsonEncode(customOnly));
+    } catch (e) {
+      debugPrint("Error saving category: $e");
     }
   }
 

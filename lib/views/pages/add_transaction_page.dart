@@ -32,6 +32,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   String _type = 'Expense'; 
   late final TextEditingController _titleController; 
   late final TextEditingController _amountController;
+  late final TextEditingController _categoryNameController;
+  late final TextEditingController _categoryEmojiController;
   String _selectedCategory = 'Food';
   bool _isSubmitting = false;
 
@@ -43,24 +45,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _amountController = TextEditingController(
       text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
     );
+    _categoryNameController = TextEditingController();
+    _categoryEmojiController = TextEditingController();
     _selectedCategory = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
   }
-
-  final List<Map<String, dynamic>> _categories = [
-    {'name': 'Food', 'icon': Icons.restaurant},
-    {'name': 'Salary', 'icon': Icons.payments},
-    {'name': 'Coffee', 'icon': Icons.coffee},
-    {'name': 'Transport', 'icon': Icons.directions_car},
-    {'name': 'Investment', 'icon': Icons.trending_up},
-    {'name': 'Tools', 'icon': Icons.edit_note},
-    {'name': 'Web', 'icon': Icons.wifi},
-    {'name': 'Fun', 'icon': Icons.theater_comedy},
-  ];
 
   @override
   void dispose() {
     _titleController.dispose();
     _amountController.dispose();
+    _categoryNameController.dispose();
+    _categoryEmojiController.dispose();
     super.dispose();
   }
 
@@ -93,321 +88,421 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
-      appBar: AppBar(
-        backgroundColor: KineticVaultTheme.background,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
-          onPressed: () => Navigator.pop(context), 
+  void _showAddCategorySheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 24,
+          left: 24,
+          right: 24,
         ),
-        title: AppHeading(
-          'Tambah Transaksi',
-          size: AppHeadingSize.h3,
-          color: KineticVaultTheme.onSurface,
+        decoration: const BoxDecoration(
+          color: KineticVaultTheme.surfaceContainer,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const OcrScanPage()),
-              );
-            },
-            icon: const Icon(Icons.document_scanner_outlined, color: KineticVaultTheme.primary),
-            tooltip: 'Scan Struk (OCR)',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppHeading('Tambah Kategori Baru', size: AppHeadingSize.h3),
+            const SizedBox(height: 8),
+            const AppHeading('Sesuaikan dengan kebutuhan mahasiswa kamu!', size: AppHeadingSize.caption, color: KineticVaultTheme.onSurfaceVariant),
+            const SizedBox(height: 24),
+            Row(
               children: [
-                const AppHeading(
-                  'JUMLAH NOMINAL',
-                  size: AppHeadingSize.caption,
-                  color: KineticVaultTheme.onSurfaceVariant,
-                  isBold: true,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    const AppHeading(
-                      'Rp',
-                      size: AppHeadingSize.h2,
-                      color: KineticVaultTheme.primary,
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _categoryEmojiController,
+                    decoration: InputDecoration(
+                      labelText: 'Emoji',
+                      hintText: '🚀',
+                      filled: true,
+                      fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    const SizedBox(width: 8),
-                    IntrinsicWidth(
-                      child: TextField(
-                        controller: _amountController,
-                        autofocus: true,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          color: KineticVaultTheme.onSurface,
-                          letterSpacing: -1,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '0',
-                          hintStyle: TextStyle(color: KineticVaultTheme.onSurface.withValues(alpha: 0.2)),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildTypeToggleItem(
-                        label: 'Pengeluaran',
-                        icon: Icons.arrow_outward,
-                        isActive: _type == 'Expense',
-                        activeColor: KineticVaultTheme.errorContainer,
-                        onTap: () => setState(() => _type = 'Expense'),
-                      ),
-                      _buildTypeToggleItem(
-                        label: 'Pemasukan',
-                        icon: Icons.south_west,
-                        isActive: _type == 'Income',
-                        activeColor: KineticVaultTheme.surfaceContainerHighest,
-                        onTap: () => setState(() => _type = 'Income'),
-                      ),
-                    ],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 24),
                   ),
                 ),
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const AppHeading(
-                      'Pilih Kategori',
-                      size: AppHeadingSize.h3,
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 5,
+                  child: TextField(
+                    controller: _categoryNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Kategori',
+                      hintText: 'Misal: Fotocopy',
+                      filled: true,
+                      fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    const AppHeading(
-                      'Lihat Semua',
-                      size: AppHeadingSize.subtitle,
-                      color: KineticVaultTheme.primary,
-                      isBold: true,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: _categories.length,
-                  itemBuilder: (context, index) {
-                    final cat = _categories[index];
-                    final isSelected = _selectedCategory == cat['name'];
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedCategory = cat['name']),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: KineticVaultTheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? KineticVaultTheme.primary.withValues(alpha: 0.2) : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AppIconContainer(
-                              icon: cat['icon'],
-                              color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-                              size: 48,
-                              opacity: isSelected ? 0.2 : 0.1,
-                            ),
-                            const SizedBox(height: 8),
-                            AppHeading(
-                              cat['name'].toUpperCase(),
-                              size: AppHeadingSize.caption,
-                              color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-                              isBold: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: KineticVaultTheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, color: KineticVaultTheme.secondary, size: 18),
-                              const SizedBox(width: 8),
-                              const AppHeading(
-                                'Waktu & Tanggal',
-                                size: AppHeadingSize.subtitle,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildBentoValueItem(label: 'Hari Ini, 24 Mei 2024', icon: Icons.expand_more),
-                          const SizedBox(height: 8),
-                          _buildBentoValueItem(label: '14:30 WIB', icon: Icons.schedule),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: KineticVaultTheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.description, color: KineticVaultTheme.tertiary, size: 18),
-                              const SizedBox(width: 8),
-                              const AppHeading(
-                                'Catatan',
-                                size: AppHeadingSize.subtitle,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _titleController,
-                            maxLines: 3,
-                            style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurface),
-                            decoration: InputDecoration(
-                              hintText: 'Makan siang bareng temen...',
-                              hintStyle: TextStyle(color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                              border: InputBorder.none,
-                              fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              filled: true,
-                              contentPadding: const EdgeInsets.all(12),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassCard(
-                  padding: const EdgeInsets.all(24),
-                  borderRadius: 16,
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppHeading(
-                                'Progress Tabungan',
-                                size: AppHeadingSize.subtitle,
-                                color: KineticVaultTheme.tertiary,
-                                isBold: true,
-                              ),
-                              AppHeading(
-                                'Sisa budget makan kamu masih aman!',
-                                size: AppHeadingSize.caption,
-                                color: KineticVaultTheme.onSurfaceVariant,
-                                isBold: false,
-                              ),
-                            ],
-                          ),
-                          const AppHeading(
-                            '82%',
-                            size: AppHeadingSize.h3,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const AppProgressBar(
-                        value: 0.82,
-                        color: KineticVaultTheme.tertiary,
-                        height: 6,
-                      ),
-                    ],
                   ),
                 ),
-                const SizedBox(height: 120), 
               ],
             ),
+            const SizedBox(height: 24),
+            AppButton(
+              label: 'TAMBAH KATEGORI',
+              onTap: () {
+                if (_categoryNameController.text.isNotEmpty && _categoryEmojiController.text.isNotEmpty) {
+                  sl.financeController.addCustomCategory(
+                    _categoryNameController.text,
+                    _categoryEmojiController.text,
+                  );
+                  setState(() {
+                    _selectedCategory = _categoryNameController.text;
+                  });
+                  _categoryNameController.clear();
+                  _categoryEmojiController.clear();
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: sl.financeController,
+      builder: (context, _) {
+        final categories = sl.financeController.categories;
+
+        return Scaffold(
+          backgroundColor: KineticVaultTheme.background,
+          appBar: AppBar(
+            backgroundColor: KineticVaultTheme.background,
+            elevation: 0,
+            centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
+              onPressed: () => Navigator.pop(context), 
+            ),
+            title: AppHeading(
+              'Tambah Transaksi',
+              size: AppHeadingSize.h3,
+              color: KineticVaultTheme.onSurface,
+            ),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const OcrScanPage()),
+                  );
+                },
+                icon: const Icon(Icons.document_scanner_outlined, color: KineticVaultTheme.primary),
+                tooltip: 'Scan Struk (OCR)',
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [KineticVaultTheme.background.withValues(alpha: 0), KineticVaultTheme.background],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+          body: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const AppHeading(
+                      'JUMLAH NOMINAL',
+                      size: AppHeadingSize.caption,
+                      color: KineticVaultTheme.onSurfaceVariant,
+                      isBold: true,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        const AppHeading(
+                          'Rp',
+                          size: AppHeadingSize.h2,
+                          color: KineticVaultTheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        IntrinsicWidth(
+                          child: TextField(
+                            controller: _amountController,
+                            autofocus: true,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: KineticVaultTheme.onSurface,
+                              letterSpacing: -1,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: '0',
+                              hintStyle: TextStyle(color: KineticVaultTheme.onSurface.withValues(alpha: 0.2)),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: KineticVaultTheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildTypeToggleItem(
+                            label: 'Pengeluaran',
+                            icon: Icons.arrow_outward,
+                            isActive: _type == 'Expense',
+                            activeColor: KineticVaultTheme.errorContainer,
+                            onTap: () => setState(() => _type = 'Expense'),
+                          ),
+                          _buildTypeToggleItem(
+                            label: 'Pemasukan',
+                            icon: Icons.south_west,
+                            isActive: _type == 'Income',
+                            activeColor: KineticVaultTheme.surfaceContainerHighest,
+                            onTap: () => setState(() => _type = 'Income'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const AppHeading(
+                          'Pilih Kategori',
+                          size: AppHeadingSize.h3,
+                        ),
+                        GestureDetector(
+                          onTap: _showAddCategorySheet,
+                          child: const AppHeading(
+                            '+ Tambah',
+                            size: AppHeadingSize.subtitle,
+                            color: KineticVaultTheme.primary,
+                            isBold: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.85,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final cat = categories[index];
+                        final isSelected = _selectedCategory == cat['name'];
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedCategory = cat['name']),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: KineticVaultTheme.surfaceContainer,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? KineticVaultTheme.primary.withValues(alpha: 0.5) : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AppIconContainer(
+                                  icon: cat['icon'],
+                                  color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                  size: 40,
+                                  opacity: isSelected ? 0.2 : 0.1,
+                                ),
+                                const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  child: Text(
+                                    cat['name'].toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: KineticVaultTheme.surfaceContainer,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, color: KineticVaultTheme.secondary, size: 18),
+                                  const SizedBox(width: 8),
+                                  const AppHeading(
+                                    'Waktu & Tanggal',
+                                    size: AppHeadingSize.subtitle,
+                                    isBold: true,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildBentoValueItem(label: 'Hari Ini, 24 Mei 2024', icon: Icons.expand_more),
+                              const SizedBox(height: 8),
+                              _buildBentoValueItem(label: '14:30 WIB', icon: Icons.schedule),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: KineticVaultTheme.surfaceContainer,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.description, color: KineticVaultTheme.tertiary, size: 18),
+                                  const SizedBox(width: 8),
+                                  const AppHeading(
+                                    'Catatan',
+                                    size: AppHeadingSize.subtitle,
+                                    isBold: true,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _titleController,
+                                maxLines: 3,
+                                style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurface),
+                                decoration: InputDecoration(
+                                  hintText: 'Makan siang bareng temen...',
+                                  hintStyle: TextStyle(color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                                  border: InputBorder.none,
+                                  fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  filled: true,
+                                  contentPadding: const EdgeInsets.all(12),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.3)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    GlassCard(
+                      padding: const EdgeInsets.all(24),
+                      borderRadius: 16,
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AppHeading(
+                                    'Progress Tabungan',
+                                    size: AppHeadingSize.subtitle,
+                                    color: KineticVaultTheme.tertiary,
+                                    isBold: true,
+                                  ),
+                                  AppHeading(
+                                    'Sisa budget makan kamu masih aman!',
+                                    size: AppHeadingSize.caption,
+                                    color: KineticVaultTheme.onSurfaceVariant,
+                                    isBold: false,
+                                  ),
+                                ],
+                              ),
+                              const AppHeading(
+                                '82%',
+                                size: AppHeadingSize.h3,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const AppProgressBar(
+                            value: 0.82,
+                            color: KineticVaultTheme.tertiary,
+                            height: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 120), 
+                  ],
                 ),
               ),
-              child: AppButton(
-                label: 'SIMPAN TRANSAKSI',
-                isLoading: _isSubmitting,
-                onTap: _submitData,
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [KineticVaultTheme.background.withValues(alpha: 0), KineticVaultTheme.background],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: AppButton(
+                    label: 'SIMPAN TRANSAKSI',
+                    isLoading: _isSubmitting,
+                    onTap: _submitData,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

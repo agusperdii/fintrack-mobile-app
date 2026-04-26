@@ -4,7 +4,7 @@ import '../../../core/theme/app_theme.dart';
 enum AppIconShape { circle, rounded }
 
 class AppIconContainer extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon; // Can be IconData or String (emoji)
   final Color? color;
   final Gradient? gradient;
   final double size;
@@ -28,17 +28,30 @@ class AppIconContainer extends StatelessWidget {
     return Container(
       width: size,
       height: size,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: gradient == null ? (color ?? KineticVaultTheme.primary).withValues(alpha: opacity) : null,
         gradient: gradient,
         shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(KineticVaultTheme.radiusM) : null,
       ),
-      child: Icon(
-        icon, 
-        color: iconColor ?? color ?? KineticVaultTheme.primary, 
-        size: size * 0.5
-      ),
+      child: _buildIcon(),
     );
+  }
+
+  Widget _buildIcon() {
+    if (icon is IconData) {
+      return Icon(
+        icon as IconData,
+        color: iconColor ?? color ?? KineticVaultTheme.primary,
+        size: size * 0.5,
+      );
+    } else if (icon is String) {
+      return Text(
+        icon as String,
+        style: TextStyle(fontSize: size * 0.5),
+      );
+    }
+    return const SizedBox.shrink();
   }
 }
