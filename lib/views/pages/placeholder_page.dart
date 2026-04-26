@@ -15,6 +15,7 @@ class PlaceholderPage extends StatelessWidget {
       appBar: AppHeader(
         title: featureName,
         showBackButton: true,
+        showNotification: false,
       ),
       body: Stack(
         children: [

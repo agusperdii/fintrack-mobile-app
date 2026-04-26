@@ -108,7 +108,7 @@ class KineticVaultTheme {
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
       ),
     );
   }

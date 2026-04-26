@@ -51,7 +51,7 @@ class TransactionDetailPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppHeader(title: 'Detail Transaksi', showBackButton: true),
+      appBar: AppHeader(title: 'Detail Transaksi', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

@@ -7,6 +7,7 @@ class AppBalanceMiniItem extends StatelessWidget {
   final String amount;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const AppBalanceMiniItem({
     super.key,
@@ -14,32 +15,37 @@ class AppBalanceMiniItem extends StatelessWidget {
     required this.amount,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: color, size: 12),
-            const SizedBox(width: 4),
-            AppHeading(
-              label,
-              size: AppHeadingSize.caption,
-              color: KineticVaultTheme.onSurfaceVariant,
-              isBold: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        AppHeading(
-          amount,
-          size: AppHeadingSize.subtitle,
-          isBold: true,
-        ),
-      ],
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 12),
+              const SizedBox(width: 4),
+              AppHeading(
+                label,
+                size: AppHeadingSize.caption,
+                color: KineticVaultTheme.onSurfaceVariant,
+                isBold: false,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          AppHeading(
+            amount,
+            size: AppHeadingSize.subtitle,
+            isBold: true,
+          ),
+        ],
+      ),
     );
   }
 }

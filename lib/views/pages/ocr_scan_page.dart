@@ -145,6 +145,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
       appBar: AppBar(
         backgroundColor: KineticVaultTheme.background,
         elevation: 0,
+        centerTitle: true,
         title: const AppHeading('Scan Struk AI', size: AppHeadingSize.h3),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: KineticVaultTheme.primary),

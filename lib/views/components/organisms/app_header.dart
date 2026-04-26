@@ -28,6 +28,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       toolbarHeight: kToolbarHeight + KineticVaultTheme.spacingM,
+      centerTitle: true,
       leading: showBackButton
           ? Center(
               child: IconButton(
@@ -35,29 +36,28 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => Navigator.pop(context),
               ),
             )
-          : null,
-      title: Row(
-        children: [
-          if (!showBackButton) ...[
-            AppAvatar(
-              imageUrl: avatarUrl ?? 'https://i.pravatar.cc/150?u=aida',
-              size: 36,
-              showBorder: true,
-            ),
-            const SizedBox(width: KineticVaultTheme.spacingM),
-          ],
-          Expanded(
-            child: ShaderMask(
-              shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
-              child: AppHeading(
-                title ?? 'The Kinetic Vault',
-                size: AppHeadingSize.h3,
-                color: Colors.white,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
+          : (avatarUrl != null
+              ? Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: KineticVaultTheme.spacingL),
+                    child: AppAvatar(
+                      imageUrl: avatarUrl!,
+                      size: 36,
+                      showBorder: true,
+                    ),
+                  ),
+                )
+              : null),
+      leadingWidth: showBackButton ? null : (avatarUrl != null ? 48 + KineticVaultTheme.spacingL : null),
+      title: ShaderMask(
+        shaderCallback: (bounds) => KineticVaultTheme.primaryGradient.createShader(bounds),
+        child: AppHeading(
+          title ?? 'The Kinetic Vault',
+          size: AppHeadingSize.h3,
+          color: Colors.white,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       actions: [
         if (showNotification) ...[
@@ -66,7 +66,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
             onPressed: onNotificationTap,
           ),
           const SizedBox(width: KineticVaultTheme.spacingS),
-        ],
+        ] else if (showBackButton || avatarUrl != null)
+          const SizedBox(width: 48), // Balance the leading widget for centering
       ],
     );
   }

@@ -63,7 +63,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppHeader(title: 'Semua Transaksi', showBackButton: true),
+      appBar: AppHeader(title: 'Semua Transaksi', showBackButton: true, showNotification: false),
       body: ListenableBuilder(
         listenable: sl.financeController,
         builder: (context, _) {

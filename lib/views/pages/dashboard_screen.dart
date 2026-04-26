@@ -11,8 +11,8 @@ import '../components/molecules/app_greeting_header.dart';
 import 'notifications_page.dart';
 import 'all_transactions_page.dart';
 import 'transaction_detail_page.dart';
-import 'placeholder_page.dart';
 import 'ocr_scan_page.dart';
+import 'add_transaction_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -30,10 +30,15 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  void _navigateToPlaceholder(String feature) {
+  void _navigateToAddTransaction({required String type, String? category}) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
+      MaterialPageRoute(
+        builder: (context) => AddTransactionPage(
+          initialType: type,
+          initialCategory: category,
+        ),
+      ),
     );
   }
 
@@ -86,6 +91,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       balance: data.balance,
                       income: data.totalIncome,
                       expense: data.totalExpense,
+                      onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
+                      onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
                     )
                   else
                     const AppBalanceCard(
@@ -104,7 +111,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         icon: Icons.add_rounded,
                         label: 'Pemasukan',
                         color: KineticVaultTheme.tertiary,
-                        onTap: () => _navigateToPlaceholder('Tambah Pemasukan'),
+                        onTap: () => _navigateToAddTransaction(type: 'Income'),
                       ),
                       AppIconButton(
                         icon: Icons.receipt_long,
@@ -119,7 +126,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         icon: Icons.remove_rounded,
                         label: 'Pengeluaran',
                         color: KineticVaultTheme.error,
-                        onTap: () => _navigateToPlaceholder('Tambah Pengeluaran'),
+                        onTap: () => _navigateToAddTransaction(type: 'Expense'),
                       ),
                     ],
                   ),

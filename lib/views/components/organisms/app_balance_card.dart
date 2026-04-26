@@ -9,6 +9,8 @@ class AppBalanceCard extends StatelessWidget {
   final double income;
   final double expense;
   final bool isLoading;
+  final VoidCallback? onIncomeTap;
+  final VoidCallback? onExpenseTap;
 
   const AppBalanceCard({
     super.key,
@@ -16,6 +18,8 @@ class AppBalanceCard extends StatelessWidget {
     required this.income,
     required this.expense,
     this.isLoading = false,
+    this.onIncomeTap,
+    this.onExpenseTap,
   });
 
   @override
@@ -52,12 +56,14 @@ class AppBalanceCard extends StatelessWidget {
                 amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(income),
                 icon: Icons.south_west_rounded,
                 color: KineticVaultTheme.tertiary,
+                onTap: onIncomeTap,
               ),
               AppBalanceMiniItem(
                 label: 'Pengeluaran',
                 amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(expense),
                 icon: Icons.north_east_rounded,
                 color: KineticVaultTheme.error,
+                onTap: onExpenseTap,
               ),
             ],
           ),

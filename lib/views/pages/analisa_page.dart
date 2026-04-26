@@ -37,7 +37,7 @@ class _AnalisaPageState extends State<AnalisaPage> {
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
             title: 'Analisa',
-            avatarUrl: provider.userProfile?['avatar'],
+            showNotification: false,
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.loadInitialData(),

@@ -8,6 +8,7 @@ import '../components/atoms/app_button.dart';
 import '../components/atoms/app_progress_bar.dart';
 import '../components/atoms/app_icon_container.dart';
 import 'transaction_success_page.dart';
+import 'ocr_scan_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final String? initialTitle;
@@ -42,13 +43,15 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _amountController = TextEditingController(
       text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
     );
-    _selectedCategory = widget.initialCategory ?? 'Food';
+    _selectedCategory = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
   }
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Food', 'icon': Icons.restaurant},
+    {'name': 'Salary', 'icon': Icons.payments},
     {'name': 'Coffee', 'icon': Icons.coffee},
     {'name': 'Transport', 'icon': Icons.directions_car},
+    {'name': 'Investment', 'icon': Icons.trending_up},
     {'name': 'Tools', 'icon': Icons.edit_note},
     {'name': 'Web', 'icon': Icons.wifi},
     {'name': 'Fun', 'icon': Icons.theater_comedy},
@@ -97,6 +100,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       appBar: AppBar(
         backgroundColor: KineticVaultTheme.background,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
           onPressed: () => Navigator.pop(context), 
@@ -107,16 +111,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           color: KineticVaultTheme.onSurface,
         ),
         actions: [
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(right: 24.0),
-              child: AppHeading(
-                'NEON',
-                size: AppHeadingSize.h3,
-                color: KineticVaultTheme.primary,
-              ),
-            ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const OcrScanPage()),
+              );
+            },
+            icon: const Icon(Icons.document_scanner_outlined, color: KineticVaultTheme.primary),
+            tooltip: 'Scan Struk (OCR)',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(

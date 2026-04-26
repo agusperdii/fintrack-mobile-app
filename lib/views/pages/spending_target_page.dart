@@ -65,6 +65,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       appBar: AppBar(
         backgroundColor: KineticVaultTheme.background,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: KineticVaultTheme.primary, size: 20),
           onPressed: () => Navigator.pop(context),

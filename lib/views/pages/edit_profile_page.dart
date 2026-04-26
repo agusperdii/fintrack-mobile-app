@@ -54,7 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppHeader(title: 'Edit Profil', showBackButton: true),
+      appBar: AppHeader(title: 'Edit Profil', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

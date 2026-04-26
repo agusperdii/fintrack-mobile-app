@@ -17,14 +17,13 @@ class SummaryPage extends StatelessWidget {
       listenable: sl.financeController,
       builder: (context, _) {
         final provider = sl.financeController;
-        final profile = provider.userProfile;
         final summary = provider.monthlySummary;
         
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
             title: 'The Kinetic Vault',
-            avatarUrl: profile?['avatar'],
+            showNotification: false,
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.fetchMonthlySummary(),

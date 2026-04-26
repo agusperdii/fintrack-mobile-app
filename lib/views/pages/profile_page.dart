@@ -51,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
             title: 'Profil',
-            avatarUrl: profile['avatar'],
+            showNotification: false,
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
