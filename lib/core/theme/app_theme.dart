@@ -64,7 +64,31 @@ class KineticVaultTheme {
       buffer.write(absoluteValue[i]);
       count++;
     }
-    return 'Rp $sign${buffer.toString().split('').reversed.join('')}';
+    return 'Rp$sign${buffer.toString().split('').reversed.join('')}';
+  }
+
+  static String formatCurrencyShorthand(double amount, {bool isExpense = false}) {
+    final double absAmount = amount.abs();
+    
+    if (absAmount >= 1000000) {
+      double millions = absAmount / 1000000;
+      double rounded;
+      if (isExpense) {
+        rounded = (millions * 10).ceilToDouble() / 10.0;
+      } else {
+        rounded = (millions * 10).floorToDouble() / 10.0;
+      }
+      
+      String valueStr = rounded == rounded.toInt() 
+          ? rounded.toStringAsFixed(0) 
+          : rounded.toStringAsFixed(1).replaceAll('.', ',');
+      return 'Rp${valueStr}juta';
+    } else if (absAmount >= 1000) {
+      int rounded = isExpense ? (absAmount / 1000).ceil() : (absAmount / 1000).floor();
+      return 'Rp${rounded}ribu';
+    } else {
+      return formatCurrency(absAmount);
+    }
   }
 
   static const LinearGradient primaryGradient = LinearGradient(
@@ -100,10 +124,10 @@ class KineticVaultTheme {
           labelLarge: TextStyle(fontWeight: FontWeight.w700),
         ),
       ).copyWith(
-        displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: onSurface),
-        headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, color: onSurface),
-        headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: onSurface),
-        titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: onSurface),
+        displayLarge: GoogleFonts.inter(fontWeight: FontWeight.w800, color: onSurface),
+        headlineLarge: GoogleFonts.inter(fontWeight: FontWeight.w800, color: onSurface),
+        headlineMedium: GoogleFonts.inter(fontWeight: FontWeight.w700, color: onSurface),
+        titleLarge: GoogleFonts.inter(fontWeight: FontWeight.w700, color: onSurface),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,

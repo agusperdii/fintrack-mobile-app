@@ -43,6 +43,13 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    // Use a consistent margin for all sides to ensure symmetry. 
+    // On iOS notched devices, bottomPadding is typically 34, so we use that for side symmetry too.
+    // On Android/older devices, we default to 24.
+    final horizontalMargin = bottomPadding > 24 ? bottomPadding : 24.0;
+    final bottomMargin = horizontalMargin;
+    
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
       body: Stack(
@@ -52,9 +59,9 @@ class _MainScreenState extends State<MainScreen> {
             children: _pages,
           ),
           Positioned(
-            left: 24,
-            right: 24,
-            bottom: 32,
+            left: horizontalMargin,
+            right: horizontalMargin,
+            bottom: bottomMargin,
             child: Container(
               height: 72,
               decoration: BoxDecoration(

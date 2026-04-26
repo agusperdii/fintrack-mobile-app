@@ -91,6 +91,8 @@ class Transaction {
   final String category;
   final String date;
   final TransactionType type;
+  final String? source;
+  final String? receiptUrl;
 
   Transaction({
     this.id,
@@ -99,12 +101,12 @@ class Transaction {
     required this.category,
     required this.date,
     required this.type,
+    this.source,
+    this.receiptUrl,
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
-    String rawDate = json['date']?.toString() ?? '';
-    // Handle both ISO format and YYYY-MM-DD
-    String dateStr = rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
+    String dateStr = json['date']?.toString() ?? '';
     
     return Transaction(
       id: json['id']?.toString(),
@@ -115,6 +117,8 @@ class Transaction {
       type: json['type']?.toString() == 'income'
           ? TransactionType.income
           : TransactionType.expense,
+      source: json['source']?.toString(),
+      receiptUrl: json['receipt_url']?.toString() ?? json['receiptUrl']?.toString(),
     );
   }
 }

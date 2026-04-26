@@ -4,9 +4,8 @@ import '../../core/utils/service_locator.dart';
 import '../components/atoms/glass_card.dart';
 import '../components/atoms/app_heading.dart';
 import '../components/organisms/app_header.dart';
-import '../components/molecules/app_editorial_header.dart';
 import '../components/molecules/app_weekly_summary_item.dart';
-import 'placeholder_page.dart';
+import 'all_transactions_page.dart';
 
 class SummaryPage extends StatelessWidget {
   const SummaryPage({super.key});
@@ -22,7 +21,7 @@ class SummaryPage extends StatelessWidget {
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
-            title: 'The Kinetic Vault',
+            title: 'Ringkasan Transaksi',
             showNotification: false,
           ),
           body: RefreshIndicator(
@@ -34,11 +33,7 @@ class SummaryPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppEditorialHeader(
-                    category: 'Archive Collection',
-                    title: 'Ringkasan Transaksi',
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   _ArchiveHero(monthCount: summary?.length ?? 0),
                   const SizedBox(height: 32),
                   
@@ -61,7 +56,9 @@ class SummaryPage extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: 'Laporan ${_formatMonth(monthStr)}')),
+                              MaterialPageRoute(
+                                builder: (context) => AllTransactionsPage(initialMonth: monthStr),
+                              ),
                             );
                           },
                         );

@@ -5,16 +5,29 @@ import '../../controllers/auth_controller.dart';
 import '../../core/utils/parser_utils.dart';
 import '../../core/config/api_config.dart';
 
+import '../entities/nudge_data.dart';
+
 abstract class RemoteDataSource {
   Future<AppData> getDashboardData();
   Future<List<AnalysisData>> getAnalysisData();
   Future<Map<String, String>> getUserProfile();
   Future<Map<String, dynamic>> getSpendingTarget();
-  Future<bool> saveSpendingTarget({required double amount, required String period});
-  Future<bool> addTransaction({required String title, required double amount, required String category, required String type});
+  Future<List<Map<String, dynamic>>> getAllBudgets();
+  Future<Map<String, dynamic>> getWeeklyPulse();
+  Future<List<NudgeData>> getNudges();
+  Future<bool> markNudgeRead(String id);
+  Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month});
+  Future<bool> addTransaction({
+    required String title,
+    required double amount,
+    required String category,
+    required String type,
+    DateTime? date,
+  });
   Future<List<Transaction>> getTransactions({String? month});
   Future<bool> deleteTransaction(String id);
-  Future<bool> updateProfile({required String fullName});
+  Future<bool> updateProfile({required String fullName, String? username});
+  Future<bool> updatePassword({required String currentPassword, required String newPassword});
   Future<List<Map<String, dynamic>>> getMonthlySummary();
 }
 
@@ -35,8 +48,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       };
 
   Future<http.Response> _handleResponse(http.Response response) async {
-    if (response.statusCode == 401 || response.statusCode == 403) {
-      // Token invalid or expired, logout user
+    if (response.statusCode == 401 || response.statusCode == 403 || response.statusCode == 404) {
+      // Token invalid, expired, or user deleted (404), logout user
       authController.logout();
     }
     return response;
@@ -56,6 +69,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
   Future<http.Response> _post(String url, Map<String, dynamic> body) async {
     final response = await http.post(Uri.parse(url), headers: _headers, body: jsonEncode(body)).timeout(_timeout);
+    return _handleResponse(response);
+  }
+
+  Future<http.Response> _put(String url, Map<String, dynamic> body) async {
+    final response = await http.put(Uri.parse(url), headers: _headers, body: jsonEncode(body)).timeout(_timeout);
     return _handleResponse(response);
   }
 
@@ -103,9 +121,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final email = data['email'] as String;
+      final username = data['username'] as String?;
       return {
         'name': data['full_name'] ?? email.split('@')[0],
-        'handle': '@${email.split('@')[0]}',
+        'handle': username != null ? '@$username' : '@${email.split('@')[0]}',
+        'username': username ?? '',
         'email': email,
         'avatar': 'https://www.gravatar.com/avatar/${data['id']}?d=identicon&s=200',
       };
@@ -115,30 +135,54 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getSpendingTarget() async {
-    final response = await _get('$baseUrl/budgets/');
-    if (response.statusCode == 200) {
-      final List budgets = jsonDecode(response.body);
-      if (budgets.isNotEmpty) {
-        return {'amount': ParserUtils.toDouble(budgets[0]['amount']), 'period': budgets[0]['month'] ?? 'Bulanan'};
-      }
-      return {'amount': 0.0, 'period': 'Bulanan'};
+    final budgets = await getAllBudgets();
+    if (budgets.isNotEmpty) {
+      // Return the 'All' or 'Total' budget if exists, otherwise first one
+      final totalBudget = budgets.firstWhere((b) => b['category'] == 'All' || b['category'] == 'Total', orElse: () => budgets[0]);
+      return totalBudget;
     }
-    throw Exception('Failed to load spending target');
+    return {'amount': 0.0, 'period': 'Bulanan', 'category': 'All'};
   }
 
   @override
-  Future<bool> saveSpendingTarget({required double amount, required String period}) async {
-    final now = DateTime.now();
-    final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
-    final response = await _post('$baseUrl/budgets/', {'category': 'All', 'amount': amount, 'month': monthStr});
+  Future<List<Map<String, dynamic>>> getAllBudgets() async {
+    final response = await _get('$baseUrl/budgets/');
+    if (response.statusCode == 200) {
+      final List budgets = jsonDecode(response.body);
+      return budgets.map((b) => {
+        'id': b['id'],
+        'amount': ParserUtils.toDouble(b['amount']),
+        'period': b['month'] ?? 'Bulanan',
+        'category': b['category'] ?? 'All'
+      }).toList();
+    }
+    throw Exception('Failed to load budgets');
+  }
+
+  @override
+  Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month}) async {
+    String monthStr = month ?? "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}";
+    final response = await _post('$baseUrl/budgets/', {'category': category, 'amount': amount, 'month': monthStr});
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
   @override
-  Future<bool> addTransaction({required String title, required double amount, required String category, required String type}) async {
+  Future<bool> addTransaction({
+    required String title,
+    required double amount,
+    required String category,
+    required String type,
+    DateTime? date,
+  }) async {
     final response = await _post(
       '$baseUrl/transactions/',
-      {'description': title, 'amount': amount, 'category': category, 'type': type.toLowerCase()},
+      {
+        'description': title,
+        'amount': amount,
+        'category': category,
+        'type': type.toLowerCase(),
+        if (date != null) 'date': date.toIso8601String(),
+      },
     );
     return response.statusCode == 200 || response.statusCode == 201;
   }
@@ -166,8 +210,20 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-  Future<bool> updateProfile({required String fullName}) async {
-    final response = await _patch('$baseUrl/auth/me', {'full_name': fullName});
+  Future<bool> updateProfile({required String fullName, String? username}) async {
+    final response = await _patch('$baseUrl/auth/me', {
+      'full_name': fullName,
+      'username': username,
+    });
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
+    final response = await _post('$baseUrl/auth/me/change-password', {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+    });
     return response.statusCode == 200;
   }
 
@@ -179,5 +235,30 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       return List<Map<String, dynamic>>.from(data['months']);
     }
     throw Exception('Failed to load monthly summary');
+  }
+
+  @override
+  Future<List<NudgeData>> getNudges() async {
+    final response = await _get('$baseUrl/nudges/');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((n) => NudgeData.fromJson(n)).toList();
+    }
+    throw Exception('Failed to load nudges');
+  }
+
+  @override
+  Future<bool> markNudgeRead(String id) async {
+    final response = await _put('$baseUrl/nudges/$id/read', {});
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getWeeklyPulse() async {
+    final response = await _get('$baseUrl/analytics/weekly-pulse');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to load weekly pulse data');
   }
 }

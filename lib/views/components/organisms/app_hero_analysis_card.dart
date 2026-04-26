@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
 import '../atoms/glass_card.dart';
 import '../atoms/app_heading.dart';
@@ -8,12 +9,14 @@ class AppHeroAnalysisCard extends StatelessWidget {
   final double averageAmount;
   final double budgetPercentage; 
   final List<double> dailyValues;
+  final bool isBelowBudget;
 
   const AppHeroAnalysisCard({
     super.key,
     required this.averageAmount,
     required this.budgetPercentage,
     required this.dailyValues,
+    this.isBelowBudget = true,
   });
 
   @override
@@ -37,47 +40,90 @@ class AppHeroAnalysisCard extends StatelessWidget {
               ),
               const SizedBox(height: KineticVaultTheme.spacingM),
               AppBadge(
-                label: '${budgetPercentage.toStringAsFixed(0)}% BELOW BUDGET',
-                icon: Icons.trending_down_rounded,
-                variant: AppBadgeVariant.success,
+                label: '${budgetPercentage.toStringAsFixed(0)}% ${isBelowBudget ? 'BELOW' : 'ABOVE'} BUDGET',
+                icon: isBelowBudget ? Icons.trending_down_rounded : Icons.trending_up_rounded,
+                variant: isBelowBudget ? AppBadgeVariant.success : AppBadgeVariant.error,
               ),
               const SizedBox(height: KineticVaultTheme.spacing2xl),
               SizedBox(
-                height: 80,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: dailyValues.map((val) => _buildBar(val, val == dailyValues.reduce((a, b) => a > b ? a : b))).toList(),
+                height: 120,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: 1.0,
+                    barTouchData: BarTouchData(
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (_) => KineticVaultTheme.surfaceContainerHighest,
+                        tooltipPadding: const EdgeInsets.all(8),
+                        tooltipMargin: 8,
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          return BarTooltipItem(
+                            '${(rod.toY * 100).toStringAsFixed(0)}%',
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            const days = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'];
+                            final index = value.toInt();
+                            if (index >= 0 && index < days.length) {
+                              final isToday = index == 3; // Mock today as KAM
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 8,
+                                child: Text(
+                                  days[index],
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                                    color: isToday ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                          reservedSize: 28,
+                        ),
+                      ),
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    ),
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    barGroups: dailyValues.asMap().entries.map((entry) {
+                      final isMax = entry.value == dailyValues.reduce((a, b) => a > b ? a : b);
+                      return BarChartGroupData(
+                        x: entry.key,
+                        barRods: [
+                          BarChartRodData(
+                            toY: entry.value.clamp(0.1, 1.0),
+                            gradient: isMax ? KineticVaultTheme.primaryGradient : null,
+                            color: isMax ? null : KineticVaultTheme.surfaceContainerHigh,
+                            width: 16,
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            backDrawRodData: BackgroundBarChartRodData(
+                              show: true,
+                              toY: 1.0,
+                              color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: KineticVaultTheme.spacingM),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'].map((day) {
-                  final isToday = day == 'KAM'; // Placeholder logic
-                  return AppHeading(
-                    day,
-                    size: AppHeadingSize.caption,
-                    color: isToday ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
-                    isBold: isToday,
-                  );
-                }).toList(),
               ),
             ],
           ),
         );
-  }
-
-  Widget _buildBar(double factor, bool isHighlighted) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        height: 80 * (factor < 0.1 ? 0.1 : factor),
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticVaultTheme.radiusXs)),
-          gradient: isHighlighted ? KineticVaultTheme.primaryGradient : null,
-          color: isHighlighted ? null : KineticVaultTheme.surfaceContainerHigh,
-        ),
-      ),
-    );
   }
 }

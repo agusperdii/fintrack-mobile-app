@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'FinTrack',
+        title: 'Habitra',
         theme: KineticVaultTheme.theme,
         home: Consumer<AuthController>(
           builder: (context, auth, _) {

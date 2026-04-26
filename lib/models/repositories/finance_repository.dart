@@ -1,5 +1,6 @@
 import '../data_sources/remote_data_source.dart';
 import '../entities/app_data.dart';
+import '../entities/nudge_data.dart';
 
 class FinanceRepository {
   final RemoteDataSource remoteDataSource;
@@ -47,17 +48,41 @@ class FinanceRepository {
     }
   }
 
-  Future<bool> saveSpendingTarget({required double amount, required String period}) =>
-      remoteDataSource.saveSpendingTarget(amount: amount, period: period);
+  Future<List<Map<String, dynamic>>> getAllBudgets() => remoteDataSource.getAllBudgets();
 
-  Future<bool> addTransaction({required String title, required double amount, required String category, required String type}) =>
-      remoteDataSource.addTransaction(title: title, amount: amount, category: category, type: type);
+  Future<Map<String, dynamic>> getWeeklyPulse() => remoteDataSource.getWeeklyPulse();
+
+  Future<List<NudgeData>> getNudges() => remoteDataSource.getNudges();
+
+  Future<bool> markNudgeRead(String id) => remoteDataSource.markNudgeRead(id);
+
+  Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month}) =>
+      remoteDataSource.saveSpendingTarget(amount: amount, period: period, category: category, month: month);
+
+  Future<bool> addTransaction({
+    required String title,
+    required double amount,
+    required String category,
+    required String type,
+    DateTime? date,
+  }) =>
+      remoteDataSource.addTransaction(
+        title: title,
+        amount: amount,
+        category: category,
+        type: type,
+        date: date,
+      );
 
   Future<List<Transaction>> getTransactions({String? month}) => remoteDataSource.getTransactions(month: month);
 
   Future<bool> deleteTransaction(String id) => remoteDataSource.deleteTransaction(id);
 
-  Future<bool> updateProfile({required String fullName}) => remoteDataSource.updateProfile(fullName: fullName);
+  Future<bool> updateProfile({required String fullName, String? username}) => 
+      remoteDataSource.updateProfile(fullName: fullName, username: username);
+
+  Future<bool> updatePassword({required String currentPassword, required String newPassword}) =>
+      remoteDataSource.updatePassword(currentPassword: currentPassword, newPassword: newPassword);
 
   Future<List<Map<String, dynamic>>> getMonthlySummary() async {
     try {

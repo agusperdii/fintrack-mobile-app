@@ -35,7 +35,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 const SizedBox(height: 32),
                 Text(
                   'Transaksi Berhasil!',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: KineticVaultTheme.onSurface,
@@ -43,7 +43,7 @@ class TransactionSuccessPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Catatan keuangan kamu sudah diperbarui secara otomatis oleh Kinetic Vault.',
+                  'Catatan keuangan kamu sudah diperbarui secara otomatis oleh Habitra.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 14,
@@ -64,7 +64,7 @@ class TransactionSuccessPage extends StatelessWidget {
                     ),
                     child: Text(
                       'KEMBALI KE DASHBOARD',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w800,
                         letterSpacing: 1.0,
                       ),

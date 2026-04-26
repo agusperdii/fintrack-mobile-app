@@ -42,7 +42,7 @@ class AppBadge extends StatelessWidget {
           ],
           Text(
             label.toUpperCase(),
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 9,
               fontWeight: FontWeight.w800,
               color: color,

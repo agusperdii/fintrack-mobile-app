@@ -22,7 +22,7 @@ class AppSectionHeader extends StatelessWidget {
       children: [
         AppHeading(
           title,
-          size: AppHeadingSize.h3,
+          size: AppHeadingSize.subtitle,
         ),
         if (actionLabel != null)
           GestureDetector(

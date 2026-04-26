@@ -40,7 +40,7 @@ class PlaceholderPage extends StatelessWidget {
                   const SizedBox(height: 32),
                   Text(
                     'Segera Hadir!',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: KineticVaultTheme.onSurface,
@@ -67,7 +67,7 @@ class PlaceholderPage extends StatelessWidget {
                     ),
                     child: Text(
                       'KEMBALI',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w800,
                       ),
                     ),

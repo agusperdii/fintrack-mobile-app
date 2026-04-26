@@ -72,7 +72,7 @@ class AppButton extends StatelessWidget {
                   ],
                   Text(
                     label.toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,
                       fontSize: 14,

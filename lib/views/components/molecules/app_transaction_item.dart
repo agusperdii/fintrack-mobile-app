@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/service_locator.dart';
 import '../../../models/entities/app_data.dart';
 import '../atoms/app_heading.dart';
 import '../atoms/app_icon_container.dart';
@@ -17,6 +19,17 @@ class AppTransactionItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.type == TransactionType.expense;
+    final categoryIcon = sl.financeController.getCategoryIcon(transaction.category);
+    final accentColor = isExpense ? KineticVaultTheme.error : KineticVaultTheme.tertiary;
+
+    String formattedSubtitle = transaction.date;
+    try {
+      final dateTime = DateTime.parse(transaction.date);
+      formattedSubtitle = '${DateFormat('d MMM yyyy').format(dateTime)} @${DateFormat('HH:mm').format(dateTime)}';
+    } catch (e) {
+      // Fallback if parsing fails
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(KineticVaultTheme.radiusL),
@@ -32,12 +45,12 @@ class AppTransactionItem extends StatelessWidget {
         child: Row(
           children: [
             AppIconContainer(
-              icon: isExpense ? Icons.coffee_rounded : Icons.shopping_bag_rounded,
-              color: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
+              icon: categoryIcon,
+              color: accentColor,
               shape: AppIconShape.rounded,
               size: 48,
               opacity: 0.15,
-              iconColor: isExpense ? KineticVaultTheme.secondary : KineticVaultTheme.primary,
+              iconColor: accentColor,
             ),
             const SizedBox(width: KineticVaultTheme.spacingM),
             Expanded(
@@ -51,7 +64,7 @@ class AppTransactionItem extends StatelessWidget {
                   ),
                   const SizedBox(height: KineticVaultTheme.spacingXs),
                   AppHeading(
-                    '${transaction.date} • ${transaction.category}',
+                    formattedSubtitle,
                     size: AppHeadingSize.caption,
                     color: KineticVaultTheme.onSurfaceVariant,
                     isBold: false,
@@ -63,16 +76,16 @@ class AppTransactionItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 AppHeading(
-                  '${isExpense ? "-" : "+"} ${KineticVaultTheme.formatCurrency(transaction.amount)}',
+                  '${isExpense ? "-" : "+"}${KineticVaultTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense)}',
                   size: AppHeadingSize.subtitle,
                   color: isExpense ? KineticVaultTheme.onSurface : KineticVaultTheme.primary,
                   isBold: true,
                 ),
                 const SizedBox(height: KineticVaultTheme.spacingXs),
                 AppHeading(
-                  'Success',
+                  isExpense ? 'Expense' : 'Income',
                   size: AppHeadingSize.caption,
-                  color: Colors.greenAccent.withValues(alpha: 0.7),
+                  color: accentColor.withValues(alpha: 0.7),
                   isBold: false,
                 ),
               ],

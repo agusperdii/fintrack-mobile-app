@@ -13,6 +13,8 @@ import 'all_transactions_page.dart';
 import 'transaction_detail_page.dart';
 import 'ocr_scan_page.dart';
 import 'add_transaction_page.dart';
+import 'spending_target_page.dart';
+import '../components/organisms/nudge_overlay.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -25,9 +27,25 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
     if (sl.financeController.dashboardData == null) {
-      sl.financeController.loadInitialData();
+      await sl.financeController.loadInitialData();
     }
+    _checkAndShowNudge();
+  }
+
+  void _checkAndShowNudge() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nudge = sl.financeController.latestUnreadNudge;
+      if (nudge != null && mounted) {
+        NudgeOverlay.show(context, nudge, () {
+          sl.financeController.markNudgeAsRead(nudge.id);
+        });
+      }
+    });
   }
 
   void _navigateToAddTransaction({required String type, String? category}) {
@@ -62,7 +80,33 @@ class _DashboardPageState extends State<DashboardPage> {
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
-            avatarUrl: profile?['avatar'],
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Center(
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: KineticVaultTheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SpendingTargetPage()),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.tune_rounded,
+                      color: KineticVaultTheme.primary,
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+            ),
             onNotificationTap: () {
               Navigator.push(
                 context,
@@ -188,10 +232,16 @@ class _DashboardPageState extends State<DashboardPage> {
                   // Weekly Pulse (Organism)
                   const AppSectionHeader(title: 'Wawasan Mingguan'),
                   const SizedBox(height: 16),
-                  AppWeeklyPulseChart(
-                    growth: 12.0,
-                    values: const [0.5, 0.8, 0.4, 1.0, 0.7, 0.5, 0.8],
-                  ),
+                  if (provider.weeklyPulse != null)
+                    AppWeeklyPulseChart(
+                      growth: (provider.weeklyPulse!['growth'] as num).toDouble(),
+                      values: (provider.weeklyPulse!['values'] as List).map((v) => (v as num).toDouble()).toList(),
+                    )
+                  else
+                    const AppWeeklyPulseChart(
+                      growth: 0,
+                      values: [0, 0, 0, 0, 0, 0, 0],
+                    ),
                   
                   const SizedBox(height: 100), 
                 ],

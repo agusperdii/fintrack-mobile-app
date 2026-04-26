@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_theme.dart';
 import '../atoms/app_heading.dart';
 
 class AppWeeklyPulseChart extends StatelessWidget {
   final double growth;
-  final List<double> values; // Normalized values 0.0 to 1.0
+  final List<double> values; 
 
   const AppWeeklyPulseChart({
     super.key,
@@ -14,6 +15,10 @@ class AppWeeklyPulseChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Find max value for normalization or maxY
+    final double maxValue = values.isEmpty ? 1.0 : values.reduce((a, b) => a > b ? a : b);
+    final double displayMax = maxValue == 0 ? 1.0 : maxValue;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -36,37 +41,60 @@ class AppWeeklyPulseChart extends StatelessWidget {
                     isBold: true,
                   ),
                   AppHeading(
-                    'Growth ${growth > 0 ? "+" : ""}${growth.toStringAsFixed(0)}%',
+                    'Growth ${growth >= 0 ? "+" : ""}${growth.toStringAsFixed(1)}%',
                     size: AppHeadingSize.h3,
-                    color: growth > 0 ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+                    color: growth >= 0 ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
                   ),
                 ],
               ),
               Icon(Icons.insights, color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.3), size: 18),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           SizedBox(
-            height: 48,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: values.map((val) => _buildPulseBar(val, val == values.reduce((a, b) => a > b ? a : b))).toList(),
+            height: 100,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: displayMax,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => KineticVaultTheme.surfaceContainerHighest,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        KineticVaultTheme.formatCurrency(rod.toY),
+                        const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: const FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: false),
+                barGroups: values.asMap().entries.map((entry) {
+                  final isMax = entry.value == maxValue && maxValue > 0;
+                  return BarChartGroupData(
+                    x: entry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value,
+                        color: isMax ? KineticVaultTheme.tertiary : KineticVaultTheme.surfaceContainerHighest,
+                        width: 14,
+                        borderRadius: BorderRadius.circular(4),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: displayMax,
+                          color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPulseBar(double heightFactor, bool isHighlighted) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        height: 48 * heightFactor.clamp(0.1, 1.0),
-        decoration: BoxDecoration(
-          color: isHighlighted ? KineticVaultTheme.tertiary : KineticVaultTheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
       ),
     );
   }

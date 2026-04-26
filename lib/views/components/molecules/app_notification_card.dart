@@ -13,6 +13,7 @@ class AppNotificationCard extends StatelessWidget {
   final AppNotificationVariant variant;
   final List<Widget>? actions;
   final Widget? footer;
+  final bool isRead;
 
   const AppNotificationCard({
     super.key,
@@ -22,6 +23,7 @@ class AppNotificationCard extends StatelessWidget {
     this.variant = AppNotificationVariant.info,
     this.actions,
     this.footer,
+    this.isRead = false,
   });
 
   @override
@@ -48,67 +50,73 @@ class AppNotificationCard extends StatelessWidget {
         break;
     }
 
+    // Dim color if read
+    final effectiveColor = isRead ? color.withValues(alpha: 0.5) : color;
+
     return GlassCard(
       padding: EdgeInsets.zero,
-      borderColor: variant == AppNotificationVariant.warning 
+      borderColor: variant == AppNotificationVariant.warning && !isRead
           ? color.withValues(alpha: 0.5) 
           : KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.1),
       borderWidth: 1,
-      child: Container(
-        decoration: variant == AppNotificationVariant.warning ? BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: color.withValues(alpha: 0.5),
-              width: 4,
-            ),
-          ),
-        ) : null,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppIconContainer(
-              icon: icon,
-              color: color,
-              size: 40,
-              opacity: 0.1,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      AppHeading(
-                        category,
-                        size: AppHeadingSize.caption,
-                        color: color,
-                        isBold: true,
-                      ),
-                      AppHeading(
-                        time,
-                        size: AppHeadingSize.caption,
-                        color: KineticVaultTheme.onSurface.withValues(alpha: 0.4),
-                        isBold: false,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  content,
-                  if (actions != null && actions!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Row(children: actions!),
-                  ],
-                  if (footer != null) ...[
-                    const SizedBox(height: 12),
-                    footer!,
-                  ],
-                ],
+      child: Opacity(
+        opacity: isRead ? 0.6 : 1.0,
+        child: Container(
+          decoration: variant == AppNotificationVariant.warning && !isRead ? BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: color.withValues(alpha: 0.5),
+                width: 4,
               ),
             ),
-          ],
+          ) : null,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppIconContainer(
+                icon: icon,
+                color: effectiveColor,
+                size: 40,
+                opacity: 0.1,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        AppHeading(
+                          category,
+                          size: AppHeadingSize.caption,
+                          color: effectiveColor,
+                          isBold: !isRead,
+                        ),
+                        AppHeading(
+                          time,
+                          size: AppHeadingSize.caption,
+                          color: KineticVaultTheme.onSurface.withValues(alpha: 0.4),
+                          isBold: false,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    content,
+                    if (actions != null && actions!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(children: actions!),
+                    ],
+                    if (footer != null) ...[
+                      const SizedBox(height: 12),
+                      footer!,
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

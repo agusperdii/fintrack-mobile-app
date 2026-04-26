@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/service_locator.dart';
 import '../../models/entities/app_data.dart';
@@ -145,7 +146,15 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Text(date, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: KineticVaultTheme.onSurfaceVariant, letterSpacing: 0.5)),
+                              child: Text(
+                                DateFormat('d MMMM yyyy').format(DateTime.parse(date)),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: KineticVaultTheme.onSurfaceVariant,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                             ),
                             ...txs.map((tx) => _TransactionListItem(
                               transaction: tx,
@@ -233,13 +242,16 @@ class _TransactionListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(transaction.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(transaction.category, style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurfaceVariant)),
+                    Text(
+                      '${transaction.category} @${DateFormat('HH:mm').format(DateTime.parse(transaction.date))}',
+                      style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurfaceVariant),
+                    ),
                   ],
                 ),
               ),
               Text(
-                '${isIncome ? '+' : '-'}Rp ${transaction.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.bold, color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error),
+                '${isIncome ? '+' : '-'}Rp${transaction.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error),
               ),
             ],
           ),

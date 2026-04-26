@@ -4,48 +4,62 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/service_locator.dart';
 import '../components/organisms/app_header.dart';
 
-class EditProfilePage extends StatefulWidget {
-  final String currentName;
-  const EditProfilePage({super.key, required this.currentName});
+class ChangeUsernamePage extends StatefulWidget {
+  final String currentUsername;
+  final String currentFullName;
+  const ChangeUsernamePage({super.key, required this.currentUsername, required this.currentFullName});
 
   @override
-  State<EditProfilePage> createState() => _EditProfilePageState();
+  State<ChangeUsernamePage> createState() => _ChangeUsernamePageState();
 }
 
-class _EditProfilePageState extends State<EditProfilePage> {
-  late final TextEditingController _nameController;
+class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
+  late final TextEditingController _usernameController;
   bool _isSaving = false;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.currentName);
+    _usernameController = TextEditingController(text: widget.currentUsername);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() => _errorMessage = 'Nama tidak boleh kosong');
+    final username = _usernameController.text.trim().toLowerCase();
+    if (username.isEmpty) {
+      setState(() => _errorMessage = 'Username tidak boleh kosong');
       return;
     }
+    
+    // Simple validation: alphanumeric and underscores only
+    if (!RegExp(r'^[a-z0-9_]+$').hasMatch(username)) {
+      setState(() => _errorMessage = 'Username hanya boleh berisi huruf kecil, angka, dan underscore');
+      return;
+    }
+
     setState(() { _isSaving = true; _errorMessage = null; });
-    final success = await sl.financeController.updateProfile(fullName: name);
+    
+    // We update both because updateProfile expects fullName
+    final success = await sl.financeController.updateProfile(
+      fullName: widget.currentFullName,
+      username: username,
+    );
+    
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil diperbarui'), backgroundColor: KineticVaultTheme.tertiary),
+          const SnackBar(content: Text('Username berhasil diperbarui'), backgroundColor: KineticVaultTheme.tertiary),
         );
         Navigator.pop(context, true);
       } else {
-        setState(() => _errorMessage = 'Gagal memperbarui profil. Coba lagi.');
+        setState(() => _errorMessage = 'Username sudah digunakan atau gagal diperbarui.');
       }
     }
   }
@@ -54,22 +68,25 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: KineticVaultTheme.background,
-      appBar: AppHeader(title: 'Edit Profil', showBackButton: true, showNotification: false),
+      appBar: AppHeader(title: 'Ganti Username', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 16),
-            Text('Nama Lengkap', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurfaceVariant)),
+            Text('Username Baru', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurfaceVariant)),
             const SizedBox(height: 8),
             TextField(
-              controller: _nameController,
+              controller: _usernameController,
+              autofocus: true,
               style: GoogleFonts.inter(color: KineticVaultTheme.onSurface),
               decoration: InputDecoration(
+                prefixText: '@ ',
+                prefixStyle: TextStyle(color: KineticVaultTheme.primary, fontWeight: FontWeight.bold),
                 filled: true,
                 fillColor: KineticVaultTheme.surfaceContainerHigh,
-                hintText: 'Masukkan nama lengkap Anda',
+                hintText: 'user_anda',
                 hintStyle: TextStyle(color: KineticVaultTheme.onSurfaceVariant),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 focusedBorder: OutlineInputBorder(
@@ -77,6 +94,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.5)),
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Username akan digunakan sebagai handle unik Anda.',
+              style: TextStyle(color: KineticVaultTheme.onSurfaceVariant, fontSize: 11),
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
@@ -93,7 +115,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               child: _isSaving
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: KineticVaultTheme.onPrimaryFixed))
-                  : Text('SIMPAN', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  : Text('SIMPAN USERNAME', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/service_locator.dart';
 import '../components/atoms/glass_card.dart';
@@ -36,6 +37,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late final TextEditingController _categoryEmojiController;
   String _selectedCategory = 'Food';
   bool _isSubmitting = false;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -59,6 +61,70 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.dispose();
   }
 
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: KineticVaultTheme.primary,
+              onPrimary: Colors.black,
+              surface: KineticVaultTheme.surfaceContainer,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _selectedDate.hour,
+          _selectedDate.minute,
+        );
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedDate),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: KineticVaultTheme.primary,
+              onPrimary: Colors.black,
+              surface: KineticVaultTheme.surfaceContainer,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          picked.hour,
+          picked.minute,
+        );
+      });
+    }
+  }
+
   Future<void> _submitData() async {
     if (_amountController.text.isEmpty || double.tryParse(_amountController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tolong masukkan nominal yang valid')));
@@ -73,9 +139,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         amount: double.parse(_amountController.text),
         category: _selectedCategory,
         type: _type,
+        date: _selectedDate,
       );
 
       if (success && mounted) {
+        // Fetch nudges to get any new budget warnings or positive feedback
+        sl.financeController.fetchNudges();
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const TransactionSuccessPage()),
@@ -237,7 +307,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             autofocus: true,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 48,
                               fontWeight: FontWeight.w900,
                               color: KineticVaultTheme.onSurface,
@@ -338,7 +408,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                   child: Text(
                                     cat['name'].toUpperCase(),
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
                                       color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
@@ -379,10 +449,17 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              _buildBentoValueItem(label: 'Hari Ini, 24 Mei 2024', icon: Icons.expand_more),
+                              _buildBentoValueItem(
+                                label: DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                                icon: Icons.calendar_today,
+                                onTap: _pickDate,
+                              ),
                               const SizedBox(height: 8),
-                              _buildBentoValueItem(label: '14:30 WIB', icon: Icons.schedule),
-                            ],
+                                                        _buildBentoValueItem(
+                                                          label: '${DateFormat('HH:mm').format(_selectedDate)} WIB',
+                                                          icon: Icons.schedule,
+                                                          onTap: _pickTime,
+                                                        ),                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -534,7 +611,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: isActive ? Colors.white : KineticVaultTheme.onSurfaceVariant,
@@ -547,25 +624,29 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
   }
 
-  Widget _buildBentoValueItem({required String label, required IconData icon}) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurface),
-              overflow: TextOverflow.ellipsis,
+  Widget _buildBentoValueItem({required String label, required IconData icon, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: onTap != null ? Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.2)) : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurface),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          Icon(icon, color: KineticVaultTheme.onSurfaceVariant, size: 14),
-        ],
+            Icon(icon, color: KineticVaultTheme.onSurfaceVariant, size: 14),
+          ],
+        ),
       ),
     );
   }

@@ -30,16 +30,16 @@ class AppHeading extends StatelessWidget {
     double? letterSpacing;
 
     switch (size) {
-      case AppHeadingSize.h1: fontSize = 32; break;
-      case AppHeadingSize.h2: fontSize = 24; break;
-      case AppHeadingSize.h3: fontSize = 20; break;
+      case AppHeadingSize.h1: fontSize = 28; break;
+      case AppHeadingSize.h2: fontSize = 20; break;
+      case AppHeadingSize.h3: fontSize = 16; break;
       case AppHeadingSize.subtitle: 
         fontSize = 14; 
         letterSpacing = 0.5;
         fontWeight = isBold ? FontWeight.w700 : FontWeight.w500;
         break;
       case AppHeadingSize.caption: 
-        fontSize = 12; 
+        fontSize = 10; 
         fontWeight = isBold ? FontWeight.w700 : FontWeight.w400;
         break;
     }
@@ -49,7 +49,7 @@ class AppHeading extends StatelessWidget {
       textAlign: textAlign,
       maxLines: maxLines,
       overflow: overflow,
-      style: GoogleFonts.plusJakartaSans(
+      style: GoogleFonts.inter(
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color ?? KineticVaultTheme.onSurface,

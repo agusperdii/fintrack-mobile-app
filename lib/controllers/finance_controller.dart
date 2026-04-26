@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/entities/app_data.dart';
 import '../models/repositories/finance_repository.dart';
 
+import '../models/entities/nudge_data.dart';
+
 class FinanceController extends ChangeNotifier {
   final FinanceRepository _repository;
 
@@ -12,9 +14,12 @@ class FinanceController extends ChangeNotifier {
   // --- States ---
   AppData? _dashboardData;
   Map<String, dynamic>? _spendingTarget;
+  List<Map<String, dynamic>> _allBudgets = [];
+  Map<String, dynamic>? _weeklyPulse;
   Map<String, String>? _userProfile;
   List<Transaction>? _transactions;
   List<Map<String, dynamic>>? _monthlySummary;
+  List<NudgeData> _nudges = [];
   bool _isLoading = false;
 
   // --- Categories ---
@@ -34,15 +39,45 @@ class FinanceController extends ChangeNotifier {
   // --- Getters ---
   AppData? get dashboardData => _dashboardData;
   Map<String, dynamic>? get spendingTarget => _spendingTarget;
+  List<Map<String, dynamic>> get allBudgets => _allBudgets;
+  Map<String, dynamic>? get weeklyPulse => _weeklyPulse;
   Map<String, String>? get userProfile => _userProfile;
   List<Transaction>? get transactions => _transactions;
   List<Map<String, dynamic>>? get monthlySummary => _monthlySummary;
+  List<NudgeData> get nudges => _nudges;
   bool get isLoading => _isLoading;
   List<Map<String, dynamic>> get categories => _categories;
   
+  NudgeData? get latestUnreadNudge {
+    if (_nudges.isEmpty) return null;
+    try {
+      return _nudges.firstWhere((n) => !n.isRead);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  dynamic getCategoryIcon(String categoryName) {
+    final cat = _categories.firstWhere(
+      (c) => c['name'].toLowerCase() == categoryName.toLowerCase(),
+      orElse: () => {'icon': Icons.category},
+    );
+    return cat['icon'];
+  }
+
   void setTransactions(List<Transaction> txs) {
     _transactions = txs;
     notifyListeners();
+  }
+
+  double getSpentAmountFor(String category, String month) {
+    if (_transactions == null) return 0.0;
+    
+    return _transactions!
+        .where((t) => t.type == TransactionType.expense)
+        .where((t) => t.date.startsWith(month))
+        .where((t) => category == 'All' || t.category.toLowerCase() == category.toLowerCase())
+        .fold(0.0, (sum, t) => sum + t.amount);
   }
 
   Future<void> fetchAllData() async {
@@ -52,11 +87,17 @@ class FinanceController extends ChangeNotifier {
         _repository.getDashboardData(),
         _repository.getSpendingTarget(),
         _repository.getUserProfile(),
+        _repository.getAllBudgets(),
+        _repository.getWeeklyPulse(),
+        _repository.getNudges(),
         loadCategories(),
       ]);
       _dashboardData = results[0] as AppData;
       _spendingTarget = results[1] as Map<String, dynamic>;
       _userProfile = results[2] as Map<String, String>;
+      _allBudgets = results[3] as List<Map<String, dynamic>>;
+      _weeklyPulse = results[4] as Map<String, dynamic>;
+      _nudges = results[5] as List<NudgeData>;
     } catch (e) {
       debugPrint("Error fetching data: $e");
     } finally {
@@ -72,8 +113,11 @@ class FinanceController extends ChangeNotifier {
       // Start all requests in parallel
       final dashboardFuture = _repository.getDashboardData();
       final targetFuture = _repository.getSpendingTarget();
+      final allBudgetsFuture = _repository.getAllBudgets();
+      final weeklyPulseFuture = _repository.getWeeklyPulse();
       final profileFuture = _repository.getUserProfile();
       final summaryFuture = _repository.getMonthlySummary();
+      final nudgesFuture = _repository.getNudges();
 
       // Handle each result as it arrives to update UI incrementally
       dashboardFuture.then((data) {
@@ -83,11 +127,32 @@ class FinanceController extends ChangeNotifier {
         debugPrint("Error dashboard: $e");
       });
 
+      nudgesFuture.then((data) {
+        _nudges = data;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint("Error nudges: $e");
+      });
+
       targetFuture.then((data) {
         _spendingTarget = data;
         notifyListeners();
       }).catchError((e) {
         debugPrint("Error target: $e");
+      });
+
+      allBudgetsFuture.then((data) {
+        _allBudgets = data;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint("Error all budgets: $e");
+      });
+
+      weeklyPulseFuture.then((data) {
+        _weeklyPulse = data;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint("Error weekly pulse: $e");
       });
 
       profileFuture.then((data) {
@@ -118,6 +183,33 @@ class FinanceController extends ChangeNotifier {
   }
 
   // --- Category Management ---
+
+  Future<void> fetchNudges() async {
+    try {
+      _nudges = await _repository.getNudges();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching nudges: $e");
+    }
+  }
+
+  Future<void> markNudgeAsRead(String id) async {
+    final success = await _repository.markNudgeRead(id);
+    if (success) {
+      final index = _nudges.indexWhere((n) => n.id == id);
+      if (index != -1) {
+        _nudges[index] = NudgeData(
+          id: _nudges[index].id,
+          type: _nudges[index].type,
+          category: _nudges[index].category,
+          message: _nudges[index].message,
+          isRead: true,
+          createdAt: _nudges[index].createdAt,
+        );
+        notifyListeners();
+      }
+    }
+  }
 
   Future<void> loadCategories() async {
     try {
@@ -202,17 +294,22 @@ class FinanceController extends ChangeNotifier {
     return success;
   }
 
-  Future<bool> updateProfile({required String fullName}) async {
-    final success = await _repository.updateProfile(fullName: fullName);
+  Future<bool> updateProfile({required String fullName, String? username}) async {
+    final success = await _repository.updateProfile(fullName: fullName, username: username);
     if (success) {
       await fetchAllData();
     }
     return success;
   }
 
-  Future<void> updateSpendingTarget(double amount, String period) async {
+  Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
+    final success = await _repository.updatePassword(currentPassword: currentPassword, newPassword: newPassword);
+    return success;
+  }
+
+  Future<void> updateSpendingTarget(double amount, String period, {String category = 'All', String? month}) async {
     _setLoading(true);
-    final success = await _repository.saveSpendingTarget(amount: amount, period: period);
+    final success = await _repository.saveSpendingTarget(amount: amount, period: period, category: category, month: month);
     if (success) {
       await fetchAllData();
     } else {
@@ -225,9 +322,16 @@ class FinanceController extends ChangeNotifier {
     required double amount,
     required String category,
     required String type,
+    DateTime? date,
   }) async {
     _setLoading(true);
-    final success = await _repository.addTransaction(title: title, amount: amount, category: category, type: type);
+    final success = await _repository.addTransaction(
+      title: title,
+      amount: amount,
+      category: category,
+      type: type,
+      date: date,
+    );
     if (success) {
       await Future.wait([
         fetchAllData(),
