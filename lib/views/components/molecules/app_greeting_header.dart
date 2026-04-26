@@ -4,6 +4,7 @@ import '../../../core/theme/app_theme.dart';
 
 class AppGreetingHeader extends StatelessWidget {
   final String userName;
+
   const AppGreetingHeader({
     super.key, 
     required this.userName,
@@ -11,22 +12,15 @@ class AppGreetingHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppHeading('Hi, $userName!', size: AppHeadingSize.h2),
-              const AppHeading(
-                'Selamat Datang!', 
-                size: AppHeadingSize.subtitle, 
-                color: KineticVaultTheme.onSurfaceVariant,
-                isBold: false,
-              ),
-            ],
-          ),
+        AppHeading('Hi, $userName!', size: AppHeadingSize.h2),
+        const AppHeading(
+          'Selamat Datang!', 
+          size: AppHeadingSize.subtitle, 
+          color: KineticVaultTheme.onSurfaceVariant,
+          isBold: false,
         ),
       ],
     );

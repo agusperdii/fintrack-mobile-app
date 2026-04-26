@@ -90,26 +90,14 @@ class _TrendLinePainter extends CustomPainter {
     path.quadraticBezierTo(size.width * 0.75, size.height * 0.6, size.width * 0.9, size.height * 0.3);
     path.lineTo(size.width, size.height * 0.5);
 
-    final shadowPaint = Paint()
-      ..color = KineticVaultTheme.primary.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-
-    canvas.drawPath(path, shadowPaint);
     canvas.drawPath(path, paint);
 
     final pointPaint = Paint()
       ..color = KineticVaultTheme.primary
       ..style = PaintingStyle.fill;
-    
-    final glowPaint = Paint()
-      ..color = KineticVaultTheme.primary.withValues(alpha: 0.5)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
 
     final activeX = size.width * 0.6;
     const activeY = 30.0; 
-    canvas.drawCircle(Offset(activeX, activeY), 8, glowPaint);
     canvas.drawCircle(Offset(activeX, activeY), 4, pointPaint);
   }
 

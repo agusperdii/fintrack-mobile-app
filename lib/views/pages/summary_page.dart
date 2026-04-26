@@ -17,40 +17,68 @@ class SummaryPage extends StatelessWidget {
       listenable: sl.financeController,
       builder: (context, _) {
         final provider = sl.financeController;
+        final profile = provider.userProfile;
+        final summary = provider.monthlySummary;
         
         return Scaffold(
           backgroundColor: KineticVaultTheme.background,
           appBar: AppHeader(
             title: 'The Kinetic Vault',
-            avatarUrl: provider.userProfile?['avatar'],
+            avatarUrl: profile?['avatar'],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppEditorialHeader(
-                  category: 'Archive Collection',
-                  title: 'Ringkasan Transaksi',
-                ),
-                const SizedBox(height: 20),
-                const _ArchiveHero(),
-                const SizedBox(height: 32),
-                const _YearGroupHeader(year: '2026', color: KineticVaultTheme.secondary),
-                const SizedBox(height: 16),
-                _buildArchiveList(context, [
-                  {'month': 'Maret 2026', 'tx': 1476, 'progress': 0.85},
-                  {'month': 'Februari 2026', 'tx': 1242, 'progress': 0.7},
-                  {'month': 'Januari 2026', 'tx': 980, 'progress': 0.6},
-                ]),
-                const SizedBox(height: 32),
-                const _YearGroupHeader(year: '2025', color: KineticVaultTheme.outline),
-                const SizedBox(height: 16),
-                _buildArchiveList(context, [
-                  {'month': 'Desember 2025', 'tx': 1104, 'progress': 0.9},
-                  {'month': 'November 2025', 'tx': 892, 'progress': 0.5},
-                ]),
-              ],
+          body: RefreshIndicator(
+            onRefresh: () => provider.fetchMonthlySummary(),
+            color: KineticVaultTheme.primary,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppEditorialHeader(
+                    category: 'Archive Collection',
+                    title: 'Ringkasan Transaksi',
+                  ),
+                  const SizedBox(height: 20),
+                  _ArchiveHero(monthCount: summary?.length ?? 0),
+                  const SizedBox(height: 32),
+                  
+                  if (summary != null && summary.isNotEmpty) ...[
+                    // Grouping by year (simplified)
+                    const _YearGroupHeader(year: '2026', color: KineticVaultTheme.secondary),
+                    const SizedBox(height: 16),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: summary.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final item = summary[index];
+                        final monthStr = item['month']; // e.g., "2026-04"
+                        return AppWeeklySummaryItem(
+                          title: _formatMonth(monthStr),
+                          amount: '${item['count']} Transaksi',
+                          progress: 0.7, // Mock progress
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: 'Laporan ${_formatMonth(monthStr)}')),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ] else if (summary != null)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Text('Belum ada riwayat bulanan', style: TextStyle(color: KineticVaultTheme.onSurfaceVariant)),
+                      ),
+                    )
+                  else
+                    const Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+                ],
+              ),
             ),
           ),
         );
@@ -58,45 +86,32 @@ class SummaryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildArchiveList(BuildContext context, List<Map<String, dynamic>> data) {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: data.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = data[index];
-        return AppWeeklySummaryItem(
-          title: item['month'],
-          amount: '${item['tx']} Transaksi',
-          progress: item['progress'],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: 'Laporan ${item['month']}')),
-            );
-          },
-        );
-      },
-    );
+  String _formatMonth(String monthYear) {
+    // Basic formatting for YYYY-MM
+    try {
+      final parts = monthYear.split('-');
+      if (parts.length < 2) return monthYear;
+      final months = [
+        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      ];
+      final monthIdx = int.parse(parts[1]);
+      return "${months[monthIdx]} ${parts[0]}";
+    } catch (e) {
+      return monthYear;
+    }
   }
 }
 
 class _ArchiveHero extends StatelessWidget {
-  const _ArchiveHero();
+  final int monthCount;
+  const _ArchiveHero({required this.monthCount});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: KineticVaultTheme.primary.withValues(alpha: 0.05),
-            blurRadius: 40,
-            spreadRadius: -10,
-          ),
-        ],
       ),
       child: GlassCard(
         padding: const EdgeInsets.all(24),
@@ -105,23 +120,23 @@ class _ArchiveHero extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppHeading(
+                const AppHeading(
                   'TOTAL ARCHIVIST',
                   size: AppHeadingSize.caption,
                   color: KineticVaultTheme.onSurfaceVariant,
                   isBold: true,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    AppHeading('24', size: AppHeadingSize.h1),
-                    AppHeading('.', size: AppHeadingSize.h1, color: KineticVaultTheme.primary),
-                    AppHeading('Bulan', size: AppHeadingSize.h2),
+                    AppHeading('$monthCount', size: AppHeadingSize.h1),
+                    const AppHeading('.', size: AppHeadingSize.h1, color: KineticVaultTheme.primary),
+                    const AppHeading('Bulan', size: AppHeadingSize.h2),
                   ],
                 ),
               ],

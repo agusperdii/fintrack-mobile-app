@@ -1,3 +1,5 @@
+import '../../core/utils/parser_utils.dart';
+
 enum TransactionType { income, expense }
 
 class AppData {
@@ -23,16 +25,16 @@ class AppData {
 
   factory AppData.fromJson(Map<String, dynamic> json) {
     return AppData(
-      initialBalance: (json['initialBalance'] ?? 0.0).toDouble(),
-      totalIncome: (json['totalIncome'] ?? 0.0).toDouble(),
-      totalExpense: (json['totalExpense'] ?? 0.0).toDouble(),
+      initialBalance: ParserUtils.toDouble(json['initialBalance']),
+      totalIncome: ParserUtils.toDouble(json['totalIncome']),
+      totalExpense: ParserUtils.toDouble(json['totalExpense']),
       recentTransactions: (json['recentTransactions'] as List)
           .map((t) => Transaction.fromJson(t))
           .toList(),
       analysis: (json['analysis'] as List)
           .map((a) => AnalysisData.fromJson(a))
           .toList(),
-      spendingTarget: (json['spendingTarget'] ?? 0.0).toDouble(),
+      spendingTarget: ParserUtils.toDouble(json['spendingTarget']),
       targetPeriod: json['targetPeriod'] as String?,
     );
   }
@@ -83,6 +85,7 @@ class AppData {
 }
 
 class Transaction {
+  final String? id;
   final String title;
   final double amount;
   final String category;
@@ -90,6 +93,7 @@ class Transaction {
   final TransactionType type;
 
   Transaction({
+    this.id,
     required this.title,
     required this.amount,
     required this.category,
@@ -98,12 +102,17 @@ class Transaction {
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
+    String rawDate = json['date']?.toString() ?? '';
+    // Handle both ISO format and YYYY-MM-DD
+    String dateStr = rawDate.length >= 10 ? rawDate.substring(0, 10) : rawDate;
+    
     return Transaction(
-      title: json['title'] as String,
-      amount: (json['amount'] ?? 0.0).toDouble(),
-      category: json['category'] as String,
-      date: json['date'] as String,
-      type: json['type'] == 'income'
+      id: json['id']?.toString(),
+      title: json['title']?.toString() ?? json['description']?.toString() ?? 'Transaksi',
+      amount: ParserUtils.toDouble(json['amount']),
+      category: json['category']?.toString() ?? 'Lainnya',
+      date: dateStr,
+      type: json['type']?.toString() == 'income'
           ? TransactionType.income
           : TransactionType.expense,
     );
@@ -124,7 +133,7 @@ class AnalysisData {
   factory AnalysisData.fromJson(Map<String, dynamic> json) {
     return AnalysisData(
       label: json['label'] as String,
-      amount: (json['amount'] ?? 0.0).toDouble(),
+      amount: ParserUtils.toDouble(json['amount']),
       colorHex: json['colorHex'] as String,
     );
   }

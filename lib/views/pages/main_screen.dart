@@ -5,6 +5,7 @@ import 'analisa_page.dart';
 import 'profile_page.dart';
 import 'summary_page.dart';
 import 'add_transaction_page.dart';
+import '../../core/utils/service_locator.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,6 +16,17 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch all initial data once when the main screen is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (sl.financeController.dashboardData == null) {
+        sl.financeController.loadInitialData();
+      }
+    });
+  }
 
   final List<Widget> _pages = [
     const DashboardPage(),
@@ -39,37 +51,29 @@ class _MainScreenState extends State<MainScreen> {
             index: _selectedIndex,
             children: _pages,
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 32,
             child: Container(
-              height: 72 + MediaQuery.paddingOf(context).bottom,
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom,
-              ),
+              height: 72,
               decoration: BoxDecoration(
                 color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.8),
-                border: Border(
-                  top: BorderSide(
-                    color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2),
-                  ),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
-                  _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
-                  _buildFloatingActionButton(),
-                  _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
-                  _buildNavItem(3, Icons.person_rounded, 'Profil'),
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
+                    _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
+                    _buildFloatingActionButton(),
+                    _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
+                    _buildNavItem(3, Icons.person_rounded, 'Profil'),
+                  ],
+                ),
               ),
             ),
           ),
@@ -95,12 +99,6 @@ class _MainScreenState extends State<MainScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: KineticVaultTheme.primary.withValues(alpha: 0.1),
-              blurRadius: 10,
-            ),
-          ],
         ) : null,
         child: Icon(
           icon,
@@ -121,23 +119,16 @@ class _MainScreenState extends State<MainScreen> {
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          shape: BoxShape.circle,
           gradient: KineticVaultTheme.primaryGradient,
-          boxShadow: [
-            BoxShadow(
-              color: KineticVaultTheme.primary.withValues(alpha: 0.4),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: const Icon(
           Icons.add_rounded,
           color: KineticVaultTheme.onPrimaryFixed,
-          size: 26,
+          size: 32,
         ),
       ),
     );

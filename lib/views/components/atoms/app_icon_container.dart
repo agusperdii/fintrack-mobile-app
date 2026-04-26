@@ -33,12 +33,6 @@ class AppIconContainer extends StatelessWidget {
         gradient: gradient,
         shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(KineticVaultTheme.radiusM) : null,
-        boxShadow: gradient != null ? [
-          BoxShadow(
-            color: (iconColor ?? Colors.white).withValues(alpha: 0.3),
-            blurRadius: 15,
-          ),
-        ] : null,
       ),
       child: Icon(
         icon, 

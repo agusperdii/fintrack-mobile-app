@@ -76,9 +76,6 @@ class AppHeroAnalysisCard extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(KineticVaultTheme.radiusXs)),
           gradient: isHighlighted ? KineticVaultTheme.primaryGradient : null,
           color: isHighlighted ? null : KineticVaultTheme.surfaceContainerHigh,
-          boxShadow: isHighlighted ? [
-            BoxShadow(color: KineticVaultTheme.primary.withValues(alpha: 0.3), blurRadius: 10)
-          ] : null,
         ),
       ),
     );

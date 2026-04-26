@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config/api_config.dart';
 
 class AuthController extends ChangeNotifier {
-  // Use 10.0.2.2 for Android Emulator, 127.0.0.1 for iOS Simulator
-  final String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  final String baseUrl = ApiConfig.baseUrl;
+
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;

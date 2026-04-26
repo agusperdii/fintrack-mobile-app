@@ -8,12 +8,14 @@ class AppBalanceCard extends StatelessWidget {
   final double balance;
   final double income;
   final double expense;
+  final bool isLoading;
 
   const AppBalanceCard({
     super.key,
     required this.balance,
     required this.income,
     required this.expense,
+    this.isLoading = false,
   });
 
   @override
@@ -38,7 +40,7 @@ class AppBalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: KineticVaultTheme.spacingS),
           AppHeading(
-            KineticVaultTheme.formatCurrency(balance),
+            isLoading ? 'Rp --.---.---' : KineticVaultTheme.formatCurrency(balance),
             size: AppHeadingSize.h1,
           ),
           const SizedBox(height: KineticVaultTheme.spacingXl),
@@ -47,13 +49,13 @@ class AppBalanceCard extends StatelessWidget {
             children: [
               AppBalanceMiniItem(
                 label: 'Pemasukan',
-                amount: KineticVaultTheme.formatCurrency(income),
+                amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(income),
                 icon: Icons.south_west_rounded,
                 color: KineticVaultTheme.tertiary,
               ),
               AppBalanceMiniItem(
                 label: 'Pengeluaran',
-                amount: KineticVaultTheme.formatCurrency(expense),
+                amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(expense),
                 icon: Icons.north_east_rounded,
                 color: KineticVaultTheme.error,
               ),

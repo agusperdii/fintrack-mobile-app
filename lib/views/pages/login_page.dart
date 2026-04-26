@@ -4,6 +4,7 @@ import '../../controllers/auth_controller.dart';
 import '../../core/theme/app_theme.dart';
 import 'main_screen.dart';
 import 'register_page.dart';
+import '../../core/utils/service_locator.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,6 +27,8 @@ class _LoginPageState extends State<LoginPage> {
 
     if (success) {
       if (!mounted) return;
+      // Pre-fetch data while transitioning
+      sl.financeController.loadInitialData();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );

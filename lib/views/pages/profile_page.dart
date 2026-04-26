@@ -9,6 +9,7 @@ import '../components/molecules/app_section_header.dart';
 import '../components/atoms/app_heading.dart';
 import '../components/atoms/app_icon_container.dart';
 import 'spending_target_page.dart';
+import 'edit_profile_page.dart';
 import 'placeholder_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -183,7 +184,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         icon: Icons.person_outline_rounded,
                         title: 'Edit nama',
                         isTop: true,
-                        onTap: () => _navigateToPlaceholder('Edit Nama'),
+                        onTap: () async {
+                          final updated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditProfilePage(currentName: profile['name'] ?? ''),
+                            ),
+                          );
+                          if (updated == true) {
+                            sl.financeController.fetchAllData();
+                          }
+                        },
                       ),
                       AppProfileMenuItem(
                         icon: Icons.alternate_email_rounded,
@@ -214,7 +225,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   variant: AppButtonVariant.error,
                   icon: Icons.logout_rounded,
                   width: 200,
-                  onTap: () => _navigateToPlaceholder('Logout'),
+                  onTap: () async {
+                    await sl.authController.logout();
+                  },
                 ),
               ],
             ),

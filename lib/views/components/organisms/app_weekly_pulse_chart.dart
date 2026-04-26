@@ -66,12 +66,6 @@ class AppWeeklyPulseChart extends StatelessWidget {
         decoration: BoxDecoration(
           color: isHighlighted ? KineticVaultTheme.tertiary : KineticVaultTheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: isHighlighted ? [
-            BoxShadow(
-              color: KineticVaultTheme.tertiary.withValues(alpha: 0.3),
-              blurRadius: 10,
-            )
-          ] : null,
         ),
       ),
     );

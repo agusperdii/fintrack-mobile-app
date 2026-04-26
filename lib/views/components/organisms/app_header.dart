@@ -9,6 +9,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool showNotification;
   final String? avatarUrl;
   final VoidCallback? onNotificationTap;
+  final bool transparent;
 
   const AppHeader({
     super.key,
@@ -17,12 +18,13 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     this.showNotification = true,
     this.avatarUrl,
     this.onNotificationTap,
+    this.transparent = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: transparent ? Colors.transparent : KineticVaultTheme.background,
       elevation: 0,
       scrolledUnderElevation: 0,
       toolbarHeight: kToolbarHeight + KineticVaultTheme.spacingM,

@@ -10,7 +10,18 @@ import '../components/atoms/app_icon_container.dart';
 import 'transaction_success_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
-  const AddTransactionPage({super.key});
+  final String? initialTitle;
+  final double? initialAmount;
+  final String? initialCategory;
+  final String? initialType;
+
+  const AddTransactionPage({
+    super.key,
+    this.initialTitle,
+    this.initialAmount,
+    this.initialCategory,
+    this.initialType,
+  });
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -18,10 +29,21 @@ class AddTransactionPage extends StatefulWidget {
 
 class _AddTransactionPageState extends State<AddTransactionPage> {
   String _type = 'Expense'; 
-  final _titleController = TextEditingController(); 
-  final _amountController = TextEditingController();
+  late final TextEditingController _titleController; 
+  late final TextEditingController _amountController;
   String _selectedCategory = 'Food';
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _type = widget.initialType ?? 'Expense';
+    _titleController = TextEditingController(text: widget.initialTitle);
+    _amountController = TextEditingController(
+      text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
+    );
+    _selectedCategory = widget.initialCategory ?? 'Food';
+  }
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Food', 'icon': Icons.restaurant},
