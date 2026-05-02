@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class KineticVaultTheme {
+class SavaioTheme {
   // --- Design Tokens (Tailwind-like) ---
   
   // Spacing (8px grid)

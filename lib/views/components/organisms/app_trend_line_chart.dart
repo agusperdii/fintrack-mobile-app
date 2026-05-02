@@ -37,9 +37,9 @@ class AppTrendLineChart extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: KineticVaultTheme.surfaceContainer,
+                  color: SavaioTheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1)),
+                  border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -83,7 +83,7 @@ class AppTrendLineChart extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                color: isToday ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                color: isToday ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                               ),
                             ),
                           );
@@ -114,7 +114,7 @@ class AppTrendLineChart extends StatelessWidget {
                     ],
                     isCurved: true,
                     gradient: const LinearGradient(
-                      colors: [KineticVaultTheme.primary, KineticVaultTheme.secondary],
+                      colors: [SavaioTheme.primary, SavaioTheme.secondary],
                     ),
                     barWidth: 4,
                     isStrokeCapRound: true,
@@ -124,7 +124,7 @@ class AppTrendLineChart extends StatelessWidget {
                         if (index == activeDayIndex) {
                           return FlDotCirclePainter(
                             radius: 6,
-                            color: KineticVaultTheme.primary,
+                            color: SavaioTheme.primary,
                             strokeWidth: 2,
                             strokeColor: Colors.white,
                           );
@@ -136,8 +136,8 @@ class AppTrendLineChart extends StatelessWidget {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          KineticVaultTheme.primary.withValues(alpha: 0.3),
-                          KineticVaultTheme.secondary.withValues(alpha: 0.0),
+                          SavaioTheme.primary.withValues(alpha: 0.3),
+                          SavaioTheme.secondary.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,

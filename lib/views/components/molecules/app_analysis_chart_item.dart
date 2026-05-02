@@ -15,7 +15,7 @@ class AppAnalysisChartItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -40,7 +40,7 @@ class AppAnalysisChartItem extends StatelessWidget {
             ],
           ),
           AppHeading(
-            KineticVaultTheme.formatCurrency(data.amount),
+            SavaioTheme.formatCurrency(data.amount),
             size: AppHeadingSize.subtitle,
             isBold: true,
           ),

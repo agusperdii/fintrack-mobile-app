@@ -1,4 +1,4 @@
-package com.example.dayone
+package com.example.savaio
 
 import io.flutter.embedding.android.FlutterActivity
 

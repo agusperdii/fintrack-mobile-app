@@ -27,18 +27,18 @@ class TransactionDetailPage extends StatelessWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: KineticVaultTheme.surfaceContainerHigh,
+        backgroundColor: SavaioTheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Transaksi?', style: GoogleFonts.inter(color: KineticVaultTheme.onSurface, fontWeight: FontWeight.bold)),
-        content: Text('Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.', style: GoogleFonts.inter(color: KineticVaultTheme.onSurfaceVariant, fontSize: 14)),
+        title: Text('Hapus Transaksi?', style: GoogleFonts.inter(color: SavaioTheme.onSurface, fontWeight: FontWeight.bold)),
+        content: Text('Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.', style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariant, fontSize: 14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: TextStyle(color: KineticVaultTheme.onSurfaceVariant)),
+            child: Text('Batal', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Hapus', style: TextStyle(color: KineticVaultTheme.error, fontWeight: FontWeight.bold)),
+            child: Text('Hapus', style: TextStyle(color: SavaioTheme.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -50,7 +50,7 @@ class TransactionDetailPage extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Transaksi berhasil dihapus'), 
-            backgroundColor: KineticVaultTheme.error,
+            backgroundColor: SavaioTheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -64,7 +64,7 @@ class TransactionDetailPage extends StatelessWidget {
     final isIncome = transaction.type == TransactionType.income;
 
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppHeader(title: 'Detail Transaksi', showBackButton: true, showNotification: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -75,23 +75,23 @@ class TransactionDetailPage extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
               decoration: BoxDecoration(
-                color: KineticVaultTheme.surfaceContainerLow,
+                color: SavaioTheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1)),
+                border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
               ),
               child: Column(
                 children: [
                   AppIconContainer(
                     icon: isIncome ? Icons.south_west_rounded : Icons.north_east_rounded,
-                    color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+                    color: isIncome ? SavaioTheme.tertiary : SavaioTheme.error,
                     size: 64,
                     opacity: 0.15,
                   ),
                   const SizedBox(height: 20),
                   AppHeading(
-                    '${isIncome ? "+" : "-"}${KineticVaultTheme.formatCurrency(transaction.amount)}',
+                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(transaction.amount)}',
                     size: AppHeadingSize.h1,
-                    color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.onSurface,
+                    color: isIncome ? SavaioTheme.tertiary : SavaioTheme.onSurface,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -99,7 +99,7 @@ class TransactionDetailPage extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: KineticVaultTheme.onSurfaceVariant,
+                      color: SavaioTheme.onSurfaceVariant,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -110,7 +110,7 @@ class TransactionDetailPage extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Details Section
-            AppHeading('INFORMASI TRANSAKSI', size: AppHeadingSize.caption, color: KineticVaultTheme.primary, isBold: true),
+            AppHeading('INFORMASI TRANSAKSI', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
             const SizedBox(height: 16),
             
             GlassCard(
@@ -119,11 +119,17 @@ class TransactionDetailPage extends StatelessWidget {
               child: Column(
                 children: [
                   _buildDetailItem(
-                    icon: Icons.notes_rounded, 
-                    label: 'Keterangan', 
+                    icon: Icons.title_rounded, 
+                    label: 'Judul Transaksi', 
                     value: transaction.title,
                     isFirst: true,
                   ),
+                  if (transaction.description != null && transaction.description!.isNotEmpty)
+                    _buildDetailItem(
+                      icon: Icons.notes_rounded, 
+                      label: 'Catatan', 
+                      value: transaction.description!,
+                    ),
                   _buildDetailItem(
                     icon: Icons.category_rounded, 
                     label: 'Kategori', 
@@ -159,8 +165,8 @@ class TransactionDetailPage extends StatelessWidget {
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 label: const Text('HAPUS DATA INI'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: KineticVaultTheme.error,
-                  side: BorderSide(color: KineticVaultTheme.error.withValues(alpha: 0.5)),
+                  foregroundColor: SavaioTheme.error,
+                  side: BorderSide(color: SavaioTheme.error.withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                   textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.1),
@@ -187,7 +193,7 @@ class TransactionDetailPage extends StatelessWidget {
             height: 1, 
             indent: 56, 
             endIndent: 20, 
-            color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1),
+            color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
           ),
         Padding(
           padding: const EdgeInsets.all(16),
@@ -195,38 +201,35 @@ class TransactionDetailPage extends StatelessWidget {
             children: [
               AppIconContainer(
                 icon: icon,
-                color: KineticVaultTheme.primary,
+                color: SavaioTheme.primary,
                 size: 40,
                 opacity: 0.1,
-                iconColor: KineticVaultTheme.onSurfaceVariant,
+                iconColor: SavaioTheme.onSurfaceVariant,
               ),
               const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: KineticVaultTheme.onSurfaceVariant,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: SavaioTheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  SizedBox(
-                    width: 180,
-                    child: Text(
+                    const SizedBox(height: 2),
+                    Text(
                       value,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: KineticVaultTheme.onSurface,
+                        color: SavaioTheme.onSurface,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

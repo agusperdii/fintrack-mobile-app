@@ -25,8 +25,8 @@ class AppBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      padding: const EdgeInsets.all(KineticVaultTheme.spacingXl),
-      borderRadius: KineticVaultTheme.radius2xl,
+      padding: const EdgeInsets.all(SavaioTheme.spacingXl),
+      borderRadius: SavaioTheme.radius2xl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -36,33 +36,33 @@ class AppBalanceCard extends StatelessWidget {
               AppHeading(
                 'TOTAL SALDO ANDA'.toUpperCase(),
                 size: AppHeadingSize.caption,
-                color: KineticVaultTheme.onSurfaceVariant,
+                color: SavaioTheme.onSurfaceVariant,
                 isBold: true,
               ),
-              const Icon(Icons.wallet_rounded, color: KineticVaultTheme.primary, size: 20),
+              const Icon(Icons.wallet_rounded, color: SavaioTheme.primary, size: 20),
             ],
           ),
-          const SizedBox(height: KineticVaultTheme.spacingS),
+          const SizedBox(height: SavaioTheme.spacingS),
           AppHeading(
-            isLoading ? 'Rp --.---.---' : KineticVaultTheme.formatCurrency(balance),
+            isLoading ? 'Rp --.---.---' : SavaioTheme.formatCurrency(balance),
             size: AppHeadingSize.h1,
           ),
-          const SizedBox(height: KineticVaultTheme.spacingXl),
+          const SizedBox(height: SavaioTheme.spacingXl),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               AppBalanceMiniItem(
                 label: 'Pemasukan',
-                amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(income),
+                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(income),
                 icon: Icons.south_west_rounded,
-                color: KineticVaultTheme.tertiary,
+                color: SavaioTheme.tertiary,
                 onTap: onIncomeTap,
               ),
               AppBalanceMiniItem(
                 label: 'Pengeluaran',
-                amount: isLoading ? 'Rp --.---' : KineticVaultTheme.formatCurrency(expense),
+                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(expense),
                 icon: Icons.north_east_rounded,
-                color: KineticVaultTheme.error,
+                color: SavaioTheme.error,
                 onTap: onExpenseTap,
               ),
             ],

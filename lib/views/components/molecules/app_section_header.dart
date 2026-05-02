@@ -30,7 +30,7 @@ class AppSectionHeader extends StatelessWidget {
             child: AppHeading(
               actionLabel!,
               size: AppHeadingSize.subtitle,
-              color: KineticVaultTheme.primary,
+              color: SavaioTheme.primary,
               isBold: true,
             ),
           ),

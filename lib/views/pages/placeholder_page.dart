@@ -11,7 +11,7 @@ class PlaceholderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppHeader(
         title: featureName,
         showBackButton: true,
@@ -28,12 +28,12 @@ class PlaceholderPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.construction_rounded,
-                      color: KineticVaultTheme.primary,
+                      color: SavaioTheme.primary,
                       size: 64,
                     ),
                   ),
@@ -43,7 +43,7 @@ class PlaceholderPage extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: KineticVaultTheme.onSurface,
+                      color: SavaioTheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -52,7 +52,7 @@ class PlaceholderPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: KineticVaultTheme.onSurfaceVariant,
+                      color: SavaioTheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -60,8 +60,8 @@ class PlaceholderPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: KineticVaultTheme.primary,
-                      foregroundColor: KineticVaultTheme.onPrimaryFixed,
+                      backgroundColor: SavaioTheme.primary,
+                      foregroundColor: SavaioTheme.onPrimaryFixed,
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                     ),

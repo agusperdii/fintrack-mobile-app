@@ -25,7 +25,7 @@ class AppWeeklySummaryItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainerLow,
+          color: SavaioTheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -40,14 +40,14 @@ class AppWeeklySummaryItem extends StatelessWidget {
                 AppHeading(
                   amount,
                   size: AppHeadingSize.subtitle,
-                  color: isOverBudget ? KineticVaultTheme.error : KineticVaultTheme.onSurface,
+                  color: isOverBudget ? SavaioTheme.error : SavaioTheme.onSurface,
                 ),
               ],
             ),
             const SizedBox(height: 12),
             AppProgressBar(
               value: progress,
-              color: isOverBudget ? KineticVaultTheme.error : KineticVaultTheme.primary,
+              color: isOverBudget ? SavaioTheme.error : SavaioTheme.primary,
               height: 4,
             ),
           ],

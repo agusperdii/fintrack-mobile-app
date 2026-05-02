@@ -24,7 +24,7 @@ class NudgeOverlay extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: KineticVaultTheme.background,
+        color: SavaioTheme.background,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
@@ -41,14 +41,14 @@ class NudgeOverlay extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.2),
+              color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 32),
           AppIconContainer(
             icon: nudge.icon,
-            color: isPositive ? KineticVaultTheme.tertiary : KineticVaultTheme.primary,
+            color: isPositive ? SavaioTheme.tertiary : SavaioTheme.primary,
             size: 80,
             opacity: 0.15,
           ),
@@ -56,7 +56,7 @@ class NudgeOverlay extends StatelessWidget {
           AppHeading(
             isPositive ? 'Selamat!' : 'Perhatian',
             size: AppHeadingSize.h2,
-            color: isPositive ? KineticVaultTheme.tertiary : KineticVaultTheme.primary,
+            color: isPositive ? SavaioTheme.tertiary : SavaioTheme.primary,
           ),
           const SizedBox(height: 12),
           Text(
@@ -64,7 +64,7 @@ class NudgeOverlay extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: KineticVaultTheme.onSurface,
+              color: SavaioTheme.onSurface,
               height: 1.6,
             ),
           ),
@@ -85,7 +85,7 @@ class NudgeOverlay extends StatelessWidget {
               },
               child: const Text(
                 'LIHAT BUDGET KATEGORI',
-                style: TextStyle(color: KineticVaultTheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(color: SavaioTheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
           ],

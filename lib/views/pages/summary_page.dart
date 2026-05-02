@@ -19,14 +19,14 @@ class SummaryPage extends StatelessWidget {
         final summary = provider.monthlySummary;
         
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppHeader(
             title: 'Ringkasan Transaksi',
             showNotification: false,
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.fetchMonthlySummary(),
-            color: KineticVaultTheme.primary,
+            color: SavaioTheme.primary,
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -39,7 +39,7 @@ class SummaryPage extends StatelessWidget {
                   
                   if (summary != null && summary.isNotEmpty) ...[
                     // Grouping by year (simplified)
-                    const _YearGroupHeader(year: '2026', color: KineticVaultTheme.secondary),
+                    const _YearGroupHeader(year: '2026', color: SavaioTheme.secondary),
                     const SizedBox(height: 16),
                     ListView.separated(
                       shrinkWrap: true,
@@ -68,11 +68,11 @@ class SummaryPage extends StatelessWidget {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(40),
-                        child: Text('Belum ada riwayat bulanan', style: TextStyle(color: KineticVaultTheme.onSurfaceVariant)),
+                        child: Text('Belum ada riwayat bulanan', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
                       ),
                     )
                   else
-                    const Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+                    const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
                 ],
               ),
             ),
@@ -112,7 +112,7 @@ class _ArchiveHero extends StatelessWidget {
       child: GlassCard(
         padding: const EdgeInsets.all(24),
         borderRadius: 20,
-        color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.4),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -122,7 +122,7 @@ class _ArchiveHero extends StatelessWidget {
                 const AppHeading(
                   'TOTAL ARCHIVIST',
                   size: AppHeadingSize.caption,
-                  color: KineticVaultTheme.onSurfaceVariant,
+                  color: SavaioTheme.onSurfaceVariant,
                   isBold: true,
                 ),
                 const SizedBox(height: 8),
@@ -131,7 +131,7 @@ class _ArchiveHero extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     AppHeading('$monthCount', size: AppHeadingSize.h1),
-                    const AppHeading('.', size: AppHeadingSize.h1, color: KineticVaultTheme.primary),
+                    const AppHeading('.', size: AppHeadingSize.h1, color: SavaioTheme.primary),
                     const AppHeading('Bulan', size: AppHeadingSize.h2),
                   ],
                 ),
@@ -140,20 +140,20 @@ class _ArchiveHero extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: KineticVaultTheme.surfaceContainerLow,
+                color: SavaioTheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
+                border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.verified_user_rounded, size: 12, color: KineticVaultTheme.tertiary),
+                  Icon(Icons.verified_user_rounded, size: 12, color: SavaioTheme.tertiary),
                   SizedBox(width: 6),
                   Text(
                     'AES-256',
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: KineticVaultTheme.onSurface,
+                      color: SavaioTheme.onSurface,
                     ),
                   ),
                 ],

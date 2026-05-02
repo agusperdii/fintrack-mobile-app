@@ -13,7 +13,7 @@ import 'all_transactions_page.dart';
 import 'transaction_detail_page.dart';
 import 'ocr_scan_page.dart';
 import 'add_transaction_page.dart';
-import 'spending_target_page.dart';
+import 'spending_target_list_page.dart';
 import '../components/organisms/nudge_overlay.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -69,8 +69,8 @@ class _DashboardPageState extends State<DashboardPage> {
         
         if (provider.isLoading && provider.dashboardData == null) {
           return const Scaffold(
-            backgroundColor: KineticVaultTheme.background,
-            body: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+            backgroundColor: SavaioTheme.background,
+            body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
           );
         }
 
@@ -78,7 +78,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final profile = provider.userProfile;
         
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppHeader(
             leading: Padding(
               padding: const EdgeInsets.only(left: 16.0),
@@ -87,19 +87,19 @@ class _DashboardPageState extends State<DashboardPage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                    color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SpendingTargetPage()),
+                        MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
                       );
                     },
                     icon: const Icon(
                       Icons.tune_rounded,
-                      color: KineticVaultTheme.primary,
+                      color: SavaioTheme.primary,
                       size: 20,
                     ),
                     padding: EdgeInsets.zero,
@@ -116,7 +116,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.loadInitialData(),
-            color: KineticVaultTheme.primary,
+            color: SavaioTheme.primary,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -154,7 +154,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       AppIconButton(
                         icon: Icons.add_rounded,
                         label: 'Pemasukan',
-                        color: KineticVaultTheme.tertiary,
+                        color: SavaioTheme.tertiary,
                         onTap: () => _navigateToAddTransaction(type: 'Income'),
                       ),
                       AppIconButton(
@@ -169,7 +169,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       AppIconButton(
                         icon: Icons.remove_rounded,
                         label: 'Pengeluaran',
-                        color: KineticVaultTheme.error,
+                        color: SavaioTheme.error,
                         onTap: () => _navigateToAddTransaction(type: 'Expense'),
                       ),
                     ],
@@ -211,7 +211,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Text('Belum ada transaksi', style: TextStyle(color: KineticVaultTheme.onSurfaceVariant)),
+                        child: Text('Belum ada transaksi', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
                       ),
                     )
                   else
@@ -221,7 +221,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         height: 70,
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: KineticVaultTheme.surfaceContainerLow,
+                          color: SavaioTheme.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(12),
                         ),
                       )),

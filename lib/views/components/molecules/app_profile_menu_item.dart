@@ -34,7 +34,7 @@ class AppProfileMenuItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
             border: isTop ? null : Border(
-              top: BorderSide(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1)),
+              top: BorderSide(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
             ),
           ),
           child: Row(
@@ -44,21 +44,21 @@ class AppProfileMenuItem extends StatelessWidget {
                 children: [
                   Icon(
                     icon, 
-                    color: isDestructive ? KineticVaultTheme.error.withValues(alpha: 0.6) : KineticVaultTheme.onSurfaceVariant, 
+                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.6) : SavaioTheme.onSurfaceVariant, 
                     size: 18
                   ),
                   const SizedBox(width: 16),
                   AppHeading(
                     title,
                     size: AppHeadingSize.subtitle,
-                    color: isDestructive ? KineticVaultTheme.error.withValues(alpha: 0.8) : KineticVaultTheme.onSurface,
+                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.8) : SavaioTheme.onSurface,
                     isBold: false,
                   ),
                 ],
               ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: KineticVaultTheme.outline.withValues(alpha: 0.4),
+                color: SavaioTheme.outline.withValues(alpha: 0.4),
                 size: 12,
               ),
             ],

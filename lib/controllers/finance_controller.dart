@@ -319,6 +319,7 @@ class FinanceController extends ChangeNotifier {
 
   Future<bool> addTransaction({
     required String title,
+    String? description,
     required double amount,
     required String category,
     required String type,
@@ -327,6 +328,7 @@ class FinanceController extends ChangeNotifier {
     _setLoading(true);
     final success = await _repository.addTransaction(
       title: title,
+      description: description,
       amount: amount,
       category: category,
       type: type,

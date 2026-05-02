@@ -7,6 +7,7 @@ import '../components/atoms/app_button.dart';
 import '../components/atoms/app_icon_container.dart';
 import '../components/atoms/app_heading.dart';
 import '../components/atoms/app_progress_bar.dart';
+import '../components/molecules/app_date_time_picker.dart';
 
 class SpendingTargetPage extends StatefulWidget {
   final String? initialCategory;
@@ -97,7 +98,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Target pengeluaran berhasil disimpan'),
-          backgroundColor: KineticVaultTheme.tertiary,
+          backgroundColor: SavaioTheme.tertiary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -124,25 +125,18 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
           ...provider.categories
         ];
 
-        // Generate months
-        final now = DateTime.now();
-        final monthList = List.generate(6, (i) {
-          final date = DateTime(now.year, now.month - 2 + i, 1);
-          return "${date.year}-${date.month.toString().padLeft(2, '0')}";
-        });
-
         final currentSpent = provider.getSpentAmountFor(_selectedCategory, _selectedMonth);
         final targetAmount = double.tryParse(_amountController.text) ?? 0.0;
         final progress = targetAmount > 0 ? (currentSpent / targetAmount).clamp(0.0, 1.0) : 0.0;
         final isOver = currentSpent > targetAmount && targetAmount > 0;
 
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppBar(
-            backgroundColor: KineticVaultTheme.background,
+            backgroundColor: SavaioTheme.background,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
+              icon: const Icon(Icons.close, color: SavaioTheme.primary),
               onPressed: () => Navigator.pop(context),
             ),
             title: AppHeading('Atur Alokasi Dana', size: AppHeadingSize.h3),
@@ -162,7 +156,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                         label: 'BULAN',
                         value: _formatMonth(_selectedMonth),
                         icon: Icons.calendar_month_rounded,
-                        onTap: () => _showMonthPicker(monthList),
+                        onTap: _showMonthPicker,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -191,7 +185,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                       AppHeading(
                         'LIMIT PENGELUARAN',
                         size: AppHeadingSize.caption,
-                        color: KineticVaultTheme.onSurfaceVariant,
+                        color: SavaioTheme.onSurfaceVariant,
                         isBold: true,
                       ),
                       const SizedBox(height: 16),
@@ -205,7 +199,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                             style: GoogleFonts.inter(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: KineticVaultTheme.primary,
+                              color: SavaioTheme.primary,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -218,13 +212,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                               style: GoogleFonts.inter(
                                 fontSize: 42,
                                 fontWeight: FontWeight.w900,
-                                color: KineticVaultTheme.onSurface,
+                                color: SavaioTheme.onSurface,
                                 letterSpacing: -1,
                               ),
                               onChanged: (_) => setState(() {}),
                               decoration: InputDecoration(
                                 hintText: '0',
-                                hintStyle: TextStyle(color: KineticVaultTheme.onSurface.withValues(alpha: 0.2)),
+                                hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -251,15 +245,15 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                 const SizedBox(height: 32),
 
                 // 3. Dynamic Progress/Insight Section
-                AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: KineticVaultTheme.primary, isBold: true),
+                AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
                 const SizedBox(height: 16),
                 
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerLow,
+                    color: SavaioTheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1)),
+                    border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
                   ),
                   child: Column(
                     children: [
@@ -269,21 +263,21 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: KineticVaultTheme.onSurfaceVariant)),
+                              const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
                               const SizedBox(height: 4),
-                              AppHeading(KineticVaultTheme.formatCurrency(currentSpent), size: AppHeadingSize.subtitle),
+                              AppHeading(SavaioTheme.formatCurrency(currentSpent), size: AppHeadingSize.subtitle),
                             ],
                           ),
                           if (targetAmount > 0)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                const Text('Sisa', style: TextStyle(fontSize: 12, color: KineticVaultTheme.onSurfaceVariant)),
+                                const Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
                                 const SizedBox(height: 4),
                                 AppHeading(
-                                  KineticVaultTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent),
+                                  SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent),
                                   size: AppHeadingSize.subtitle,
-                                  color: isOver ? KineticVaultTheme.error : KineticVaultTheme.tertiary,
+                                  color: isOver ? SavaioTheme.error : SavaioTheme.tertiary,
                                 ),
                               ],
                             ),
@@ -292,7 +286,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                       const SizedBox(height: 20),
                       AppProgressBar(
                         value: progress,
-                        color: isOver ? KineticVaultTheme.error : (progress > 0.8 ? Colors.orange : KineticVaultTheme.tertiary),
+                        color: isOver ? SavaioTheme.error : (progress > 0.8 ? Colors.orange : SavaioTheme.tertiary),
                         height: 8,
                       ),
                       const SizedBox(height: 12),
@@ -304,12 +298,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                             style: TextStyle(
                               fontSize: 11, 
                               fontWeight: FontWeight.bold,
-                              color: isOver ? KineticVaultTheme.error : KineticVaultTheme.onSurfaceVariant
+                              color: isOver ? SavaioTheme.error : SavaioTheme.onSurfaceVariant
                             ),
                           ),
                           Text(
-                            'Target: ${KineticVaultTheme.formatCurrency(targetAmount)}',
-                            style: const TextStyle(fontSize: 11, color: KineticVaultTheme.onSurfaceVariant),
+                            'Target: ${SavaioTheme.formatCurrency(targetAmount)}',
+                            style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -324,17 +318,17 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                   GlassCard(
                     padding: const EdgeInsets.all(20),
                     borderRadius: 16,
-                    color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
                     child: Row(
                       children: [
-                        const Icon(Icons.auto_awesome_rounded, color: KineticVaultTheme.secondary, size: 20),
+                        const Icon(Icons.auto_awesome_rounded, color: SavaioTheme.secondary, size: 20),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
                             isOver 
                               ? 'Waduh! Pengeluaran kamu sudah lewat dari target. Yuk, lebih ketat lagi!'
-                              : 'Batas harian kamu: ${KineticVaultTheme.formatCurrency((targetAmount - currentSpent) / 30)} untuk sisa bulan ini.',
-                            style: const TextStyle(fontSize: 12, color: KineticVaultTheme.onSurface, height: 1.5),
+                              : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30)} untuk sisa bulan ini.',
+                            style: const TextStyle(fontSize: 12, color: SavaioTheme.onSurface, height: 1.5),
                           ),
                         ),
                       ],
@@ -347,7 +341,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [KineticVaultTheme.background.withValues(alpha: 0), KineticVaultTheme.background],
+                colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -375,23 +369,23 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainerHigh,
+          color: SavaioTheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.1)),
+          border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: KineticVaultTheme.primary, letterSpacing: 1)),
+            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: SavaioTheme.primary, letterSpacing: 1)),
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(icon is IconData ? icon : Icons.category, size: 16, color: KineticVaultTheme.onSurface),
+                Icon(icon is IconData ? icon : Icons.category, size: 16, color: SavaioTheme.onSurface),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value, 
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: KineticVaultTheme.onSurface),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: SavaioTheme.onSurface),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -414,54 +408,36 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.primary.withValues(alpha: 0.1),
+          color: SavaioTheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
         ),
         child: Text(
           '+${(amount/1000).toStringAsFixed(0)}rb',
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: KineticVaultTheme.primary),
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SavaioTheme.primary),
         ),
       ),
     );
   }
 
-  void _showMonthPicker(List<String> months) {
-    showModalBottomSheet(
+  void _showMonthPicker() async {
+    final picked = await AppDateTimePicker.showMonthPicker(
       context: context,
-      backgroundColor: KineticVaultTheme.surfaceContainer,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppHeading('Pilih Bulan', size: AppHeadingSize.h3),
-            const SizedBox(height: 20),
-            ...months.map((m) => ListTile(
-              title: Text(_formatMonth(m), style: TextStyle(color: _selectedMonth == m ? KineticVaultTheme.primary : KineticVaultTheme.onSurface)),
-              trailing: _selectedMonth == m ? const Icon(Icons.check_circle, color: KineticVaultTheme.primary) : null,
-              onTap: () {
-                setState(() {
-                  _selectedMonth = m;
-                  _loadBudgetData();
-                  sl.financeController.fetchTransactions(month: _selectedMonth);
-                });
-                Navigator.pop(context);
-              },
-            )),
-          ],
-        ),
-      ),
+      initialMonth: _selectedMonth,
     );
+    if (picked != null) {
+      setState(() {
+        _selectedMonth = picked;
+        _loadBudgetData();
+        sl.financeController.fetchTransactions(month: _selectedMonth);
+      });
+    }
   }
 
   void _showCategoryPicker(List<Map<String, dynamic>> categories) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: KineticVaultTheme.surfaceContainer,
+      backgroundColor: SavaioTheme.surfaceContainer,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -484,12 +460,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     leading: AppIconContainer(
                       icon: cat['icon'],
                       size: 32,
-                      color: _selectedCategory == name ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                      color: _selectedCategory == name ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                       opacity: 0.1,
                     ),
                     title: Text(name == 'All' ? 'Total Semua' : name, 
-                      style: TextStyle(color: _selectedCategory == name ? KineticVaultTheme.primary : KineticVaultTheme.onSurface)),
-                    trailing: _selectedCategory == name ? const Icon(Icons.check_circle, color: KineticVaultTheme.primary) : null,
+                      style: TextStyle(color: _selectedCategory == name ? SavaioTheme.primary : SavaioTheme.onSurface)),
+                    trailing: _selectedCategory == name ? const Icon(Icons.check_circle, color: SavaioTheme.primary) : null,
                     onTap: () {
                       setState(() {
                         _selectedCategory = name;

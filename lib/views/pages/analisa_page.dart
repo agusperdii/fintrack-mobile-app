@@ -9,6 +9,7 @@ import '../components/organisms/app_trend_line_chart.dart';
 import '../components/organisms/app_category_pie_chart.dart';
 import '../components/molecules/app_section_header.dart';
 import 'placeholder_page.dart';
+import 'spending_target_page.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -51,14 +52,14 @@ class _AnalisaPageState extends State<AnalisaPage> {
         }
 
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppHeader(
             title: 'Analisa Pengeluaran',
             showNotification: false,
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.loadInitialData(),
-            color: KineticVaultTheme.primary,
+            color: SavaioTheme.primary,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
@@ -120,7 +121,7 @@ class _AnalisaPageState extends State<AnalisaPage> {
                         final budgetAmount = (categoryBudget['amount'] as num).toDouble();
                         if (budgetAmount > 0) {
                           progress = item.amount / budgetAmount;
-                          limitText = 'Batas: ${KineticVaultTheme.formatCurrency(budgetAmount)}';
+                          limitText = 'Batas: ${SavaioTheme.formatCurrency(budgetAmount)}';
                           status = progress > 1.0 ? 'Over' : (progress > 0.8 ? 'Peringatan' : 'Aman');
                         }
                       }
@@ -130,12 +131,17 @@ class _AnalisaPageState extends State<AnalisaPage> {
                         child: AppCategoryCard(
                           icon: _getIconForCategory(item.label),
                           title: item.label,
-                          amount: KineticVaultTheme.formatCurrency(item.amount),
+                          amount: SavaioTheme.formatCurrency(item.amount),
                           progress: progress.clamp(0.0, 1.0),
                           limit: limitText,
                           status: status,
                           accentColor: color,
-                          onTap: () => _navigateToPlaceholder('Analisa ${item.label}'),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SpendingTargetPage(initialCategory: item.label),
+                            ),
+                          ),
                         ),
                       );
                     })
@@ -143,11 +149,11 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(24.0),
-                        child: Text('Belum ada data kategori', style: TextStyle(color: KineticVaultTheme.onSurfaceVariant)),
+                        child: Text('Belum ada data kategori', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
                       ),
                     )
                   else
-                    const Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+                    const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
 
                   const SizedBox(height: 32),
 

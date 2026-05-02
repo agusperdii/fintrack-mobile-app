@@ -55,7 +55,7 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
       setState(() => _isSaving = false);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Username berhasil diperbarui'), backgroundColor: KineticVaultTheme.tertiary),
+          const SnackBar(content: Text('Username berhasil diperbarui'), backgroundColor: SavaioTheme.tertiary),
         );
         Navigator.pop(context, true);
       } else {
@@ -67,7 +67,7 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppHeader(title: 'Ganti Username', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -75,46 +75,46 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 16),
-            Text('Username Baru', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurfaceVariant)),
+            Text('Username Baru', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: SavaioTheme.onSurfaceVariant)),
             const SizedBox(height: 8),
             TextField(
               controller: _usernameController,
               autofocus: true,
-              style: GoogleFonts.inter(color: KineticVaultTheme.onSurface),
+              style: GoogleFonts.inter(color: SavaioTheme.onSurface),
               decoration: InputDecoration(
                 prefixText: '@ ',
-                prefixStyle: TextStyle(color: KineticVaultTheme.primary, fontWeight: FontWeight.bold),
+                prefixStyle: TextStyle(color: SavaioTheme.primary, fontWeight: FontWeight.bold),
                 filled: true,
-                fillColor: KineticVaultTheme.surfaceContainerHigh,
+                fillColor: SavaioTheme.surfaceContainerHigh,
                 hintText: 'user_anda',
-                hintStyle: TextStyle(color: KineticVaultTheme.onSurfaceVariant),
+                hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.5)),
+                  borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.5)),
                 ),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'Username akan digunakan sebagai handle unik Anda.',
-              style: TextStyle(color: KineticVaultTheme.onSurfaceVariant, fontSize: 11),
+              style: TextStyle(color: SavaioTheme.onSurfaceVariant, fontSize: 11),
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
-              Text(_errorMessage!, style: TextStyle(color: KineticVaultTheme.error, fontSize: 13)),
+              Text(_errorMessage!, style: TextStyle(color: SavaioTheme.error, fontSize: 13)),
             ],
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isSaving ? null : _save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: KineticVaultTheme.primary,
-                foregroundColor: KineticVaultTheme.onPrimaryFixed,
+                backgroundColor: SavaioTheme.primary,
+                foregroundColor: SavaioTheme.onPrimaryFixed,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
               ),
               child: _isSaving
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: KineticVaultTheme.onPrimaryFixed))
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.onPrimaryFixed))
                   : Text('SIMPAN USERNAME', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],

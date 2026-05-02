@@ -8,9 +8,7 @@ import 'controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize Service Locator
   sl.setup();
-  // Pre-check auth
   await sl.authController.checkAuth();
   runApp(const MyApp());
 }
@@ -27,8 +25,8 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Habitra',
-        theme: KineticVaultTheme.theme,
+        title: 'Savaio',
+        theme: SavaioTheme.theme,
         home: Consumer<AuthController>(
           builder: (context, auth, _) {
             return auth.isAuthenticated

@@ -22,7 +22,7 @@ class AppAvatar extends StatelessWidget {
       decoration: showBorder ? const BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [KineticVaultTheme.primary, KineticVaultTheme.secondary],
+          colors: [SavaioTheme.primary, SavaioTheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -31,13 +31,13 @@ class AppAvatar extends StatelessWidget {
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: KineticVaultTheme.surface,
-          border: showBorder ? null : Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
+          color: SavaioTheme.surface,
+          border: showBorder ? null : Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
         ),
         child: CircleAvatar(
           radius: (size / 2) - 2,
           backgroundImage: NetworkImage(imageUrl),
-          backgroundColor: KineticVaultTheme.surfaceContainer,
+          backgroundColor: SavaioTheme.surfaceContainer,
         ),
       ),
     );

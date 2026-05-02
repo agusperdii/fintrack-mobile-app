@@ -60,7 +60,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       setState(() => _isSaving = false);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password berhasil diganti'), backgroundColor: KineticVaultTheme.tertiary),
+          const SnackBar(content: Text('Password berhasil diganti'), backgroundColor: SavaioTheme.tertiary),
         );
         Navigator.pop(context);
       } else {
@@ -72,7 +72,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppHeader(title: 'Ganti Password', showBackButton: true, showNotification: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -100,19 +100,19 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
-              Text(_errorMessage!, style: TextStyle(color: KineticVaultTheme.error, fontSize: 13)),
+              Text(_errorMessage!, style: TextStyle(color: SavaioTheme.error, fontSize: 13)),
             ],
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _isSaving ? null : _save,
               style: ElevatedButton.styleFrom(
-                backgroundColor: KineticVaultTheme.primary,
-                foregroundColor: KineticVaultTheme.onPrimaryFixed,
+                backgroundColor: SavaioTheme.primary,
+                foregroundColor: SavaioTheme.onPrimaryFixed,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
               ),
               child: _isSaving
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: KineticVaultTheme.onPrimaryFixed))
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.onPrimaryFixed))
                   : Text('UPDATE PASSWORD', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
@@ -130,25 +130,25 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurfaceVariant)),
+        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: SavaioTheme.onSurfaceVariant)),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: obscure,
-          style: GoogleFonts.inter(color: KineticVaultTheme.onSurface),
+          style: GoogleFonts.inter(color: SavaioTheme.onSurface),
           decoration: InputDecoration(
             filled: true,
-            fillColor: KineticVaultTheme.surfaceContainerHigh,
+            fillColor: SavaioTheme.surfaceContainerHigh,
             suffixIcon: onToggleObscure != null 
                 ? IconButton(
-                    icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: KineticVaultTheme.onSurfaceVariant, size: 20),
+                    icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: SavaioTheme.onSurfaceVariant, size: 20),
                     onPressed: onToggleObscure,
                   )
                 : null,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.5)),
+              borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.5)),
             ),
           ),
         ),

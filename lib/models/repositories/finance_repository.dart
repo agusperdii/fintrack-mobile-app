@@ -61,6 +61,7 @@ class FinanceRepository {
 
   Future<bool> addTransaction({
     required String title,
+    String? description,
     required double amount,
     required String category,
     required String type,
@@ -68,6 +69,7 @@ class FinanceRepository {
   }) =>
       remoteDataSource.addTransaction(
         title: title,
+        description: description,
         amount: amount,
         category: category,
         type: type,

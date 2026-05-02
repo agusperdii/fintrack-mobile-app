@@ -17,7 +17,7 @@ class AppEditorialHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppHeading(category.toUpperCase(), size: AppHeadingSize.caption, color: KineticVaultTheme.primary, isBold: true),
+        AppHeading(category.toUpperCase(), size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
         const SizedBox(height: 4),
         AppHeading(title, size: AppHeadingSize.h2),
       ],

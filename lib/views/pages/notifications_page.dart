@@ -22,7 +22,7 @@ class NotificationsPage extends StatelessWidget {
         final nudges = provider.nudges;
 
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: const AppHeader(
             title: 'Notifikasi',
             showBackButton: true,
@@ -30,7 +30,7 @@ class NotificationsPage extends StatelessWidget {
           ),
           body: RefreshIndicator(
             onRefresh: () => provider.fetchNudges(),
-            color: KineticVaultTheme.primary,
+            color: SavaioTheme.primary,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               physics: const AlwaysScrollableScrollPhysics(),
@@ -50,7 +50,7 @@ class NotificationsPage extends StatelessWidget {
                           },
                           child: const Text(
                             'Baca semua',
-                            style: TextStyle(color: KineticVaultTheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: SavaioTheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
                     ],
@@ -62,9 +62,9 @@ class NotificationsPage extends StatelessWidget {
                       child: Column(
                         children: [
                           const SizedBox(height: 100),
-                          Icon(Icons.notifications_none_rounded, size: 64, color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                          Icon(Icons.notifications_none_rounded, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
-                          const AppHeading('Belum ada notifikasi', size: AppHeadingSize.subtitle, color: KineticVaultTheme.onSurfaceVariant),
+                          const AppHeading('Belum ada notifikasi', size: AppHeadingSize.subtitle, color: SavaioTheme.onSurfaceVariant),
                         ],
                       ),
                     )
@@ -105,13 +105,13 @@ class NotificationsPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: KineticVaultTheme.error.withValues(alpha: 0.1),
+                color: SavaioTheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: KineticVaultTheme.error.withValues(alpha: 0.3)),
+                border: Border.all(color: SavaioTheme.error.withValues(alpha: 0.3)),
               ),
               child: const Text(
                 'LIHAT BUDGET',
-                style: TextStyle(color: KineticVaultTheme.error, fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(color: SavaioTheme.error, fontSize: 10, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -122,13 +122,13 @@ class NotificationsPage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: KineticVaultTheme.primary.withValues(alpha: 0.1),
+              color: SavaioTheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.3)),
             ),
             child: const Text(
               'TANDAI DIBACA',
-              style: TextStyle(color: KineticVaultTheme.primary, fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(color: SavaioTheme.primary, fontSize: 10, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -169,7 +169,7 @@ class NotificationsPage extends StatelessWidget {
             Text(
               nudge.message,
               style: TextStyle(
-                color: nudge.isRead ? KineticVaultTheme.onSurfaceVariant : KineticVaultTheme.onSurface,
+                color: nudge.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface,
                 fontSize: 13,
                 height: 1.5,
                 fontWeight: nudge.isRead ? FontWeight.normal : FontWeight.w600,

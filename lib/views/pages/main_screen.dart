@@ -51,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
     final bottomMargin = horizontalMargin;
     
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       body: Stack(
         children: [
           IndexedStack(
@@ -65,9 +65,9 @@ class _MainScreenState extends State<MainScreen> {
             child: Container(
               height: 72,
               decoration: BoxDecoration(
-                color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: KineticVaultTheme.outlineVariant.withValues(alpha: 0.2)),
+                border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(100),
@@ -100,8 +100,8 @@ class _MainScreenState extends State<MainScreen> {
           shape: BoxShape.circle,
           gradient: LinearGradient(
             colors: [
-              KineticVaultTheme.primary.withValues(alpha: 0.1),
-              KineticVaultTheme.secondary.withValues(alpha: 0.1),
+              SavaioTheme.primary.withValues(alpha: 0.1),
+              SavaioTheme.secondary.withValues(alpha: 0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -109,7 +109,7 @@ class _MainScreenState extends State<MainScreen> {
         ) : null,
         child: Icon(
           icon,
-          color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+          color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
           size: 24,
         ),
       ),
@@ -130,11 +130,11 @@ class _MainScreenState extends State<MainScreen> {
         height: 48,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: KineticVaultTheme.primaryGradient,
+          gradient: SavaioTheme.primaryGradient,
         ),
         child: const Icon(
           Icons.add_rounded,
-          color: KineticVaultTheme.onPrimaryFixed,
+          color: SavaioTheme.onPrimaryFixed,
           size: 32,
         ),
       ),

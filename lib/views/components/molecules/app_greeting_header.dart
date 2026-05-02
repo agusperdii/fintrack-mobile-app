@@ -19,7 +19,7 @@ class AppGreetingHeader extends StatelessWidget {
         const AppHeading(
           'Selamat Datang!', 
           size: AppHeadingSize.subtitle, 
-          color: KineticVaultTheme.onSurfaceVariant,
+          color: SavaioTheme.onSurfaceVariant,
           isBold: false,
         ),
       ],

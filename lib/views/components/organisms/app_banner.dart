@@ -46,7 +46,7 @@ class AppBanner extends StatelessWidget {
                 AppHeading(
                   subtitle,
                   size: AppHeadingSize.caption,
-                  color: KineticVaultTheme.onSurfaceVariant,
+                  color: SavaioTheme.onSurfaceVariant,
                   isBold: false,
                 ),
               ],

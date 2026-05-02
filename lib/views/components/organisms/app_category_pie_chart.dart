@@ -25,7 +25,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -33,7 +33,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
           const AppHeading(
             'DISTRIBUSI PENGELUARAN',
             size: AppHeadingSize.caption,
-            color: KineticVaultTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariant,
             isBold: true,
           ),
           const SizedBox(height: 32),
@@ -117,7 +117,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
               item.label,
               style: const TextStyle(
                 fontSize: 12,
-                color: KineticVaultTheme.onSurfaceVariant,
+                color: SavaioTheme.onSurfaceVariant,
               ),
             ),
           ],

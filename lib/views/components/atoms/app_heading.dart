@@ -52,7 +52,7 @@ class AppHeading extends StatelessWidget {
       style: GoogleFonts.inter(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color ?? KineticVaultTheme.onSurface,
+        color: color ?? SavaioTheme.onSurface,
         letterSpacing: letterSpacing,
       ),
     );

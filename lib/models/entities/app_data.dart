@@ -51,6 +51,7 @@ class AppData {
       recentTransactions: [
         Transaction(
           title: 'Belanja Bulanan',
+          description: 'Beli bahan makanan di pasar',
           amount: 500000,
           category: 'Food',
           date: '2026-04-10',
@@ -58,6 +59,7 @@ class AppData {
         ),
         Transaction(
           title: 'Gaji Bulanan',
+          description: 'Gaji bulan April',
           amount: 10000000,
           category: 'Salary',
           date: '2026-04-01',
@@ -65,6 +67,7 @@ class AppData {
         ),
         Transaction(
           title: 'Tagihan Listrik',
+          description: 'Listrik pascabayar',
           amount: 250000,
           category: 'Bills',
           date: '2026-04-05',
@@ -87,6 +90,7 @@ class AppData {
 class Transaction {
   final String? id;
   final String title;
+  final String? description;
   final double amount;
   final String category;
   final String date;
@@ -97,6 +101,7 @@ class Transaction {
   Transaction({
     this.id,
     required this.title,
+    this.description,
     required this.amount,
     required this.category,
     required this.date,
@@ -110,7 +115,8 @@ class Transaction {
     
     return Transaction(
       id: json['id']?.toString(),
-      title: json['title']?.toString() ?? json['description']?.toString() ?? 'Transaksi',
+      title: json['title']?.toString() ?? 'Transaksi',
+      description: json['description']?.toString(),
       amount: ParserUtils.toDouble(json['amount']),
       category: json['category']?.toString() ?? 'Lainnya',
       date: dateStr,

@@ -20,10 +20,10 @@ class AppBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     switch (variant) {
-      case AppBadgeVariant.success: color = KineticVaultTheme.tertiary; break;
-      case AppBadgeVariant.error: color = KineticVaultTheme.error; break;
+      case AppBadgeVariant.success: color = SavaioTheme.tertiary; break;
+      case AppBadgeVariant.error: color = SavaioTheme.error; break;
       case AppBadgeVariant.warning: color = Colors.orange; break;
-      case AppBadgeVariant.neutral: color = KineticVaultTheme.onSurfaceVariant; break;
+      case AppBadgeVariant.neutral: color = SavaioTheme.onSurfaceVariant; break;
     }
 
     return Container(

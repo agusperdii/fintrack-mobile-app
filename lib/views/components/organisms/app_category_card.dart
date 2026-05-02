@@ -33,7 +33,7 @@ class AppCategoryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainer,
+          color: SavaioTheme.surfaceContainer,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -71,13 +71,13 @@ class AppCategoryCard extends StatelessWidget {
                 AppHeading(
                   limit,
                   size: AppHeadingSize.caption,
-                  color: KineticVaultTheme.onSurfaceVariant,
+                  color: SavaioTheme.onSurfaceVariant,
                   isBold: true,
                 ),
                 AppHeading(
                   status.toUpperCase(),
                   size: AppHeadingSize.caption,
-                  color: status == 'Aman' || status == 'Stabil' ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+                  color: status == 'Aman' || status == 'Stabil' ? SavaioTheme.tertiary : SavaioTheme.error,
                   isBold: true,
                 ),
               ],

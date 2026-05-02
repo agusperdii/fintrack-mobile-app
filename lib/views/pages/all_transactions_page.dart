@@ -63,7 +63,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppHeader(title: 'Semua Transaksi', showBackButton: true, showNotification: false),
       body: ListenableBuilder(
         listenable: sl.financeController,
@@ -101,13 +101,13 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                     if (months.isNotEmpty)
                       DropdownButton<String?>(
                         value: _selectedMonth,
-                        hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurfaceVariant)),
-                        dropdownColor: KineticVaultTheme.surfaceContainerHigh,
+                        hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
+                        dropdownColor: SavaioTheme.surfaceContainerHigh,
                         underline: const SizedBox(),
-                        icon: const Icon(Icons.expand_more, color: KineticVaultTheme.onSurfaceVariant, size: 16),
+                        icon: const Icon(Icons.expand_more, color: SavaioTheme.onSurfaceVariant, size: 16),
                         items: [
-                          DropdownMenuItem<String?>(value: null, child: Text('Semua', style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurface))),
-                          ...months.map((m) => DropdownMenuItem<String?>(value: m, child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurface)))),
+                          DropdownMenuItem<String?>(value: null, child: Text('Semua', style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface))),
+                          ...months.map((m) => DropdownMenuItem<String?>(value: m, child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface)))),
                         ],
                         onChanged: (v) => setState(() => _selectedMonth = v),
                       ),
@@ -116,16 +116,16 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
               ),
               const SizedBox(height: 8),
               if (controller.isLoading)
-                const Expanded(child: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)))
+                const Expanded(child: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)))
               else if (filtered.isEmpty)
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.receipt_long_outlined, size: 64, color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                        Icon(Icons.receipt_long_outlined, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.4)),
                         const SizedBox(height: 16),
-                        AppHeading('Tidak ada transaksi', size: AppHeadingSize.h3, color: KineticVaultTheme.onSurfaceVariant),
+                        AppHeading('Tidak ada transaksi', size: AppHeadingSize.h3, color: SavaioTheme.onSurfaceVariant),
                       ],
                     ),
                   ),
@@ -134,7 +134,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: () => sl.financeController.fetchTransactions(),
-                    color: KineticVaultTheme.primary,
+                    color: SavaioTheme.primary,
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                       itemCount: sortedDates.length,
@@ -151,7 +151,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: KineticVaultTheme.onSurfaceVariant,
+                                  color: SavaioTheme.onSurfaceVariant,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -193,14 +193,14 @@ class _TypeChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: KineticVaultTheme.durationFast,
+        duration: SavaioTheme.durationFast,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? KineticVaultTheme.primary.withValues(alpha: 0.15) : KineticVaultTheme.surfaceContainerHigh,
+          color: selected ? SavaioTheme.primary.withValues(alpha: 0.15) : SavaioTheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: selected ? KineticVaultTheme.primary.withValues(alpha: 0.5) : Colors.transparent),
+          border: Border.all(color: selected ? SavaioTheme.primary.withValues(alpha: 0.5) : Colors.transparent),
         ),
-        child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: selected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant)),
+        child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: selected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant)),
       ),
     );
   }
@@ -223,7 +223,7 @@ class _TransactionListItem extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: KineticVaultTheme.surfaceContainerLow,
+            color: SavaioTheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -231,27 +231,27 @@ class _TransactionListItem extends StatelessWidget {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: (isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error).withValues(alpha: 0.12),
+                  color: (isIncome ? SavaioTheme.tertiary : SavaioTheme.error).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(isIncome ? Icons.south_west : Icons.north_east, color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error, size: 18),
+                child: Icon(isIncome ? Icons.south_west : Icons.north_east, color: isIncome ? SavaioTheme.tertiary : SavaioTheme.error, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(transaction.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: KineticVaultTheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(transaction.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: SavaioTheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
                     Text(
                       '${transaction.category} @${DateFormat('HH:mm').format(DateTime.parse(transaction.date))}',
-                      style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurfaceVariant),
+                      style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
               Text(
                 '${isIncome ? '+' : '-'}Rp${transaction.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: isIncome ? KineticVaultTheme.tertiary : KineticVaultTheme.error),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: isIncome ? SavaioTheme.tertiary : SavaioTheme.error),
               ),
             ],
           ),

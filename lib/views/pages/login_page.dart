@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(KineticVaultTheme.spacingXl),
+          padding: const EdgeInsets.all(SavaioTheme.spacingXl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,26 +56,26 @@ class _LoginPageState extends State<LoginPage> {
                 style: Theme.of(context).textTheme.headlineLarge,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: KineticVaultTheme.spacingM),
+              const SizedBox(height: SavaioTheme.spacingM),
               Text(
                 'Log in to continue to FinTrack',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: KineticVaultTheme.onSurfaceVariant,
+                      color: SavaioTheme.onSurfaceVariant,
                     ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: KineticVaultTheme.spacing3xl),
+              const SizedBox(height: SavaioTheme.spacing3xl),
               if (_errorMessage != null)
                 Container(
-                  padding: const EdgeInsets.all(KineticVaultTheme.spacingM),
-                  margin: const EdgeInsets.only(bottom: KineticVaultTheme.spacingL),
+                  padding: const EdgeInsets.all(SavaioTheme.spacingM),
+                  margin: const EdgeInsets.only(bottom: SavaioTheme.spacingL),
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.errorContainer,
-                    borderRadius: BorderRadius.circular(KineticVaultTheme.radiusM),
+                    color: SavaioTheme.errorContainer,
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(color: KineticVaultTheme.error),
+                    style: const TextStyle(color: SavaioTheme.error),
                   ),
                 ),
               TextField(
@@ -83,37 +83,37 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   labelText: 'Email',
                   filled: true,
-                  fillColor: KineticVaultTheme.surfaceContainerHigh,
+                  fillColor: SavaioTheme.surfaceContainerHigh,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KineticVaultTheme.radiusM),
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                     borderSide: BorderSide.none,
                   ),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: KineticVaultTheme.spacingL),
+              const SizedBox(height: SavaioTheme.spacingL),
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   filled: true,
-                  fillColor: KineticVaultTheme.surfaceContainerHigh,
+                  fillColor: SavaioTheme.surfaceContainerHigh,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KineticVaultTheme.radiusM),
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                     borderSide: BorderSide.none,
                   ),
                 ),
                 obscureText: true,
               ),
-              const SizedBox(height: KineticVaultTheme.spacing2xl),
+              const SizedBox(height: SavaioTheme.spacing2xl),
               ElevatedButton(
                 onPressed: authController.isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: KineticVaultTheme.primary,
-                  foregroundColor: KineticVaultTheme.onPrimaryFixed,
-                  padding: const EdgeInsets.symmetric(vertical: KineticVaultTheme.spacingL),
+                  backgroundColor: SavaioTheme.primary,
+                  foregroundColor: SavaioTheme.onPrimaryFixed,
+                  padding: const EdgeInsets.symmetric(vertical: SavaioTheme.spacingL),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(KineticVaultTheme.radiusM),
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                   ),
                 ),
                 child: authController.isLoading
@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: KineticVaultTheme.onPrimaryFixed,
+                          color: SavaioTheme.onPrimaryFixed,
                         ),
                       )
                     : const Text(
@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
               ),
-              const SizedBox(height: KineticVaultTheme.spacingL),
+              const SizedBox(height: SavaioTheme.spacingL),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).push(
@@ -139,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                 },
                 child: Text(
                   'Don\'t have an account? Sign up',
-                  style: TextStyle(color: KineticVaultTheme.primary),
+                  style: TextStyle(color: SavaioTheme.primary),
                 ),
               ),
             ],

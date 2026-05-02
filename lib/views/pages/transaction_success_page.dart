@@ -9,7 +9,7 @@ class TransactionSuccessPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       body: Stack(
         children: [
 
@@ -23,12 +23,12 @@ class TransactionSuccessPage extends StatelessWidget {
                   height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: KineticVaultTheme.tertiary.withValues(alpha: 0.1),
-                    border: Border.all(color: KineticVaultTheme.tertiary.withValues(alpha: 0.2), width: 2),
+                    color: SavaioTheme.tertiary.withValues(alpha: 0.1),
+                    border: Border.all(color: SavaioTheme.tertiary.withValues(alpha: 0.2), width: 2),
                   ),
                   child: const Icon(
                     Icons.check_rounded,
-                    color: KineticVaultTheme.tertiary,
+                    color: SavaioTheme.tertiary,
                     size: 48,
                   ),
                 ),
@@ -38,16 +38,16 @@ class TransactionSuccessPage extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: KineticVaultTheme.onSurface,
+                    color: SavaioTheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Catatan keuangan kamu sudah diperbarui secara otomatis oleh Habitra.',
+                  'Catatan keuangan kamu sudah diperbarui secara otomatis oleh Savaio.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 14,
-                    color: KineticVaultTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariant,
                     height: 1.5,
                   ),
                 ),
@@ -57,8 +57,8 @@ class TransactionSuccessPage extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: KineticVaultTheme.tertiary,
-                      foregroundColor: KineticVaultTheme.background,
+                      backgroundColor: SavaioTheme.tertiary,
+                      foregroundColor: SavaioTheme.background,
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                     ),

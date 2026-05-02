@@ -24,7 +24,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
   void _showImagePickerOptions() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: KineticVaultTheme.surfaceContainer,
+      backgroundColor: SavaioTheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -37,7 +37,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
               const AppHeading('Ambil Foto Struk', size: AppHeadingSize.h3),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.camera_alt, color: KineticVaultTheme.primary),
+                leading: const Icon(Icons.camera_alt, color: SavaioTheme.primary),
                 title: const Text('Kamera', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
@@ -45,7 +45,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: KineticVaultTheme.primary),
+                leading: const Icon(Icons.photo_library, color: SavaioTheme.primary),
                 title: const Text('Galeri', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
@@ -71,7 +71,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: KineticVaultTheme.surfaceContainer,
+      backgroundColor: SavaioTheme.surfaceContainer,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -141,14 +141,14 @@ class _OcrScanPageState extends State<OcrScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: KineticVaultTheme.background,
+      backgroundColor: SavaioTheme.background,
       appBar: AppBar(
-        backgroundColor: KineticVaultTheme.background,
+        backgroundColor: SavaioTheme.background,
         elevation: 0,
         centerTitle: true,
         title: const AppHeading('Scan Struk AI', size: AppHeadingSize.h3),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: KineticVaultTheme.primary),
+          icon: const Icon(Icons.arrow_back, color: SavaioTheme.primary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -165,9 +165,9 @@ class _OcrScanPageState extends State<OcrScanPage> {
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: KineticVaultTheme.surfaceContainer,
+                      color: SavaioTheme.surfaceContainer,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.1)),
+                      border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.1)),
                     ),
                     child: controller.selectedImage != null
                         ? ClipRRect(
@@ -177,11 +177,11 @@ class _OcrScanPageState extends State<OcrScanPage> {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.receipt_long, size: 80, color: KineticVaultTheme.primary.withValues(alpha: 0.2)),
+                              Icon(Icons.receipt_long, size: 80, color: SavaioTheme.primary.withValues(alpha: 0.2)),
                               const SizedBox(height: 16),
                               const Text(
                                 'Belum ada foto terpilih',
-                                style: TextStyle(color: KineticVaultTheme.onSurfaceVariant),
+                                style: TextStyle(color: SavaioTheme.onSurfaceVariant),
                               ),
                             ],
                           ),
@@ -191,7 +191,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                 if (controller.error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(controller.error!, style: const TextStyle(color: KineticVaultTheme.error)),
+                    child: Text(controller.error!, style: const TextStyle(color: SavaioTheme.error)),
                   ),
                 if (controller.selectedImage == null)
                   AppButton(

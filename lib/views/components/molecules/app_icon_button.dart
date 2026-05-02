@@ -35,14 +35,14 @@ class AppIconButton extends StatelessWidget {
               icon: icon,
               size: 56,
               color: variant == AppIconButtonVariant.normal 
-                ? KineticVaultTheme.surfaceContainerHighest 
+                ? SavaioTheme.surfaceContainerHighest 
                 : null,
               gradient: variant == AppIconButtonVariant.gradient 
-                ? KineticVaultTheme.primaryGradient 
+                ? SavaioTheme.primaryGradient 
                 : null,
               iconColor: variant == AppIconButtonVariant.gradient 
-                ? KineticVaultTheme.onPrimaryFixed 
-                : (color ?? KineticVaultTheme.primary),
+                ? SavaioTheme.onPrimaryFixed 
+                : (color ?? SavaioTheme.primary),
               opacity: 1.0,
             ),
             const SizedBox(height: 8),
@@ -50,8 +50,8 @@ class AppIconButton extends StatelessWidget {
               label,
               size: AppHeadingSize.caption,
               color: variant == AppIconButtonVariant.gradient 
-                ? KineticVaultTheme.onSurface 
-                : KineticVaultTheme.onSurfaceVariant,
+                ? SavaioTheme.onSurface 
+                : SavaioTheme.onSurfaceVariant,
               isBold: true,
             ),
           ],

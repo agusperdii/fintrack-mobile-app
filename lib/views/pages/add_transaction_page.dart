@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
@@ -8,6 +9,7 @@ import '../components/atoms/app_heading.dart';
 import '../components/atoms/app_button.dart';
 import '../components/atoms/app_progress_bar.dart';
 import '../components/atoms/app_icon_container.dart';
+import '../components/molecules/app_date_time_picker.dart';
 import 'transaction_success_page.dart';
 import 'ocr_scan_page.dart';
 
@@ -32,6 +34,7 @@ class AddTransactionPage extends StatefulWidget {
 class _AddTransactionPageState extends State<AddTransactionPage> {
   String _type = 'Expense'; 
   late final TextEditingController _titleController; 
+  late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
   late final TextEditingController _categoryNameController;
   late final TextEditingController _categoryEmojiController;
@@ -44,6 +47,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.initState();
     _type = widget.initialType ?? 'Expense';
     _titleController = TextEditingController(text: widget.initialTitle);
+    _descriptionController = TextEditingController();
     _amountController = TextEditingController(
       text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
     );
@@ -55,6 +59,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     _amountController.dispose();
     _categoryNameController.dispose();
     _categoryEmojiController.dispose();
@@ -62,26 +67,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await AppDateTimePicker.show(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: KineticVaultTheme.primary,
-              onPrimary: Colors.black,
-              surface: KineticVaultTheme.surfaceContainer,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      mode: CupertinoDatePickerMode.date,
+      title: 'Pilih Tanggal',
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
         _selectedDate = DateTime(
           picked.year,
@@ -95,22 +87,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Future<void> _pickTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final picked = await AppDateTimePicker.show(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(_selectedDate),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: KineticVaultTheme.primary,
-              onPrimary: Colors.black,
-              surface: KineticVaultTheme.surfaceContainer,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: _selectedDate,
+      mode: CupertinoDatePickerMode.time,
+      title: 'Pilih Jam',
     );
     if (picked != null) {
       setState(() {
@@ -136,6 +117,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     try {
       final success = await sl.financeController.addTransaction(
         title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
+        description: _descriptionController.text,
         amount: double.parse(_amountController.text),
         category: _selectedCategory,
         type: _type,
@@ -171,7 +153,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           right: 24,
         ),
         decoration: const BoxDecoration(
-          color: KineticVaultTheme.surfaceContainer,
+          color: SavaioTheme.surfaceContainer,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -180,7 +162,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           children: [
             const AppHeading('Tambah Kategori Baru', size: AppHeadingSize.h3),
             const SizedBox(height: 8),
-            const AppHeading('Sesuaikan dengan kebutuhan mahasiswa kamu!', size: AppHeadingSize.caption, color: KineticVaultTheme.onSurfaceVariant),
+            const AppHeading('Sesuaikan dengan kebutuhan mahasiswa kamu!', size: AppHeadingSize.caption, color: SavaioTheme.onSurfaceVariant),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -192,7 +174,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       labelText: 'Emoji',
                       hintText: '🚀',
                       filled: true,
-                      fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                     textAlign: TextAlign.center,
@@ -208,7 +190,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       labelText: 'Nama Kategori',
                       hintText: 'Misal: Fotocopy',
                       filled: true,
-                      fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
@@ -248,19 +230,19 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         final categories = sl.financeController.categories;
 
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppBar(
-            backgroundColor: KineticVaultTheme.background,
+            backgroundColor: SavaioTheme.background,
             elevation: 0,
             centerTitle: true,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: KineticVaultTheme.primary),
+              icon: const Icon(Icons.close, color: SavaioTheme.primary),
               onPressed: () => Navigator.pop(context), 
             ),
             title: AppHeading(
               'Tambah Transaksi',
               size: AppHeadingSize.h3,
-              color: KineticVaultTheme.onSurface,
+              color: SavaioTheme.onSurface,
             ),
             actions: [
               IconButton(
@@ -270,7 +252,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     MaterialPageRoute(builder: (context) => const OcrScanPage()),
                   );
                 },
-                icon: const Icon(Icons.document_scanner_outlined, color: KineticVaultTheme.primary),
+                icon: const Icon(Icons.document_scanner_outlined, color: SavaioTheme.primary),
                 tooltip: 'Scan Struk (OCR)',
               ),
               const SizedBox(width: 8),
@@ -286,7 +268,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     const AppHeading(
                       'JUMLAH NOMINAL',
                       size: AppHeadingSize.caption,
-                      color: KineticVaultTheme.onSurfaceVariant,
+                      color: SavaioTheme.onSurfaceVariant,
                       isBold: true,
                     ),
                     const SizedBox(height: 16),
@@ -298,7 +280,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         const AppHeading(
                           'Rp',
                           size: AppHeadingSize.h2,
-                          color: KineticVaultTheme.primary,
+                          color: SavaioTheme.primary,
                         ),
                         const SizedBox(width: 8),
                         IntrinsicWidth(
@@ -310,12 +292,12 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             style: GoogleFonts.inter(
                               fontSize: 48,
                               fontWeight: FontWeight.w900,
-                              color: KineticVaultTheme.onSurface,
+                              color: SavaioTheme.onSurface,
                               letterSpacing: -1,
                             ),
                             decoration: InputDecoration(
                               hintText: '0',
-                              hintStyle: TextStyle(color: KineticVaultTheme.onSurface.withValues(alpha: 0.2)),
+                              hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,
                             ),
@@ -323,11 +305,23 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    // Quick amount buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildQuickAmount(10000),
+                        const SizedBox(width: 8),
+                        _buildQuickAmount(50000),
+                        const SizedBox(width: 8),
+                        _buildQuickAmount(100000),
+                      ],
+                    ),
                     const SizedBox(height: 32),
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: KineticVaultTheme.surfaceContainerLow,
+                        color: SavaioTheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Row(
@@ -336,20 +330,109 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             label: 'Pengeluaran',
                             icon: Icons.arrow_outward,
                             isActive: _type == 'Expense',
-                            activeColor: KineticVaultTheme.errorContainer,
+                            activeColor: SavaioTheme.errorContainer,
                             onTap: () => setState(() => _type = 'Expense'),
                           ),
                           _buildTypeToggleItem(
                             label: 'Pemasukan',
                             icon: Icons.south_west,
                             isActive: _type == 'Income',
-                            activeColor: KineticVaultTheme.surfaceContainerHighest,
+                            activeColor: SavaioTheme.surfaceContainerHighest,
                             onTap: () => setState(() => _type = 'Income'),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 40),
+                    
+                    // 1. Judul Transaksi (Bento)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: SavaioTheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.title_rounded, color: SavaioTheme.primary, size: 18),
+                              const SizedBox(width: 8),
+                              const AppHeading(
+                                'Judul Transaksi',
+                                size: AppHeadingSize.subtitle,
+                                isBold: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _titleController,
+                            style: GoogleFonts.inter(fontSize: 13, color: SavaioTheme.onSurface),
+                            decoration: InputDecoration(
+                              hintText: 'Misal: Makan Siang di Kantin',
+                              hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              border: InputBorder.none,
+                              fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              filled: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 2. Waktu & Tanggal (Bento)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: SavaioTheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today, color: SavaioTheme.secondary, size: 18),
+                              const SizedBox(width: 8),
+                              const AppHeading(
+                                'Waktu & Tanggal',
+                                size: AppHeadingSize.subtitle,
+                                isBold: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildBentoValueItem(
+                            label: DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                            icon: Icons.calendar_today,
+                            onTap: _pickDate,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildBentoValueItem(
+                            label: '${DateFormat('HH:mm').format(_selectedDate)} WIB',
+                            icon: Icons.schedule,
+                            onTap: _pickTime,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // 3. Kategori Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -362,7 +445,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           child: const AppHeading(
                             '+ Tambah',
                             size: AppHeadingSize.subtitle,
-                            color: KineticVaultTheme.primary,
+                            color: SavaioTheme.primary,
                             isBold: true,
                           ),
                         ),
@@ -386,10 +469,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           onTap: () => setState(() => _selectedCategory = cat['name']),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: KineticVaultTheme.surfaceContainer,
+                              color: SavaioTheme.surfaceContainer,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? KineticVaultTheme.primary.withValues(alpha: 0.5) : Colors.transparent,
+                                color: isSelected ? SavaioTheme.primary.withValues(alpha: 0.5) : Colors.transparent,
                                 width: 2,
                               ),
                             ),
@@ -398,7 +481,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                               children: [
                                 AppIconContainer(
                                   icon: cat['icon'],
-                                  color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                  color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                                   size: 40,
                                   opacity: isSelected ? 0.2 : 0.1,
                                 ),
@@ -411,7 +494,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                     style: GoogleFonts.inter(
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
-                                      color: isSelected ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                      color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -424,92 +507,53 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       },
                     ),
                     const SizedBox(height: 32),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: KineticVaultTheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                    // 4. Catatan Tambahan (Bento)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: SavaioTheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.calendar_today, color: KineticVaultTheme.secondary, size: 18),
-                                  const SizedBox(width: 8),
-                                  const AppHeading(
-                                    'Waktu & Tanggal',
-                                    size: AppHeadingSize.subtitle,
-                                    isBold: true,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              _buildBentoValueItem(
-                                label: DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
-                                icon: Icons.calendar_today,
-                                onTap: _pickDate,
-                              ),
-                              const SizedBox(height: 8),
-                                                        _buildBentoValueItem(
-                                                          label: '${DateFormat('HH:mm').format(_selectedDate)} WIB',
-                                                          icon: Icons.schedule,
-                                                          onTap: _pickTime,
-                                                        ),                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: KineticVaultTheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.description, color: KineticVaultTheme.tertiary, size: 18),
-                                  const SizedBox(width: 8),
-                                  const AppHeading(
-                                    'Catatan',
-                                    size: AppHeadingSize.subtitle,
-                                    isBold: true,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _titleController,
-                                maxLines: 3,
-                                style: GoogleFonts.inter(fontSize: 12, color: KineticVaultTheme.onSurface),
-                                decoration: InputDecoration(
-                                  hintText: 'Makan siang bareng temen...',
-                                  hintStyle: TextStyle(color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                                  border: InputBorder.none,
-                                  fillColor: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                                  filled: true,
-                                  contentPadding: const EdgeInsets.all(12),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: KineticVaultTheme.primary.withValues(alpha: 0.3)),
-                                  ),
-                                ),
+                              const Icon(Icons.description, color: SavaioTheme.tertiary, size: 18),
+                              const SizedBox(width: 8),
+                              const AppHeading(
+                                'Catatan Tambahan',
+                                size: AppHeadingSize.subtitle,
+                                isBold: true,
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _descriptionController,
+                            maxLines: 3,
+                            style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface),
+                            decoration: InputDecoration(
+                              hintText: 'Makan siang bareng temen...',
+                              hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                              border: InputBorder.none,
+                              fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              filled: true,
+                              contentPadding: const EdgeInsets.all(12),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
                     GlassCard(
@@ -526,13 +570,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                                   AppHeading(
                                     'Progress Tabungan',
                                     size: AppHeadingSize.subtitle,
-                                    color: KineticVaultTheme.tertiary,
+                                    color: SavaioTheme.tertiary,
                                     isBold: true,
                                   ),
                                   AppHeading(
                                     'Sisa budget makan kamu masih aman!',
                                     size: AppHeadingSize.caption,
-                                    color: KineticVaultTheme.onSurfaceVariant,
+                                    color: SavaioTheme.onSurfaceVariant,
                                     isBold: false,
                                   ),
                                 ],
@@ -546,7 +590,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           const SizedBox(height: 16),
                           const AppProgressBar(
                             value: 0.82,
-                            color: KineticVaultTheme.tertiary,
+                            color: SavaioTheme.tertiary,
                             height: 6,
                           ),
                         ],
@@ -564,7 +608,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [KineticVaultTheme.background.withValues(alpha: 0), KineticVaultTheme.background],
+                      colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -606,7 +650,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               Icon(
                 icon,
                 size: 14,
-                color: isActive ? Colors.white : KineticVaultTheme.onSurfaceVariant,
+                color: isActive ? Colors.white : SavaioTheme.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
               Text(
@@ -614,10 +658,37 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.white : KineticVaultTheme.onSurfaceVariant,
+                  color: isActive ? Colors.white : SavaioTheme.onSurfaceVariant,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAmount(double amount) {
+    return InkWell(
+      onTap: () {
+        final current = double.tryParse(_amountController.text) ?? 0.0;
+        _amountController.text = (current + amount).toStringAsFixed(0);
+        setState(() {});
+      },
+      borderRadius: BorderRadius.circular(100),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: SavaioTheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
+        ),
+        child: Text(
+          '+${(amount / 1000).toStringAsFixed(0)}rb',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: SavaioTheme.primary,
           ),
         ),
       ),
@@ -630,9 +701,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
-          border: onTap != null ? Border.all(color: KineticVaultTheme.primary.withValues(alpha: 0.2)) : null,
+          border: onTap != null ? Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)) : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -640,11 +711,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 11, color: KineticVaultTheme.onSurface),
+                style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(icon, color: KineticVaultTheme.onSurfaceVariant, size: 14),
+            Icon(icon, color: SavaioTheme.onSurfaceVariant, size: 14),
           ],
         ),
       ),

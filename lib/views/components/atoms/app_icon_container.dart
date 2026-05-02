@@ -30,10 +30,10 @@ class AppIconContainer extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: gradient == null ? (color ?? KineticVaultTheme.primary).withValues(alpha: opacity) : null,
+        color: gradient == null ? (color ?? SavaioTheme.primary).withValues(alpha: opacity) : null,
         gradient: gradient,
         shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(KineticVaultTheme.radiusM) : null,
+        borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(SavaioTheme.radiusM) : null,
       ),
       child: _buildIcon(),
     );
@@ -43,7 +43,7 @@ class AppIconContainer extends StatelessWidget {
     if (icon is IconData) {
       return Icon(
         icon as IconData,
-        color: iconColor ?? color ?? KineticVaultTheme.primary,
+        color: iconColor ?? color ?? SavaioTheme.primary,
         size: size * 0.5,
       );
     } else if (icon is String) {

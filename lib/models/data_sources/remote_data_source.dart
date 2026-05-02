@@ -19,6 +19,7 @@ abstract class RemoteDataSource {
   Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month});
   Future<bool> addTransaction({
     required String title,
+    String? description,
     required double amount,
     required String category,
     required String type,
@@ -169,6 +170,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   @override
   Future<bool> addTransaction({
     required String title,
+    String? description,
     required double amount,
     required String category,
     required String type,
@@ -177,7 +179,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     final response = await _post(
       '$baseUrl/transactions/',
       {
-        'description': title,
+        'title': title,
+        'description': description,
         'amount': amount,
         'category': category,
         'type': type.toLowerCase(),

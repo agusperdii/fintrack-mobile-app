@@ -22,7 +22,7 @@ class AppSmartInsightCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -36,7 +36,7 @@ class AppSmartInsightCard extends StatelessWidget {
           AppHeading(
             description,
             size: AppHeadingSize.subtitle,
-            color: KineticVaultTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariant,
             isBold: false,
           ),
           const SizedBox(height: 24),

@@ -29,20 +29,20 @@ class AppButton extends StatelessWidget {
     
     switch (variant) {
       case AppButtonVariant.primary:
-        bgColor = KineticVaultTheme.primary;
-        textColor = KineticVaultTheme.onPrimaryFixed;
+        bgColor = SavaioTheme.primary;
+        textColor = SavaioTheme.onPrimaryFixed;
         break;
       case AppButtonVariant.secondary:
-        bgColor = KineticVaultTheme.surfaceContainerHighest;
-        textColor = KineticVaultTheme.onSurface;
+        bgColor = SavaioTheme.surfaceContainerHighest;
+        textColor = SavaioTheme.onSurface;
         break;
       case AppButtonVariant.error:
-        bgColor = KineticVaultTheme.error;
+        bgColor = SavaioTheme.error;
         textColor = Colors.white;
         break;
       case AppButtonVariant.ghost:
         bgColor = Colors.transparent;
-        textColor = KineticVaultTheme.primary;
+        textColor = SavaioTheme.primary;
         break;
     }
 
@@ -55,10 +55,10 @@ class AppButton extends StatelessWidget {
           foregroundColor: textColor,
           elevation: variant == AppButtonVariant.primary ? 8 : 0,
           shadowColor: variant == AppButtonVariant.primary ? bgColor.withValues(alpha: 0.3) : Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: KineticVaultTheme.spacingL),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KineticVaultTheme.radiusFull)),
+          padding: const EdgeInsets.symmetric(vertical: SavaioTheme.spacingL),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusFull)),
           side: variant == AppButtonVariant.ghost 
-            ? const BorderSide(color: KineticVaultTheme.primary, width: 1.5)
+            ? const BorderSide(color: SavaioTheme.primary, width: 1.5)
             : BorderSide.none,
         ),
         child: isLoading
@@ -68,7 +68,7 @@ class AppButton extends StatelessWidget {
                 children: [
                   if (icon != null) ...[
                     Icon(icon, size: 20),
-                    const SizedBox(width: KineticVaultTheme.spacingS),
+                    const SizedBox(width: SavaioTheme.spacingS),
                   ],
                   Text(
                     label.toUpperCase(),

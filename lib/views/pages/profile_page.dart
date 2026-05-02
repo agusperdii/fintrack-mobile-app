@@ -7,7 +7,8 @@ import '../components/organisms/app_header.dart';
 import '../components/molecules/app_profile_menu_item.dart';
 import '../components/molecules/app_section_header.dart';
 import '../components/atoms/app_heading.dart';
-import 'spending_target_page.dart';
+import 'spending_target_list_page.dart';
+import 'login_page.dart';
 import 'edit_profile_page.dart';
 import 'change_username_page.dart';
 import 'change_password_page.dart';
@@ -37,15 +38,15 @@ class _ProfilePageState extends State<ProfilePage> {
         
         if (provider.isLoading || provider.userProfile == null) {
           return const Scaffold(
-            backgroundColor: KineticVaultTheme.background,
-            body: Center(child: CircularProgressIndicator(color: KineticVaultTheme.primary)),
+            backgroundColor: SavaioTheme.background,
+            body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
           );
         }
 
         final profile = provider.userProfile!;
 
         return Scaffold(
-          backgroundColor: KineticVaultTheme.background,
+          backgroundColor: SavaioTheme.background,
           appBar: AppHeader(
             title: 'Profil',
             showNotification: false,
@@ -60,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerLow,
+                    color: SavaioTheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -76,13 +77,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         AppHeading(
                           profile['handle'] ?? '@user',
                           size: AppHeadingSize.subtitle,
-                          color: KineticVaultTheme.primary,
+                          color: SavaioTheme.primary,
                         ),
                         const SizedBox(height: 4),
                         AppHeading(
                           profile['email']!,
                           size: AppHeadingSize.caption,
-                          color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.7),
+                          color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
                           isBold: false,
                         ),
                       ],
@@ -98,7 +99,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 
                 Container(
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerLow,
+                    color: SavaioTheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: AppProfileMenuItem(
@@ -109,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SpendingTargetPage()),
+                        MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
                       );
                     },
                   ),
@@ -123,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 
                 Container(
                   decoration: BoxDecoration(
-                    color: KineticVaultTheme.surfaceContainerLow,
+                    color: SavaioTheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -191,6 +192,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: 200,
                   onTap: () async {
                     await sl.authController.logout();
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                        (route) => false,
+                      );
+                    }
                   },
                 ),
               ],

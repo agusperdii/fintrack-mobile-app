@@ -22,29 +22,29 @@ class AppHeroAnalysisCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-          padding: const EdgeInsets.all(KineticVaultTheme.spacingXl),
-          borderRadius: KineticVaultTheme.radiusXl,
+          padding: const EdgeInsets.all(SavaioTheme.spacingXl),
+          borderRadius: SavaioTheme.radiusXl,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppHeading(
                 'DAILY AVERAGE'.toUpperCase(),
                 size: AppHeadingSize.caption,
-                color: KineticVaultTheme.onSurfaceVariant,
+                color: SavaioTheme.onSurfaceVariant,
                 isBold: true,
               ),
-              const SizedBox(height: KineticVaultTheme.spacingS),
+              const SizedBox(height: SavaioTheme.spacingS),
               AppHeading(
-                KineticVaultTheme.formatCurrency(averageAmount),
+                SavaioTheme.formatCurrency(averageAmount),
                 size: AppHeadingSize.h1,
               ),
-              const SizedBox(height: KineticVaultTheme.spacingM),
+              const SizedBox(height: SavaioTheme.spacingM),
               AppBadge(
                 label: '${budgetPercentage.toStringAsFixed(0)}% ${isBelowBudget ? 'BELOW' : 'ABOVE'} BUDGET',
                 icon: isBelowBudget ? Icons.trending_down_rounded : Icons.trending_up_rounded,
                 variant: isBelowBudget ? AppBadgeVariant.success : AppBadgeVariant.error,
               ),
-              const SizedBox(height: KineticVaultTheme.spacing2xl),
+              const SizedBox(height: SavaioTheme.spacing2xl),
               SizedBox(
                 height: 120,
                 child: BarChart(
@@ -54,7 +54,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                     barTouchData: BarTouchData(
                       enabled: true,
                       touchTooltipData: BarTouchTooltipData(
-                        getTooltipColor: (_) => KineticVaultTheme.surfaceContainerHighest,
+                        getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
                         tooltipPadding: const EdgeInsets.all(8),
                         tooltipMargin: 8,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -83,7 +83,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                    color: isToday ? KineticVaultTheme.primary : KineticVaultTheme.onSurfaceVariant,
+                                    color: isToday ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                                   ),
                                 ),
                               );
@@ -106,14 +106,14 @@ class AppHeroAnalysisCard extends StatelessWidget {
                         barRods: [
                           BarChartRodData(
                             toY: entry.value.clamp(0.1, 1.0),
-                            gradient: isMax ? KineticVaultTheme.primaryGradient : null,
-                            color: isMax ? null : KineticVaultTheme.surfaceContainerHigh,
+                            gradient: isMax ? SavaioTheme.primaryGradient : null,
+                            color: isMax ? null : SavaioTheme.surfaceContainerHigh,
                             width: 16,
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                             backDrawRodData: BackgroundBarChartRodData(
                               show: true,
                               toY: 1.0,
-                              color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                              color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.1),
                             ),
                           ),
                         ],

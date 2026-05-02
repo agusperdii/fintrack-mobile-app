@@ -20,7 +20,7 @@ class AppTransactionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.type == TransactionType.expense;
     final categoryIcon = sl.financeController.getCategoryIcon(transaction.category);
-    final accentColor = isExpense ? KineticVaultTheme.error : KineticVaultTheme.tertiary;
+    final accentColor = isExpense ? SavaioTheme.error : SavaioTheme.tertiary;
 
     String formattedSubtitle = transaction.date;
     try {
@@ -32,15 +32,15 @@ class AppTransactionItem extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(KineticVaultTheme.radiusL),
+      borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: KineticVaultTheme.spacingM,
-          vertical: KineticVaultTheme.spacingM,
+          horizontal: SavaioTheme.spacingM,
+          vertical: SavaioTheme.spacingM,
         ),
         decoration: BoxDecoration(
-          color: KineticVaultTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(KineticVaultTheme.radiusL),
+          color: SavaioTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
         ),
         child: Row(
           children: [
@@ -52,7 +52,7 @@ class AppTransactionItem extends StatelessWidget {
               opacity: 0.15,
               iconColor: accentColor,
             ),
-            const SizedBox(width: KineticVaultTheme.spacingM),
+            const SizedBox(width: SavaioTheme.spacingM),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,11 +62,11 @@ class AppTransactionItem extends StatelessWidget {
                     size: AppHeadingSize.subtitle,
                     isBold: true,
                   ),
-                  const SizedBox(height: KineticVaultTheme.spacingXs),
+                  const SizedBox(height: SavaioTheme.spacingXs),
                   AppHeading(
                     formattedSubtitle,
                     size: AppHeadingSize.caption,
-                    color: KineticVaultTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariant,
                     isBold: false,
                   ),
                 ],
@@ -76,12 +76,12 @@ class AppTransactionItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 AppHeading(
-                  '${isExpense ? "-" : "+"}${KineticVaultTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense)}',
+                  '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense)}',
                   size: AppHeadingSize.subtitle,
-                  color: isExpense ? KineticVaultTheme.onSurface : KineticVaultTheme.primary,
+                  color: isExpense ? SavaioTheme.onSurface : SavaioTheme.primary,
                   isBold: true,
                 ),
-                const SizedBox(height: KineticVaultTheme.spacingXs),
+                const SizedBox(height: SavaioTheme.spacingXs),
                 AppHeading(
                   isExpense ? 'Expense' : 'Income',
                   size: AppHeadingSize.caption,

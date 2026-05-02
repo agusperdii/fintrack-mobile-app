@@ -33,19 +33,19 @@ class AppNotificationCard extends StatelessWidget {
 
     switch (variant) {
       case AppNotificationVariant.warning:
-        color = KineticVaultTheme.error;
+        color = SavaioTheme.error;
         icon = Icons.warning;
         break;
       case AppNotificationVariant.success:
-        color = KineticVaultTheme.tertiary;
+        color = SavaioTheme.tertiary;
         icon = Icons.check_circle;
         break;
       case AppNotificationVariant.streak:
-        color = KineticVaultTheme.secondary;
+        color = SavaioTheme.secondary;
         icon = Icons.fireplace;
         break;
       case AppNotificationVariant.info:
-        color = KineticVaultTheme.primary;
+        color = SavaioTheme.primary;
         icon = Icons.lightbulb;
         break;
     }
@@ -57,7 +57,7 @@ class AppNotificationCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       borderColor: variant == AppNotificationVariant.warning && !isRead
           ? color.withValues(alpha: 0.5) 
-          : KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.1),
+          : SavaioTheme.onSurfaceVariant.withValues(alpha: 0.1),
       borderWidth: 1,
       child: Opacity(
         opacity: isRead ? 0.6 : 1.0,
@@ -97,7 +97,7 @@ class AppNotificationCard extends StatelessWidget {
                         AppHeading(
                           time,
                           size: AppHeadingSize.caption,
-                          color: KineticVaultTheme.onSurface.withValues(alpha: 0.4),
+                          color: SavaioTheme.onSurface.withValues(alpha: 0.4),
                           isBold: false,
                         ),
                       ],

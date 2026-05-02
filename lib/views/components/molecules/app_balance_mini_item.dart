@@ -33,7 +33,7 @@ class AppBalanceMiniItem extends StatelessWidget {
               AppHeading(
                 label,
                 size: AppHeadingSize.caption,
-                color: KineticVaultTheme.onSurfaceVariant,
+                color: SavaioTheme.onSurfaceVariant,
                 isBold: false,
               ),
             ],

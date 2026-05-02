@@ -22,7 +22,7 @@ class AppWeeklyPulseChart extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: KineticVaultTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -37,17 +37,17 @@ class AppWeeklyPulseChart extends StatelessWidget {
                   const AppHeading(
                     'WEEKLY PULSE',
                     size: AppHeadingSize.caption,
-                    color: KineticVaultTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariant,
                     isBold: true,
                   ),
                   AppHeading(
                     'Growth ${growth >= 0 ? "+" : ""}${growth.toStringAsFixed(1)}%',
                     size: AppHeadingSize.h3,
-                    color: growth >= 0 ? KineticVaultTheme.tertiary : KineticVaultTheme.error,
+                    color: growth >= 0 ? SavaioTheme.tertiary : SavaioTheme.error,
                   ),
                 ],
               ),
-              Icon(Icons.insights, color: KineticVaultTheme.onSurfaceVariant.withValues(alpha: 0.3), size: 18),
+              Icon(Icons.insights, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.3), size: 18),
             ],
           ),
           const SizedBox(height: 24),
@@ -60,10 +60,10 @@ class AppWeeklyPulseChart extends StatelessWidget {
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => KineticVaultTheme.surfaceContainerHighest,
+                    getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
-                        KineticVaultTheme.formatCurrency(rod.toY),
+                        SavaioTheme.formatCurrency(rod.toY),
                         const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
                       );
                     },
@@ -79,13 +79,13 @@ class AppWeeklyPulseChart extends StatelessWidget {
                     barRods: [
                       BarChartRodData(
                         toY: entry.value,
-                        color: isMax ? KineticVaultTheme.tertiary : KineticVaultTheme.surfaceContainerHighest,
+                        color: isMax ? SavaioTheme.tertiary : SavaioTheme.surfaceContainerHighest,
                         width: 14,
                         borderRadius: BorderRadius.circular(4),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: displayMax,
-                          color: KineticVaultTheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                          color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.1),
                         ),
                       ),
                     ],

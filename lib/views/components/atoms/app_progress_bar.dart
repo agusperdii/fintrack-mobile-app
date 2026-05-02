@@ -20,8 +20,8 @@ class AppProgressBar extends StatelessWidget {
       child: LinearProgressIndicator(
         value: value.clamp(0.0, 1.0),
         minHeight: height,
-        backgroundColor: KineticVaultTheme.surfaceContainerHighest,
-        valueColor: AlwaysStoppedAnimation<Color>(color ?? KineticVaultTheme.primary),
+        backgroundColor: SavaioTheme.surfaceContainerHighest,
+        valueColor: AlwaysStoppedAnimation<Color>(color ?? SavaioTheme.primary),
       ),
     );
   }

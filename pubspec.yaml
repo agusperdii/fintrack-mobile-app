@@ -1,4 +1,4 @@
-name: habitra
+name: savaio
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -48,6 +48,30 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.1
+
+flutter_native_splash:
+  color: "#0C0E12"
+  image: assets/savaio-splash.png
+  
+  android_12:
+    image: assets/savaio-splash.png
+    color: "#0C0E12"
+
+  ios: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/savaio-splash.png"
+  image_path_ios_dark: "assets/savaio-splash.png"
+  image_path_ios_tinted: "assets/savaio-splash.png"
+  background_color_ios_dark: "#0C0E12"
+  desaturate_tinted_to_grayscale_ios: true
+  min_sdk_android: 21
+  remove_alpha_ios: true
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -65,6 +89,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/savaio-splash.png
 
   # To add assets to your application, add an assets section, like this:
 
