@@ -15,7 +15,7 @@ class DailyCheckInCard extends StatelessWidget {
         final provider = sl.financeController;
         final status = provider.checkInStatus;
 
-        if (status == null) return const SizedBox.shrink();
+        if (status == null || status.isCheckedInToday) return const SizedBox.shrink();
 
         return Container(
           padding: const EdgeInsets.all(20),
@@ -41,20 +41,18 @@ class DailyCheckInCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppHeading(
+                    AppHeading(
                       'Daily Check-in',
                       size: AppHeadingSize.subtitle,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
-                      status.isCheckedInToday 
-                          ? 'Streak ${status.streakCount} hari! Sampai jumpa besok.'
-                          : 'Ayo check-in hari ini untuk jaga streak kamu!',
-                      style: const TextStyle(
+                      'Ayo check-in hari ini untuk jaga streak kamu!',
+                      style: TextStyle(
                         color: SavaioTheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
@@ -63,36 +61,12 @@ class DailyCheckInCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              if (!status.isCheckedInToday)
-                AppButton(
-                  onTap: () => provider.performCheckIn(),
-                  label: 'Check-in',
-                  small: true,
-                  width: 90,
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: SavaioTheme.success.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle_rounded, size: 14, color: SavaioTheme.success),
-                      SizedBox(width: 4),
-                      Text(
-                        'Done',
-                        style: TextStyle(
-                          color: SavaioTheme.success,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              AppButton(
+                onTap: () => provider.performCheckIn(),
+                label: 'Check-in',
+                small: true,
+                width: 90,
+              ),
             ],
           ),
         );

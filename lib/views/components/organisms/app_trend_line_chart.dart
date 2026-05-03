@@ -3,10 +3,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/views/components/molecules/app_segment_toggle_button.dart';
 
-class AppTrendLineChart extends StatelessWidget {
+class AppTrendLineChart extends StatefulWidget {
   final String title;
+  final List<FlSpot>? spots;
   final List<String> days;
   final int activeDayIndex;
   final bool isWeekly;
@@ -15,6 +15,7 @@ class AppTrendLineChart extends StatelessWidget {
   const AppTrendLineChart({
     super.key,
     required this.title,
+    this.spots,
     this.days = const ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'],
     this.activeDayIndex = 3,
     this.isWeekly = true,
@@ -22,18 +23,50 @@ class AppTrendLineChart extends StatelessWidget {
   });
 
   @override
+  State<AppTrendLineChart> createState() => _AppTrendLineChartState();
+}
+
+class _AppTrendLineChartState extends State<AppTrendLineChart> {
+  List<Color> gradientColors = [
+    SavaioTheme.primary,
+    SavaioTheme.secondary,
+  ];
+
+  @override
   Widget build(BuildContext context) {
+    final spots = widget.spots ?? const [
+      FlSpot(0, 3),
+      FlSpot(1, 1),
+      FlSpot(2, 4),
+      FlSpot(3, 2),
+      FlSpot(4, 5),
+      FlSpot(5, 3),
+      FlSpot(6, 4),
+    ];
+
     return GlassCard(
       padding: const EdgeInsets.all(24),
-      borderRadius: 16,
+      borderRadius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              AppHeading(title, size: AppHeadingSize.h3),
-              const SizedBox(height: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppHeading(widget.title, size: AppHeadingSize.h3),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.isWeekly ? 'Pengeluaran 7 hari terakhir' : 'Pengeluaran bulan ini',
+                    style: const TextStyle(
+                      color: SavaioTheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -44,15 +77,15 @@ class AppTrendLineChart extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppSegmentToggleButton(
-                      label: 'Minggu Ini', 
-                      isActive: isWeekly, 
-                      onTap: () => onPeriodChanged(true)
+                    _CompactToggleButton(
+                      label: 'M', 
+                      isActive: widget.isWeekly, 
+                      onTap: () => widget.onPeriodChanged(true)
                     ),
-                    AppSegmentToggleButton(
-                      label: 'Bulan Ini', 
-                      isActive: !isWeekly, 
-                      onTap: () => onPeriodChanged(false)
+                    _CompactToggleButton(
+                      label: 'B', 
+                      isActive: !widget.isWeekly, 
+                      onTap: () => widget.onPeriodChanged(false)
                     ),
                   ],
                 ),
@@ -61,12 +94,26 @@ class AppTrendLineChart extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           SizedBox(
-            height: 180,
+            height: 200,
             width: double.infinity,
             child: LineChart(
               LineChartData(
-                gridData: const FlGridData(show: false),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: 1.5,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
                 titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -74,16 +121,14 @@ class AppTrendLineChart extends StatelessWidget {
                       interval: 1,
                       getTitlesWidget: (value, meta) {
                         final index = value.toInt();
-                        if (index >= 0 && index < days.length) {
-                          final isToday = index == activeDayIndex;
+                        if (index >= 0 && index < widget.days.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              days[index],
-                              style: TextStyle(
+                              widget.days[index],
+                              style: const TextStyle(
                                 fontSize: 10,
-                                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                color: isToday ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+                                color: SavaioTheme.onSurfaceVariant,
                               ),
                             ),
                           );
@@ -92,53 +137,38 @@ class AppTrendLineChart extends StatelessWidget {
                       },
                     ),
                   ),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: 6,
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        return LineTooltipItem(
+                          SavaioTheme.formatCurrency(spot.y * 100000), // Scaled for display
+                          const TextStyle(
+                            color: SavaioTheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3),
-                      FlSpot(1, 1),
-                      FlSpot(2, 4),
-                      FlSpot(3, 2),
-                      FlSpot(4, 5),
-                      FlSpot(5, 3),
-                      FlSpot(6, 4),
-                    ],
+                    spots: spots,
                     isCurved: true,
-                    gradient: const LinearGradient(
-                      colors: [SavaioTheme.primary, SavaioTheme.secondary],
-                    ),
+                    gradient: LinearGradient(colors: gradientColors),
                     barWidth: 4,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        if (index == activeDayIndex) {
-                          return FlDotCirclePainter(
-                            radius: 6,
-                            color: SavaioTheme.primary,
-                            strokeWidth: 2,
-                            strokeColor: Colors.white,
-                          );
-                        }
-                        return FlDotCirclePainter(radius: 0);
-                      },
-                    ),
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
                       gradient: LinearGradient(
-                        colors: [
-                          SavaioTheme.primary.withValues(alpha: 0.3),
-                          SavaioTheme.secondary.withValues(alpha: 0.0),
-                        ],
+                        colors: gradientColors
+                            .map((color) => color.withValues(alpha: 0.15))
+                            .toList(),
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -149,6 +179,48 @@ class AppTrendLineChart extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CompactToggleButton extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _CompactToggleButton({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: SavaioTheme.durationFast,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? SavaioTheme.surfaceContainerHigh : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: isActive ? [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ] : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }

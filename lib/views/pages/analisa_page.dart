@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
@@ -161,6 +162,11 @@ class _AnalisaPageState extends State<AnalisaPage> {
                   AppTrendLineChart(
                     title: 'Tren Ledger',
                     isWeekly: _isWeeklyTrend,
+                    spots: provider.weeklyPulse != null 
+                        ? (provider.weeklyPulse!['values'] as List).asMap().entries.map((e) {
+                            return FlSpot(e.key.toDouble(), (e.value as num).toDouble() / 100000);
+                          }).toList()
+                        : null,
                     onPeriodChanged: (isWeekly) {
                       setState(() {
                         _isWeeklyTrend = isWeekly;

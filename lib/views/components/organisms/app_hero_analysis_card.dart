@@ -5,19 +5,8 @@ import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_badge.dart';
 
-class AppHeroAnalysisCard extends StatelessWidget {
-  final double averageAmount;
-  final double budgetPercentage; 
-  final List<double> dailyValues;
-  final bool isBelowBudget;
-
-  const AppHeroAnalysisCard({
-    super.key,
-    required this.averageAmount,
-    required this.budgetPercentage,
-    required this.dailyValues,
-    this.isBelowBudget = true,
-  });
+class _AppHeroAnalysisCardState extends State<AppHeroAnalysisCard> {
+  int touchedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +24,14 @@ class AppHeroAnalysisCard extends StatelessWidget {
               ),
               const SizedBox(height: SavaioTheme.spacingS),
               AppHeading(
-                SavaioTheme.formatCurrency(averageAmount),
+                SavaioTheme.formatCurrency(widget.averageAmount),
                 size: AppHeadingSize.h1,
               ),
               const SizedBox(height: SavaioTheme.spacingM),
               AppBadge(
-                label: '${budgetPercentage.toStringAsFixed(0)}% ${isBelowBudget ? 'BELOW' : 'ABOVE'} BUDGET',
-                icon: isBelowBudget ? Icons.trending_down_rounded : Icons.trending_up_rounded,
-                variant: isBelowBudget ? AppBadgeVariant.success : AppBadgeVariant.error,
+                label: '${widget.budgetPercentage.toStringAsFixed(0)}% ${widget.isBelowBudget ? 'BELOW' : 'ABOVE'} BUDGET',
+                icon: widget.isBelowBudget ? Icons.trending_down_rounded : Icons.trending_up_rounded,
+                variant: widget.isBelowBudget ? AppBadgeVariant.success : AppBadgeVariant.error,
               ),
               const SizedBox(height: SavaioTheme.spacing2xl),
               SizedBox(
@@ -53,14 +42,28 @@ class AppHeroAnalysisCard extends StatelessWidget {
                     maxY: 1.0,
                     barTouchData: BarTouchData(
                       enabled: true,
+                      touchCallback: (FlTouchEvent event, barTouchResponse) {
+                        setState(() {
+                          if (!event.isInterestedForInteractions ||
+                              barTouchResponse == null ||
+                              barTouchResponse.spot == null) {
+                            touchedIndex = -1;
+                            return;
+                          }
+                          touchedIndex = barTouchResponse.spot!.touchedBarGroupIndex;
+                        });
+                      },
                       touchTooltipData: BarTouchTooltipData(
                         getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
-                        tooltipPadding: const EdgeInsets.all(8),
+                        tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         tooltipMargin: 8,
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
                             '${(rod.toY * 100).toStringAsFixed(0)}%',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            const TextStyle(
+                              color: SavaioTheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           );
                         },
                       ),
@@ -74,7 +77,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                             const days = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'];
                             final index = value.toInt();
                             if (index >= 0 && index < days.length) {
-                              final isToday = index == 3; // Mock today as KAM
+                              final isTouched = index == touchedIndex;
                               return SideTitleWidget(
                                 axisSide: meta.axisSide,
                                 space: 8,
@@ -82,8 +85,8 @@ class AppHeroAnalysisCard extends StatelessWidget {
                                   days[index],
                                   style: TextStyle(
                                     fontSize: 10,
-                                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                    color: isToday ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+                                    fontWeight: isTouched ? FontWeight.bold : FontWeight.normal,
+                                    color: isTouched ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                                   ),
                                 ),
                               );
@@ -99,31 +102,52 @@ class AppHeroAnalysisCard extends StatelessWidget {
                     ),
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
-                    barGroups: dailyValues.asMap().entries.map((entry) {
-                      final isMax = entry.value == dailyValues.reduce((a, b) => a > b ? a : b);
+                    barGroups: widget.dailyValues.asMap().entries.map((entry) {
+                      final isMax = entry.value == widget.dailyValues.reduce((a, b) => a > b ? a : b);
+                      final isTouched = entry.key == touchedIndex;
+                      
                       return BarChartGroupData(
                         x: entry.key,
                         barRods: [
                           BarChartRodData(
                             toY: entry.value.clamp(0.1, 1.0),
-                            gradient: isMax ? SavaioTheme.primaryGradient : null,
-                            color: isMax ? null : SavaioTheme.surfaceContainerHigh,
+                            gradient: (isMax || isTouched) ? SavaioTheme.primaryGradient : null,
+                            color: (isMax || isTouched) ? null : SavaioTheme.secondary.withValues(alpha: 0.4),
                             width: 16,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                             backDrawRodData: BackgroundBarChartRodData(
                               show: true,
                               toY: 1.0,
-                              color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.1),
+                              color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
                       );
                     }).toList(),
                   ),
+                  duration: const Duration(milliseconds: 250),
                 ),
               ),
             ],
           ),
         );
   }
+}
+
+class AppHeroAnalysisCard extends StatefulWidget {
+  final double averageAmount;
+  final double budgetPercentage; 
+  final List<double> dailyValues;
+  final bool isBelowBudget;
+
+  const AppHeroAnalysisCard({
+    super.key,
+    required this.averageAmount,
+    required this.budgetPercentage,
+    required this.dailyValues,
+    this.isBelowBudget = true,
+  });
+
+  @override
+  State<AppHeroAnalysisCard> createState() => _AppHeroAnalysisCardState();
 }
