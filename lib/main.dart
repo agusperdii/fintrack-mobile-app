@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/theme/app_theme.dart';
-import 'core/utils/service_locator.dart';
-import 'views/pages/main_screen.dart';
-import 'views/pages/login_page.dart';
-import 'controllers/auth_controller.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/layouts/main_layout.dart';
+import 'package:savaio/views/pages/login_page.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         home: Consumer<AuthController>(
           builder: (context, auth, _) {
             return auth.isAuthenticated
-                ? const MainScreen()
+                ? const MainLayout()
                 : const LoginPage();
           },
         ),

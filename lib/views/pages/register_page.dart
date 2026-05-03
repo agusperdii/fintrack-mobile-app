@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/auth_controller.dart';
-import '../../core/theme/app_theme.dart';
-import 'main_screen.dart';
+import 'package:savaio/controllers/auth_controller.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/layouts/main_layout.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -40,7 +40,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (loginSuccess && mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
+          MaterialPageRoute(builder: (_) => const MainLayout()),
           (route) => false,
         );
       }

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/app_avatar.dart';
-import '../components/atoms/app_button.dart';
-import '../components/organisms/app_header.dart';
-import '../components/molecules/app_profile_menu_item.dart';
-import '../components/molecules/app_section_header.dart';
-import '../components/atoms/app_heading.dart';
-import 'spending_target_list_page.dart';
-import 'login_page.dart';
-import 'edit_profile_page.dart';
-import 'change_username_page.dart';
-import 'change_password_page.dart';
-import 'placeholder_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/app_avatar.dart';
+import 'package:savaio/views/components/atoms/app_button.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/molecules/app_profile_menu_item.dart';
+import 'package:savaio/views/components/molecules/app_section_header.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/pages/spending_target_list_page.dart';
+import 'package:savaio/views/pages/login_page.dart';
+import 'package:savaio/views/pages/edit_profile_page.dart';
+import 'package:savaio/views/pages/change_username_page.dart';
+import 'package:savaio/views/pages/change_password_page.dart';
+import 'package:savaio/views/pages/placeholder_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

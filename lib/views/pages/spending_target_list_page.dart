@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/glass_card.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/atoms/app_progress_bar.dart';
-import '../components/atoms/app_icon_container.dart';
-import '../components/molecules/app_date_time_picker.dart';
-import 'spending_target_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_progress_bar.dart';
+import 'package:savaio/views/components/atoms/app_icon_container.dart';
+import 'package:savaio/views/components/molecules/app_date_time_picker.dart';
+import 'package:savaio/views/pages/spending_target_page.dart';
 
 class SpendingTargetListPage extends StatefulWidget {
   const SpendingTargetListPage({super.key});

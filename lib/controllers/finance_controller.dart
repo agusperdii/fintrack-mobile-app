@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/entities/app_data.dart';
-import '../models/repositories/finance_repository.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/repositories/finance_repository.dart';
 
-import '../models/entities/nudge_data.dart';
+import 'package:savaio/models/nudge_data.dart';
+import 'package:savaio/models/notification_data.dart';
+import 'package:savaio/models/checkin_data.dart';
 
 class FinanceController extends ChangeNotifier {
   final FinanceRepository _repository;
@@ -20,6 +20,8 @@ class FinanceController extends ChangeNotifier {
   List<Transaction>? _transactions;
   List<Map<String, dynamic>>? _monthlySummary;
   List<NudgeData> _nudges = [];
+  List<NotificationData> _notifications = [];
+  CheckInStatus? _checkInStatus;
   bool _isLoading = false;
 
   // --- Categories ---
@@ -45,9 +47,13 @@ class FinanceController extends ChangeNotifier {
   List<Transaction>? get transactions => _transactions;
   List<Map<String, dynamic>>? get monthlySummary => _monthlySummary;
   List<NudgeData> get nudges => _nudges;
+  List<NotificationData> get notifications => _notifications;
+  CheckInStatus? get checkInStatus => _checkInStatus;
   bool get isLoading => _isLoading;
   List<Map<String, dynamic>> get categories => _categories;
   
+  int get unreadNotificationsCount => _notifications.where((n) => !n.isRead).length;
+
   NudgeData? get latestUnreadNudge {
     if (_nudges.isEmpty) return null;
     try {
@@ -91,6 +97,8 @@ class FinanceController extends ChangeNotifier {
         _repository.getWeeklyPulse(),
         _repository.getNudges(),
         loadCategories(),
+        _repository.getNotifications(),
+        _repository.getCheckInStatus(),
       ]);
       _dashboardData = results[0] as AppData;
       _spendingTarget = results[1] as Map<String, dynamic>;
@@ -98,6 +106,8 @@ class FinanceController extends ChangeNotifier {
       _allBudgets = results[3] as List<Map<String, dynamic>>;
       _weeklyPulse = results[4] as Map<String, dynamic>;
       _nudges = results[5] as List<NudgeData>;
+      _notifications = results[7] as List<NotificationData>;
+      _checkInStatus = results[8] as CheckInStatus;
     } catch (e) {
       debugPrint("Error fetching data: $e");
     } finally {
@@ -106,6 +116,8 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<void> loadInitialData() async {
+    if (_isLoading) return;
+    
     _setLoading(true);
     try {
       await loadCategories();
@@ -118,6 +130,8 @@ class FinanceController extends ChangeNotifier {
       final profileFuture = _repository.getUserProfile();
       final summaryFuture = _repository.getMonthlySummary();
       final nudgesFuture = _repository.getNudges();
+      final notificationsFuture = _repository.getNotifications();
+      final checkInStatusFuture = _repository.getCheckInStatus();
 
       // Handle each result as it arrives to update UI incrementally
       dashboardFuture.then((data) {
@@ -132,6 +146,20 @@ class FinanceController extends ChangeNotifier {
         notifyListeners();
       }).catchError((e) {
         debugPrint("Error nudges: $e");
+      });
+
+      notificationsFuture.then((data) {
+        _notifications = data;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint("Error notifications: $e");
+      });
+
+      checkInStatusFuture.then((data) {
+        _checkInStatus = data;
+        notifyListeners();
+      }).catchError((e) {
+        debugPrint("Error checkin status: $e");
       });
 
       targetFuture.then((data) {
@@ -170,10 +198,11 @@ class FinanceController extends ChangeNotifier {
       });
 
       // Wait for at least the essential dashboard data before hiding initial loading
+      // but add a local timeout just in case the repository timeout is too long
       try {
-        await dashboardFuture;
+        await dashboardFuture.timeout(const Duration(seconds: 5));
       } catch (e) {
-        debugPrint("Essential data failed: $e");
+        debugPrint("Essential data timed out or failed: $e");
       }
     } catch (e) {
       debugPrint("Error loading initial data: $e");
@@ -191,6 +220,62 @@ class FinanceController extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching nudges: $e");
     }
+  }
+
+  Future<void> fetchNotifications() async {
+    try {
+      _notifications = await _repository.getNotifications();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching notifications: $e");
+    }
+  }
+
+  Future<void> markNotificationAsRead(String id) async {
+    final success = await _repository.markNotificationRead(id);
+    if (success) {
+      final index = _notifications.indexWhere((n) => n.id == id);
+      if (index != -1) {
+        _notifications[index] = NotificationData(
+          id: _notifications[index].id,
+          title: _notifications[index].title,
+          message: _notifications[index].message,
+          type: _notifications[index].type,
+          isRead: true,
+          createdAt: _notifications[index].createdAt,
+          extraData: _notifications[index].extraData,
+        );
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    final success = await _repository.deleteNotification(id);
+    if (success) {
+      _notifications.removeWhere((n) => n.id == id);
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchCheckInStatus() async {
+    try {
+      _checkInStatus = await _repository.getCheckInStatus();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching check-in status: $e");
+    }
+  }
+
+  Future<bool> performCheckIn() async {
+    final success = await _repository.performCheckIn();
+    if (success) {
+      await Future.wait([
+        fetchCheckInStatus(),
+        fetchNotifications(),
+      ]);
+    }
+    return success;
   }
 
   Future<void> markNudgeAsRead(String id) async {
@@ -213,21 +298,22 @@ class FinanceController extends ChangeNotifier {
 
   Future<void> loadCategories() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? categoriesJson = prefs.getString('custom_categories');
-      if (categoriesJson != null) {
-        final List<dynamic> decoded = jsonDecode(categoriesJson);
-        final List<Map<String, dynamic>> savedCategories = decoded.cast<Map<String, dynamic>>();
-        
-        // Merge with default categories, avoiding duplicates by name
-        for (var saved in savedCategories) {
-          if (!_categories.any((c) => c['name'] == saved['name'])) {
-            _categories.add(saved);
-          }
-        }
+      final fetchedCategories = await _repository.getCategories();
+      
+      // Clear current categories and add fetched ones
+      _categories.clear();
+      for (var cat in fetchedCategories) {
+        _categories.add({
+          'id': cat['id'],
+          'name': cat['name'],
+          'icon': cat['icon'],
+          'isEmoji': true, // Assuming icons are emojis for now
+          'isSystem': cat['is_system'] ?? false,
+        });
       }
     } catch (e) {
-      debugPrint("Error loading categories: $e");
+      debugPrint("Error loading categories from API: $e");
+      // Fallback to defaults if needed, but the API should return them
     }
     notifyListeners();
   }
@@ -235,26 +321,23 @@ class FinanceController extends ChangeNotifier {
   Future<void> addCustomCategory(String name, String icon) async {
     if (name.isEmpty || icon.isEmpty) return;
     
-    final newCategory = {'name': name, 'icon': icon, 'isEmoji': true};
-    
-    // Avoid duplicates
+    // Avoid duplicates locally first
     if (_categories.any((c) => c['name'].toLowerCase() == name.toLowerCase())) {
       return;
     }
 
-    _categories.add(newCategory);
-    notifyListeners();
-
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final customOnly = _categories.where((c) {
-        // Simple check to identify custom categories: not in the original hardcoded list
-        final defaultNames = ['Food', 'Salary', 'Coffee', 'Transport', 'Investment', 'Education', 'Gift', 'Fun', 'Uang Saku', 'Kost/Sewa'];
-        return !defaultNames.contains(c['name']);
-      }).toList();
-      await prefs.setString('custom_categories', jsonEncode(customOnly));
+      final newCat = await _repository.addCategory(name, icon);
+      _categories.add({
+        'id': newCat['id'],
+        'name': newCat['name'],
+        'icon': newCat['icon'],
+        'isEmoji': true,
+        'isSystem': false,
+      });
+      notifyListeners();
     } catch (e) {
-      debugPrint("Error saving category: $e");
+      debugPrint("Error saving category to API: $e");
     }
   }
 

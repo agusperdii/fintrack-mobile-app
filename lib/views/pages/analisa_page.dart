@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/organisms/app_header.dart';
-import '../components/organisms/app_hero_analysis_card.dart';
-import '../components/organisms/app_smart_insight_card.dart';
-import '../components/organisms/app_category_card.dart';
-import '../components/organisms/app_trend_line_chart.dart';
-import '../components/organisms/app_category_pie_chart.dart';
-import '../components/molecules/app_section_header.dart';
-import 'placeholder_page.dart';
-import 'spending_target_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/organisms/app_hero_analysis_card.dart';
+import 'package:savaio/views/components/organisms/app_smart_insight_card.dart';
+import 'package:savaio/views/components/organisms/app_category_card.dart';
+import 'package:savaio/views/components/organisms/app_trend_line_chart.dart';
+import 'package:savaio/views/components/organisms/app_category_pie_chart.dart';
+import 'package:savaio/views/components/molecules/app_section_header.dart';
+import 'package:savaio/views/pages/placeholder_page.dart';
+import 'package:savaio/views/pages/spending_target_page.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/atoms/app_button.dart';
-import 'add_transaction_page.dart';
-import '../../models/entities/ocr_result.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_button.dart';
+import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/models/ocr_result.dart';
 
 class OcrScanPage extends StatefulWidget {
   const OcrScanPage({super.key});

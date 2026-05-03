@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/molecules/app_notification_card.dart';
-import '../components/organisms/app_header.dart';
-import '../../models/entities/nudge_data.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/molecules/app_notification_card.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:intl/intl.dart';
 
-import 'spending_target_page.dart';
-import 'analisa_page.dart';
+import 'package:savaio/models/notification_data.dart' as model;
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -19,7 +17,7 @@ class NotificationsPage extends StatelessWidget {
       listenable: sl.financeController,
       builder: (context, _) {
         final provider = sl.financeController;
-        final nudges = provider.nudges;
+        final notifications = provider.notifications;
 
         return Scaffold(
           backgroundColor: SavaioTheme.background,
@@ -29,7 +27,7 @@ class NotificationsPage extends StatelessWidget {
             showNotification: false,
           ),
           body: RefreshIndicator(
-            onRefresh: () => provider.fetchNudges(),
+            onRefresh: () => provider.fetchNotifications(),
             color: SavaioTheme.primary,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -41,11 +39,11 @@ class NotificationsPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const AppHeading('Notifikasi', size: AppHeadingSize.h2),
-                      if (nudges.any((n) => !n.isRead))
+                      if (notifications.any((n) => !n.isRead))
                         TextButton(
                           onPressed: () {
-                            for (var n in nudges) {
-                              if (!n.isRead) provider.markNudgeAsRead(n.id);
+                            for (var n in notifications) {
+                              if (!n.isRead) provider.markNotificationAsRead(n.id);
                             }
                           },
                           child: const Text(
@@ -57,7 +55,7 @@ class NotificationsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
 
-                  if (nudges.isEmpty)
+                  if (notifications.isEmpty)
                     Center(
                       child: Column(
                         children: [
@@ -69,9 +67,9 @@ class NotificationsPage extends StatelessWidget {
                       ),
                     )
                   else
-                    ...nudges.map((nudge) => Padding(
+                    ...notifications.map((notif) => Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildNudgeCard(context, nudge),
+                      child: _buildNotificationCard(context, notif),
                     )),
 
                   const SizedBox(height: 32),
@@ -84,41 +82,18 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildNudgeCard(BuildContext context, NudgeData nudge) {
+  Widget _buildNotificationCard(BuildContext context, model.NotificationData notif) {
     final provider = sl.financeController;
     AppNotificationVariant variant = AppNotificationVariant.info;
-    if (nudge.type == NudgeType.warning) variant = AppNotificationVariant.warning;
-    if (nudge.type == NudgeType.positive) variant = AppNotificationVariant.success;
+    if (notif.type == model.NotificationType.warning) variant = AppNotificationVariant.warning;
+    if (notif.type == model.NotificationType.success) variant = AppNotificationVariant.success;
+    if (notif.type == model.NotificationType.streak) variant = AppNotificationVariant.success;
 
     List<Widget>? actions;
-    if (!nudge.isRead) {
+    if (!notif.isRead) {
       actions = [
-        if (nudge.type == NudgeType.warning) ...[
-          GestureDetector(
-            onTap: () {
-              provider.markNudgeAsRead(nudge.id);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SpendingTargetPage(initialCategory: nudge.targetCategory)),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: SavaioTheme.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: SavaioTheme.error.withValues(alpha: 0.3)),
-              ),
-              child: const Text(
-                'LIHAT BUDGET',
-                style: TextStyle(color: SavaioTheme.error, fontSize: 10, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
         GestureDetector(
-          onTap: () => provider.markNudgeAsRead(nudge.id),
+          onTap: () => provider.markNotificationAsRead(notif.id),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -137,42 +112,34 @@ class NotificationsPage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        if (!nudge.isRead) {
-          provider.markNudgeAsRead(nudge.id);
-        }
-        
-        // Intelligent Redirection
-        if (nudge.type == NudgeType.warning) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => SpendingTargetPage(initialCategory: nudge.targetCategory)),
-          );
-        } else if (nudge.type == NudgeType.positive) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AnalisaPage()),
-          );
-        } else {
-          // For info/reminder, we might just stay or go to Dashboard
-          Navigator.pop(context); // Go back to dashboard
+        if (!notif.isRead) {
+          provider.markNotificationAsRead(notif.id);
         }
       },
       child: AppNotificationCard(
-        category: nudge.type.name.toUpperCase(),
-        time: _formatTime(nudge.createdAt),
+        category: notif.type.name.toUpperCase(),
+        time: _formatTime(notif.createdAt),
         variant: variant,
         actions: actions,
-        isRead: nudge.isRead,
+        isRead: notif.isRead,
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              nudge.message,
+              notif.title,
               style: TextStyle(
-                color: nudge.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface,
+                color: notif.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              notif.message,
+              style: TextStyle(
+                color: notif.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface.withValues(alpha: 0.8),
                 fontSize: 13,
                 height: 1.5,
-                fontWeight: nudge.isRead ? FontWeight.normal : FontWeight.w600,
               ),
             ),
           ],

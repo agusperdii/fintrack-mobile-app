@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../models/entities/nudge_data.dart';
-import '../../pages/spending_target_page.dart';
-import '../atoms/app_heading.dart';
-import '../atoms/app_button.dart';
-import '../atoms/app_icon_container.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/models/nudge_data.dart';
+import 'package:savaio/views/pages/spending_target_page.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_button.dart';
+import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
 class NudgeOverlay extends StatelessWidget {
   final NudgeData nudge;

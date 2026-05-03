@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../atoms/glass_card.dart';
-import '../atoms/app_heading.dart';
-import '../molecules/app_balance_mini_item.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/molecules/app_balance_mini_item.dart';
 
 class AppBalanceCard extends StatelessWidget {
   final double balance;

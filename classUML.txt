@@ -1,0 +1,184 @@
+classDiagram
+    %% --- CORE & UTILS ---
+    class ServiceLocator {
+        +RemoteDataSource remoteDataSource
+        +FinanceRepository financeRepository
+        +FinanceController financeController
+        +AuthController authController
+        +OcrController ocrController
+        +OcrRepository ocrRepository
+        +OcrDataSource ocrDataSource
+        +setup()
+    }
+
+    class ApiConfig {
+        +String baseUrl$
+        +String ocrBaseUrl$
+    }
+
+    class ParserUtils {
+        +toDouble(dynamic value)$
+    }
+
+    class SavaioTheme {
+        +ThemeData theme$
+    }
+
+    %% --- ENTITIES ---
+    class TransactionType {
+        <<enumeration>>
+        income
+        expense
+    }
+
+    class AppData {
+        +double initialBalance
+        +double totalIncome
+        +double totalExpense
+        +List~Transaction~ recentTransactions
+        +List~AnalysisData~ analysis
+        +double? spendingTarget
+        +String? targetPeriod
+        +double balance
+        +fromJson(Map json)$
+    }
+
+    class Transaction {
+        +String? id
+        +String title
+        +String? description
+        +double amount
+        +String category
+        +String date
+        +TransactionType type
+        +String? source
+        +String? receiptUrl
+        +fromJson(Map json)$
+    }
+
+    class AnalysisData {
+        +String label
+        +double amount
+        +String colorHex
+        +fromJson(Map json)$
+    }
+
+    class NudgeData {
+        +String id
+        +String type
+        +String category
+        +String message
+        +bool isRead
+        +DateTime createdAt
+        +fromJson(Map json)$
+    }
+
+    class OcrResult {
+        +String? storeName
+        +double? totalAmount
+        +DateTime? date
+        +List~OcrItem~ items
+        +fromJson(Map json)$
+    }
+
+    AppData "1" *-- "many" Transaction
+    AppData "1" *-- "many" AnalysisData
+    Transaction --> TransactionType
+
+    %% --- DATA SOURCES ---
+    class RemoteDataSource {
+        <<interface>>
+        +getDashboardData()
+        +getUserProfile()
+        +getTransactions()
+        +addTransaction()
+        +updateProfile()
+        +...()
+    }
+
+    class RemoteDataSourceImpl {
+        +AuthController authController
+        +String baseUrl
+        -get(String url)
+        -post(String url, Map body)
+        +...()
+    }
+    RemoteDataSource <|.. RemoteDataSourceImpl
+
+    class OcrDataSource {
+        +scanReceipt(File imageFile)
+    }
+
+    %% --- REPOSITORIES ---
+    class FinanceRepository {
+        -RemoteDataSource remoteDataSource
+        +getDashboardData()
+        +getTransactions()
+        +addTransaction()
+        +...()
+    }
+
+    class OcrRepository {
+        -OcrDataSource _dataSource
+        +scanReceipt(File imageFile)
+    }
+
+    FinanceRepository o-- RemoteDataSource
+    OcrRepository o-- OcrDataSource
+
+    %% --- CONTROLLERS ---
+    class AuthController {
+        -String? _token
+        -bool _isLoading
+        +bool isAuthenticated
+        +String? token
+        +login(String email, String password)
+        +register(String email, String password)
+        +logout()
+        +checkAuth()
+    }
+
+    class FinanceController {
+        -FinanceRepository _repository
+        -AppData? _dashboardData
+        -List~Transaction~? _transactions
+        -List~NudgeData~ _nudges
+        +fetchAllData()
+        +addTransaction()
+        +deleteTransaction()
+        +...()
+    }
+
+    class OcrController {
+        -OcrRepository _repository
+        -File? _selectedImage
+        -OcrResult? _scanResult
+        +pickImage(ImageSource source)
+        +startScan()
+        +clear()
+    }
+
+    ServiceLocator "1" o-- "1" AuthController
+    ServiceLocator "1" o-- "1" FinanceController
+    ServiceLocator "1" o-- "1" OcrController
+    ServiceLocator "1" o-- "1" FinanceRepository
+    ServiceLocator "1" o-- "1" OcrRepository
+    ServiceLocator "1" o-- "1" RemoteDataSource
+    ServiceLocator "1" o-- "1" OcrDataSource
+
+    FinanceController o-- FinanceRepository
+    OcrController o-- OcrRepository
+    RemoteDataSourceImpl o-- AuthController
+
+    %% --- WIDGETS (SAMPLES) ---
+    class MyApp {
+        +build(BuildContext context)
+    }
+
+    class MainScreen {
+        +build(BuildContext context)
+    }
+
+    class LoginPage {
+        +build(BuildContext context)
+    }

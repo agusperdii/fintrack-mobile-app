@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_theme.dart';
-import '../components/organisms/app_header.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
 
 class PlaceholderPage extends StatelessWidget {
   final String featureName;

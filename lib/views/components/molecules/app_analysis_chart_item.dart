@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../models/entities/app_data.dart';
-import '../atoms/app_heading.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppAnalysisChartItem extends StatelessWidget {
   final AnalysisData data;

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/config/api_config.dart';
+import 'package:savaio/core/constants/api_config.dart';
 
 class AuthController extends ChangeNotifier {
   final String baseUrl = ApiConfig.baseUrl;
@@ -34,7 +34,7 @@ class AuthController extends ChangeNotifier {
           'username': email,
           'password': password,
         },
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -71,7 +71,7 @@ class AuthController extends ChangeNotifier {
           'email': email,
           'password': password,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _isLoading = false;

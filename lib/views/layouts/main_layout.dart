@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import 'dashboard_screen.dart';
-import 'analisa_page.dart';
-import 'profile_page.dart';
-import 'summary_page.dart';
-import 'add_transaction_page.dart';
-import '../../core/utils/service_locator.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/pages/dashboard_page.dart';
+import 'package:savaio/views/pages/analisa_page.dart';
+import 'package:savaio/views/pages/profile_page.dart';
+import 'package:savaio/views/pages/summary_page.dart';
+import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/core/utils/service_locator.dart';
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+class MainLayout extends StatefulWidget {
+  const MainLayout({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Fetch all initial data once when the main screen is loaded
+    // Fetch data only if not already present or loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (sl.financeController.dashboardData == null) {
-        sl.financeController.loadInitialData();
+      final controller = sl.financeController;
+      if (controller.dashboardData == null && !controller.isLoading) {
+        controller.loadInitialData();
       }
     });
   }
@@ -43,11 +44,11 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    // final bottomPadding = 16;
     // Use a consistent margin for all sides to ensure symmetry. 
     // On iOS notched devices, bottomPadding is typically 34, so we use that for side symmetry too.
     // On Android/older devices, we default to 24.
-    final horizontalMargin = bottomPadding > 24 ? bottomPadding : 24.0;
+    final horizontalMargin = 22.0;
     final bottomMargin = horizontalMargin;
     
     return Scaffold(

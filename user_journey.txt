@@ -1,0 +1,135 @@
+# User Journey: Savaio Fintech App
+
+This document outlines the user journey within the Savaio application, covering multiple use cases from daily tracking to long-term financial planning.
+
+```mermaid
+journey
+    title User Journey - The Savaio Experience
+    
+    section Onboarding & Setup
+      User registers an account: 5: User
+      User logs in for the first time: 5: User
+      User sets up their initial profile: 4: User
+      
+    section Case 1: The Habit Builder (Daily Routine)
+      User opens app in the morning: 5: User
+      User performs Daily Check-in: 5: User
+      User views Streak Summary to see progress: 5: User
+      User checks Notifications for financial nudges: 4: User
+      
+    section Case 2: Active Tracking (Expense Management)
+      User makes a purchase: 3: User
+      User opens "Add Transaction": 5: User
+      User enters manual expense details: 4: User
+      User uses OCR to scan a receipt for quick logging: 5: User
+      User categorizes transaction (e.g., Food, Coffee): 4: User
+      
+    section Case 3: The Financial Planner (Budgeting)
+      User navigates to Spending Targets: 4: User
+      User sets a monthly budget for a category: 5: User
+      User monitors balance vs target on Dashboard: 5: User
+      User receives alert when approaching budget limit: 3: User
+      
+    section Case 4: Deep Insight (Evaluation)
+      User checks Weekly Pulse chart for trends: 5: User
+      User views Analisa Page for category breakdown: 4: User
+      User reviews Monthly Summary for periodic evaluation: 5: User
+      User adjusts spending habits based on insights: 4: User
+```
+
+## User Flow Diagram
+
+```mermaid
+graph TD
+    %% Global Styles
+    classDef primary fill:#81ECFF,stroke:#00E3FD,stroke-width:2px,color:#003840;
+    classDef success fill:#AAFFDC,stroke:#34A853,stroke-width:2px,color:#1B5E20;
+    classDef orange fill:#FFE0B2,stroke:#FF9800,stroke-width:2px,color:#E65100;
+    classDef surface fill:#171A1F,stroke:#46484D,stroke-width:1px,color:#F6F6FC;
+
+    %% Entry Point
+    Start((Mulai)) --> Auth{Sudah Login?}
+    
+    %% Authentication & Onboarding
+    Auth -- Belum --> Register[Registrasi & Setup Profil]
+    Auth -- Sudah --> Dashboard[Dashboard Utama]
+    Register --> Dashboard
+
+    %% Case 1: Habit Building (Daily Routine)
+    subgraph Daily_Habit [1. Membangun Kebiasaan]
+        Dashboard --> CheckIn{Sudah Check-in?}
+        CheckIn -- Belum --> DoCheckIn[Lakukan Daily Check-in]
+        DoCheckIn --> StreakUp[Streak Bertambah + Animasi]
+        CheckIn -- Sudah --> ViewStreak[Klik Ikon Streak di AppBar]
+        ViewStreak --> StreakSummary[Lihat Halaman My Streak]
+        StreakUp --> StreakSummary
+    end
+
+    %% Case 2: Expense Tracking
+    subgraph Tracking [2. Pencatatan Transaksi]
+        Dashboard --> AddAction{Metode Input?}
+        AddAction -- Manual --> ManualInput[Input Detail Transaksi]
+        AddAction -- OCR/Scan --> ScanReceipt[Scan Struk dengan Kamera]
+        ScanReceipt --> OCRExtract[Ekstraksi Data Otomatis]
+        OCRExtract --> ManualInput
+        ManualInput --> SaveTx[Simpan Transaksi]
+        SaveTx --> UpdateBalance[Saldo Terupdate Real-time]
+    end
+
+    %% Case 3: Financial Planning
+    subgraph Planning [3. Perencanaan & Kontrol]
+        Dashboard --> SetBudget[Buka Spending Target]
+        SetBudget --> DefineLimit[Tentukan Limit per Kategori]
+        UpdateBalance --> BudgetCheck{Dekat Limit?}
+        BudgetCheck -- Ya > 80% --> Nudge[Terima Notifikasi Nudge]
+        Nudge --> ReviewSpending[Review Pengeluaran]
+    end
+
+    %% Case 4: Analysis & Evaluation
+    subgraph Analysis [4. Analisis & Evaluasi]
+        Dashboard --> WeeklyPulse[Cek Wawasan Mingguan]
+        WeeklyPulse --> AnalisaPage[Buka Halaman Analisa Lengkap]
+        AnalisaPage --> MonthlyReport[Lihat Ringkasan Bulanan]
+        MonthlyReport --> Adjustment[Sesuaikan Strategi Finansial]
+    end
+
+    %% Connections to Dashboard
+    StreakSummary -.-> Dashboard
+    UpdateBalance -.-> Dashboard
+    ReviewSpending -.-> Dashboard
+    Adjustment -.-> Dashboard
+
+    %% Apply Styles
+    class Start,Auth,Dashboard primary;
+    class DoCheckIn,StreakUp,SaveTx,UpdateBalance success;
+    class ViewStreak,StreakSummary,Nudge orange;
+    class Register,ManualInput,ScanReceipt,SetBudget,AnalisaPage surface;
+```
+
+## Detailed Flow Scenarios
+
+### 1. Daily Engagement Flow
+1. **Entry**: User launches app.
+2. **Action**: Daily Check-in Card appears or user clicks Streak Button in AppBar.
+3. **Reward**: Streak count increments, visual feedback given.
+4. **Reflection**: User clicks Streak Button to view "My Streak" summary and progress.
+
+### 2. Smart Logging Flow (OCR)
+1. **Trigger**: User receives a paper receipt.
+2. **Action**: Clicks "Scan" in Quick Actions.
+3. **Process**: App captures image -> OCR extracts amount and title.
+4. **Validation**: User confirms/edits extracted data.
+5. **Completion**: Transaction saved, balance updated instantly.
+
+### 3. Budgeting & Alerting Flow
+1. **Setup**: User goes to Spending Target List -> Add Target.
+2. **Action**: User sets Rp 2.000.000 for "Food" this month.
+3. **Monitoring**: Every "Food" expense reduces the remaining budget.
+4. **Notification**: System sends a "Nudge" if 80% of budget is reached.
+5. **Review**: User checks "Analisa" to see which category eats up most of the budget.
+
+### 4. Periodic Review Flow
+1. **Visual**: User looks at "Wawasan Mingguan" (Weekly Pulse) on Dashboard.
+2. **Drill-down**: User navigates to "Analisa Page" for detailed charts.
+3. **Comparison**: User checks "Monthly Summary" to compare this month vs last month.
+4. **Adjustment**: User modifies Spending Targets for the next period.

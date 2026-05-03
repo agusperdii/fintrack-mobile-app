@@ -1,0 +1,108 @@
+graph TD
+    %% Entry Point
+    Main[lib/main.dart] --> SL[lib/core/utils/service_locator.dart]
+    Main --> App[MaterialApp]
+
+    %% Layers
+    subgraph Presentation_Layer [Presentation Layer]
+        Pages[lib/views/pages/]
+        Organisms[lib/views/components/organisms/]
+        Molecules[lib/views/components/molecules/]
+        Atoms[lib/views/components/atoms/]
+    end
+
+    subgraph Controller_Layer [Controller / State Management]
+        FinanceCtrl[lib/controllers/finance_controller.dart]
+        AuthCtrl[lib/controllers/auth_controller.dart]
+        OCRCtrl[lib/controllers/ocr_controller.dart]
+    end
+
+    subgraph Domain_Repository_Layer [Domain & Repository Layer]
+        FinanceRepo[lib/models/repositories/finance_repository.dart]
+        OCRRepo[lib/models/repositories/ocr_repository.dart]
+    end
+
+    subgraph Data_Source_Layer [Data Source Layer]
+        RemoteDS[lib/models/data_sources/remote_data_source.dart]
+        OCR_DS[lib/models/data_sources/ocr_data_source.dart]
+        MockData[lib/models/data_sources/mock_notifications.dart]
+    end
+
+    %% External System
+    API((☁️ External API / Backend))
+
+    subgraph Model_Entity_Layer [Models & Entities]
+        Entities[lib/models/entities/]
+    end
+    
+    %% ... (rest of nodes)
+    
+    %% Dependencies & Flow
+    App --> FinanceCtrl
+    App --> AuthCtrl
+    Pages --> FinanceCtrl
+    Pages --> AuthCtrl
+    Pages --> OCRCtrl
+    
+    FinanceCtrl --> FinanceRepo
+    AuthCtrl --> FinanceRepo
+    OCRCtrl --> OCRRepo
+
+    FinanceRepo --> RemoteDS
+    FinanceRepo --> MockData
+    OCRRepo --> OCR_DS
+
+    %% Data Flow to External
+    RemoteDS <--> API
+    OCR_DS <--> API
+
+    RemoteDS --> Entities
+    OCR_DS --> Entities
+    
+    %% UI Components Flow
+    Pages --> Organisms
+    Organisms --> Molecules
+    Molecules --> Atoms
+    
+    %% Core usage
+    Pages --> Theme
+    Controller_Layer --> Utils
+    Data_Source_Layer --> Config
+
+    %% Styling for clarity
+    style Main fill:#f9f,stroke:#333,stroke-width:2px
+    style Controller_Layer fill:#bbf,stroke:#333,stroke-width:2px
+    style Domain_Repository_Layer fill:#bfb,stroke:#333,stroke-width:2px
+    style Data_Source_Layer fill:#fbb,stroke:#333,stroke-width:2px
+    style Presentation_Layer fill:#fff,stroke:#333,stroke-width:1px
+    style API fill:#ff9,stroke:#f66,stroke-width:3px,stroke-dasharray: 5 5
+
+---
+
+## Deskripsi Struktur & Cara Kerja File
+
+### 1. Entry Point & Configuration
+- **lib/main.dart**: Titik masuk aplikasi. Menginisialisasi Service Locator (DI), memvalidasi status autentikasi, dan membungkus aplikasi dengan Provider untuk manajemen state global.
+- **lib/core/**: Berisi konfigurasi API, tema global (SavaioTheme), dan utilitas pendukung (Service Locator, Parser).
+
+### 2. Presentation Layer (UI)
+- **lib/views/pages/**: Layar utama aplikasi (Dashboard, Profile, Login). Berinteraksi langsung dengan Controller untuk mendapatkan data dan mengirim aksi pengguna.
+- **lib/views/components/**: Mengikuti pola Atomic Design:
+    - **Atoms**: Komponen terkecil (Button, Avatar, Heading).
+    - **Molecules**: Gabungan beberapa atoms (TransactionItem, NotificationCard).
+    - **Organisms**: Blok UI kompleks (Header, WeeklyPulseChart).
+
+### 3. Controller Layer (State Management)
+- **lib/controllers/**: Mengelola logika bisnis UI dan state aplikasi menggunakan `ChangeNotifier`. 
+    - Contoh: `FinanceController` memanggil Repository untuk mengambil data transaksi, menyimpannya dalam variabel state, dan memicu `notifyListeners()` agar UI diperbarui secara otomatis.
+
+### 4. Domain & Repository Layer
+- **lib/models/repositories/**: Bertindak sebagai mediator antara Controller dan Data Source. Repository memproses data mentah dari API/Source menjadi format yang siap digunakan oleh Controller.
+
+### 5. Data Source Layer & External API (☁️)
+- **lib/models/data_sources/**: Bertanggung jawab atas komunikasi eksternal.
+    - **RemoteDataSource & OCRDataSource**: File utama yang berinteraksi langsung dengan **External API**. Mereka mengirim request (POST/GET) dan menerima data mentah dari server.
+    - **MockData**: Menyediakan data simulasi untuk keperluan testing atau pengembangan offline.
+
+### 6. Model & Entity Layer
+- **lib/models/entities/**: Definisi struktur data (Plain Old Dart Objects) seperti `AppData`, `Transaction`, dan `OCRResult` yang digunakan di seluruh aplikasi untuk konsistensi tipe data.

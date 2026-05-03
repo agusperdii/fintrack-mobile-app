@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../core/theme/app_theme.dart';
-import '../atoms/glass_card.dart';
-import '../atoms/app_heading.dart';
-import '../atoms/app_badge.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_badge.dart';
 
 class AppHeroAnalysisCard extends StatelessWidget {
   final double averageAmount;

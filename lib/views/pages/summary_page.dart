@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/glass_card.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/organisms/app_header.dart';
-import '../components/molecules/app_weekly_summary_item.dart';
-import 'all_transactions_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/molecules/app_weekly_summary_item.dart';
+import 'package:savaio/views/pages/all_transactions_page.dart';
 
 class SummaryPage extends StatelessWidget {
   const SummaryPage({super.key});

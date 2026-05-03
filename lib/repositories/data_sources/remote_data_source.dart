@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../entities/app_data.dart';
-import '../../controllers/auth_controller.dart';
-import '../../core/utils/parser_utils.dart';
-import '../../core/config/api_config.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/controllers/auth_controller.dart';
+import 'package:savaio/core/utils/parser_utils.dart';
+import 'package:savaio/core/constants/api_config.dart';
 
-import '../entities/nudge_data.dart';
+import 'package:savaio/models/nudge_data.dart';
+import 'package:savaio/models/notification_data.dart';
+import 'package:savaio/models/checkin_data.dart';
 
 abstract class RemoteDataSource {
   Future<AppData> getDashboardData();
@@ -16,6 +18,11 @@ abstract class RemoteDataSource {
   Future<Map<String, dynamic>> getWeeklyPulse();
   Future<List<NudgeData>> getNudges();
   Future<bool> markNudgeRead(String id);
+  Future<List<NotificationData>> getNotifications();
+  Future<bool> markNotificationRead(String id);
+  Future<bool> deleteNotification(String id);
+  Future<CheckInStatus> getCheckInStatus();
+  Future<bool> performCheckIn();
   Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month});
   Future<bool> addTransaction({
     required String title,
@@ -30,6 +37,8 @@ abstract class RemoteDataSource {
   Future<bool> updateProfile({required String fullName, String? username});
   Future<bool> updatePassword({required String currentPassword, required String newPassword});
   Future<List<Map<String, dynamic>>> getMonthlySummary();
+  Future<List<Map<String, dynamic>>> getCategories();
+  Future<Map<String, dynamic>> addCategory(String name, String icon);
 }
 
 class RemoteDataSourceImpl implements RemoteDataSource {
@@ -257,11 +266,71 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
+  Future<List<NotificationData>> getNotifications() async {
+    final response = await _get('$baseUrl/notifications/');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.map((n) => NotificationData.fromJson(n)).toList();
+    }
+    throw Exception('Failed to load notifications');
+  }
+
+  @override
+  Future<bool> markNotificationRead(String id) async {
+    final response = await _put('$baseUrl/notifications/$id', {'is_read': true});
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<bool> deleteNotification(String id) async {
+    final response = await _delete('$baseUrl/notifications/$id');
+    return response.statusCode == 200;
+  }
+
+  @override
+  Future<CheckInStatus> getCheckInStatus() async {
+    final response = await _get('$baseUrl/check-in/status');
+    if (response.statusCode == 200) {
+      return CheckInStatus.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to load check-in status');
+  }
+
+  @override
+  Future<bool> performCheckIn() async {
+    final response = await _post('$baseUrl/check-in/', {});
+    return response.statusCode == 200;
+  }
+
+  @override
   Future<Map<String, dynamic>> getWeeklyPulse() async {
+
     final response = await _get('$baseUrl/analytics/weekly-pulse');
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
     throw Exception('Failed to load weekly pulse data');
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    final response = await _get('$baseUrl/categories/');
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    }
+    throw Exception('Failed to load categories');
+  }
+
+  @override
+  Future<Map<String, dynamic>> addCategory(String name, String icon) async {
+    final response = await _post('$baseUrl/categories/', {
+      'name': name,
+      'icon': icon,
+    });
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to add category: ${response.statusCode}');
   }
 }

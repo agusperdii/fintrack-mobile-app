@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../core/theme/app_theme.dart';
-import '../atoms/app_heading.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppWeeklyPulseChart extends StatelessWidget {
   final double growth;
@@ -69,7 +69,32 @@ class AppWeeklyPulseChart extends StatelessWidget {
                     },
                   ),
                 ),
-                titlesData: const FlTitlesData(show: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const days = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            days[value.toInt() % 7],
+                            style: const TextStyle(
+                              color: SavaioTheme.onSurfaceVariant,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      },
+                      reservedSize: 22,
+                    ),
+                  ),
+                ),
                 borderData: FlBorderData(show: false),
                 gridData: const FlGridData(show: false),
                 barGroups: values.asMap().entries.map((entry) {

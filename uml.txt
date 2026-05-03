@@ -1,0 +1,137 @@
+classDiagram
+    %% Core & Configuration
+    class ServiceLocator {
+        +RemoteDataSource remoteDataSource
+        +FinanceRepository financeRepository
+        +FinanceController financeController
+        +AuthController authController
+        +OcrController ocrController
+        +OcrRepository ocrRepository
+        +OcrDataSource ocrDataSource
+        +setup()
+    }
+    ServiceLocator --* AuthController
+    ServiceLocator --* FinanceController
+    ServiceLocator --* OcrController
+    ServiceLocator --* FinanceRepository
+    ServiceLocator --* OcrRepository
+    ServiceLocator --* RemoteDataSource
+    ServiceLocator --* OcrDataSource
+
+    class ApiConfig {
+        +String baseUrl$
+    }
+
+    class ParserUtils {
+        +toDouble(dynamic value)$
+    }
+
+    class SavaioTheme {
+        +ThemeData theme$
+    }
+
+    %% Controllers (State Management)
+    class ChangeNotifier { <<Flutter>> }
+    
+    class AuthController {
+        -String? _token
+        +bool isAuthenticated
+        +String? token
+        +login(String email, String password)
+        +logout()
+        +checkAuth()
+    }
+    ChangeNotifier <|-- AuthController
+
+    class FinanceController {
+        -FinanceRepository _repository
+        -AppData? _dashboardData
+        -List~Transaction~? _transactions
+        +fetchAllData()
+        +addTransaction()
+        +deleteTransaction()
+    }
+    ChangeNotifier <|-- FinanceController
+    FinanceController o-- FinanceRepository
+
+    class OcrController {
+        -OcrRepository _repository
+        +scanReceipt(File image)
+    }
+    ChangeNotifier <|-- OcrController
+    OcrController o-- OcrRepository
+
+    %% Repositories
+    class FinanceRepository {
+        -RemoteDataSource remoteDataSource
+        +getDashboardData()
+        +getTransactions()
+        +saveSpendingTarget()
+    }
+    FinanceRepository o-- RemoteDataSource
+
+    class OcrRepository {
+        -OcrDataSource ocrDataSource
+        +processImage(File image)
+    }
+    OcrRepository o-- OcrDataSource
+
+    %% Data Sources
+    class RemoteDataSource { <<interface>> }
+    
+    class RemoteDataSourceImpl {
+        +AuthController authController
+        -http.get()
+        -http.post()
+    }
+    RemoteDataSource <|.. RemoteDataSourceImpl
+    RemoteDataSourceImpl o-- AuthController
+    RemoteDataSourceImpl ..> ApiConfig
+    RemoteDataSourceImpl ..> ParserUtils
+
+    class OcrDataSource {
+        +uploadAndScan(File image)
+    }
+
+    %% Entities (Models)
+    class AppData {
+        +double balance
+        +double income
+        +double expense
+        +List~Transaction~ recentTransactions
+    }
+    class Transaction {
+        +String id
+        +String title
+        +double amount
+        +String category
+        +TransactionType type
+        +DateTime date
+    }
+    class NudgeData {
+        +String id
+        +String message
+        +bool isRead
+    }
+    class OcrResult {
+        +String storeName
+        +double totalAmount
+        +DateTime date
+    }
+
+    AppData "1" *-- "many" Transaction
+    FinanceController ..> AppData
+    FinanceController ..> Transaction
+    FinanceController ..> NudgeData
+    OcrController ..> OcrResult
+
+    %% Views Relationship (Simplified)
+    class MainScreen
+    class DashboardScreen
+    class ProfilePage
+    class LoginPage
+    
+    MainScreen ..> FinanceController
+    DashboardScreen ..> FinanceController
+    ProfilePage ..> FinanceController
+    LoginPage ..> AuthController

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppButtonVariant { primary, secondary, error, ghost }
 
@@ -11,6 +11,7 @@ class AppButton extends StatelessWidget {
   final bool isLoading;
   final IconData? icon;
   final double? width;
+  final bool small;
 
   const AppButton({
     super.key,
@@ -20,6 +21,7 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.width,
+    this.small = false,
   });
 
   @override
@@ -55,7 +57,7 @@ class AppButton extends StatelessWidget {
           foregroundColor: textColor,
           elevation: variant == AppButtonVariant.primary ? 8 : 0,
           shadowColor: variant == AppButtonVariant.primary ? bgColor.withValues(alpha: 0.3) : Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: SavaioTheme.spacingL),
+          padding: EdgeInsets.symmetric(vertical: small ? 8 : 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusFull)),
           side: variant == AppButtonVariant.ghost 
             ? const BorderSide(color: SavaioTheme.primary, width: 1.5)

@@ -1,6 +1,6 @@
 import 'dart:io';
-import '../data_sources/ocr_data_source.dart';
-import '../entities/ocr_result.dart';
+import 'package:savaio/repositories/data_sources/ocr_data_source.dart';
+import 'package:savaio/models/ocr_result.dart';
 
 class OcrRepository {
   final OcrDataSource _dataSource;

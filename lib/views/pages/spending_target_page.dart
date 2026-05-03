@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/glass_card.dart';
-import '../components/atoms/app_button.dart';
-import '../components/atoms/app_icon_container.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/atoms/app_progress_bar.dart';
-import '../components/molecules/app_date_time_picker.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_button.dart';
+import 'package:savaio/views/components/atoms/app_icon_container.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_progress_bar.dart';
+import 'package:savaio/views/components/molecules/app_date_time_picker.dart';
+import 'package:savaio/views/components/molecules/selection_card.dart';
 
 class SpendingTargetPage extends StatefulWidget {
   final String? initialCategory;
@@ -29,7 +30,6 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     final now = DateTime.now();
     _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
     
-    // Normalize category selection: Find case-insensitive match
     String initial = widget.initialCategory ?? 'All';
     final categories = sl.financeController.categories;
     try {
@@ -42,7 +42,6 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     }
     
     _loadBudgetData();
-    // Ensure transactions are loaded for spending comparison
     sl.financeController.fetchTransactions(month: _selectedMonth);
   }
 
@@ -132,268 +131,245 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
         return Scaffold(
           backgroundColor: SavaioTheme.background,
-          appBar: AppBar(
-            backgroundColor: SavaioTheme.background,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: SavaioTheme.primary),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: AppHeading('Atur Alokasi Dana', size: AppHeadingSize.h3),
-            centerTitle: true,
-          ),
+          appBar: _buildAppBar(),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Month & Category Selection Row
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: _buildSelectionCard(
-                        label: 'BULAN',
-                        value: _formatMonth(_selectedMonth),
-                        icon: Icons.calendar_month_rounded,
-                        onTap: _showMonthPicker,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 4,
-                      child: _buildSelectionCard(
-                        label: 'KATEGORI',
-                        value: _selectedCategory == 'All' ? 'Total' : _selectedCategory,
-                        icon: provider.getCategoryIcon(_selectedCategory) is IconData 
-                            ? provider.getCategoryIcon(_selectedCategory) as IconData
-                            : Icons.category_rounded,
-                        onTap: () => _showCategoryPicker(categories),
-                      ),
-                    ),
-                  ],
-                ),
-                
+                _buildHeaderSelection(provider, categories),
                 const SizedBox(height: 32),
-                
-                // 2. Main Input Card
-                GlassCard(
-                  padding: const EdgeInsets.all(32),
-                  borderRadius: 24,
-                  child: Column(
-                    children: [
-                      AppHeading(
-                        'LIMIT PENGELUARAN',
-                        size: AppHeadingSize.caption,
-                        color: SavaioTheme.onSurfaceVariant,
-                        isBold: true,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            'Rp',
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: SavaioTheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IntrinsicWidth(
-                            child: TextField(
-                              controller: _amountController,
-                              autofocus: false,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 42,
-                                fontWeight: FontWeight.w900,
-                                color: SavaioTheme.onSurface,
-                                letterSpacing: -1,
-                              ),
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                hintText: '0',
-                                hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Quick actions
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildQuickAdd(100000),
-                          const SizedBox(width: 8),
-                          _buildQuickAdd(500000),
-                          const SizedBox(width: 8),
-                          _buildQuickAdd(1000000),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                
+                _buildAmountInputCard(),
                 const SizedBox(height: 32),
-
-                // 3. Dynamic Progress/Insight Section
-                AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
-                const SizedBox(height: 16),
-                
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: SavaioTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
-                              const SizedBox(height: 4),
-                              AppHeading(SavaioTheme.formatCurrency(currentSpent), size: AppHeadingSize.subtitle),
-                            ],
-                          ),
-                          if (targetAmount > 0)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
-                                const SizedBox(height: 4),
-                                AppHeading(
-                                  SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent),
-                                  size: AppHeadingSize.subtitle,
-                                  color: isOver ? SavaioTheme.error : SavaioTheme.tertiary,
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      AppProgressBar(
-                        value: progress,
-                        color: isOver ? SavaioTheme.error : (progress > 0.8 ? Colors.orange : SavaioTheme.tertiary),
-                        height: 8,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            isOver ? 'Melebihi Budget!' : '${(progress * 100).toStringAsFixed(0)}% Terpakai',
-                            style: TextStyle(
-                              fontSize: 11, 
-                              fontWeight: FontWeight.bold,
-                              color: isOver ? SavaioTheme.error : SavaioTheme.onSurfaceVariant
-                            ),
-                          ),
-                          Text(
-                            'Target: ${SavaioTheme.formatCurrency(targetAmount)}',
-                            style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
+                _buildStatusSection(currentSpent, targetAmount, progress, isOver),
                 const SizedBox(height: 24),
-                
-                // 4. Smart Insight Card
-                if (targetAmount > 0)
-                  GlassCard(
-                    padding: const EdgeInsets.all(20),
-                    borderRadius: 16,
-                    color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.auto_awesome_rounded, color: SavaioTheme.secondary, size: 20),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            isOver 
-                              ? 'Waduh! Pengeluaran kamu sudah lewat dari target. Yuk, lebih ketat lagi!'
-                              : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30)} untuk sisa bulan ini.',
-                            style: const TextStyle(fontSize: 12, color: SavaioTheme.onSurface, height: 1.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                _buildInsightCard(targetAmount, currentSpent, isOver),
               ],
             ),
           ),
-          bottomNavigationBar: Container(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: AppButton(
-              label: 'SIMPAN PERUBAHAN',
-              isLoading: _isSaving,
-              onTap: _saveTarget,
-            ),
-          ),
+          bottomNavigationBar: _buildBottomButton(),
         );
       }
     );
   }
 
-  Widget _buildSelectionCard({
-    required String label,
-    required String value,
-    required dynamic icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: SavaioTheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: SavaioTheme.background,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close, color: SavaioTheme.primary),
+        onPressed: () => Navigator.pop(context),
+      ),
+      title: const AppHeading('Atur Alokasi Dana', size: AppHeadingSize.h3),
+      centerTitle: true,
+    );
+  }
+
+  Widget _buildHeaderSelection(dynamic provider, List<Map<String, dynamic>> categories) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: SelectionCard(
+            label: 'BULAN',
+            value: _formatMonth(_selectedMonth),
+            icon: Icons.calendar_month_rounded,
+            onTap: _showMonthPicker,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: SavaioTheme.primary, letterSpacing: 1)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(icon is IconData ? icon : Icons.category, size: 16, color: SavaioTheme.onSurface),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    value, 
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: SavaioTheme.onSurface),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 4,
+          child: SelectionCard(
+            label: 'KATEGORI',
+            value: _selectedCategory == 'All' ? 'Total' : _selectedCategory,
+            icon: provider.getCategoryIcon(_selectedCategory) is IconData 
+                ? provider.getCategoryIcon(_selectedCategory) as IconData
+                : Icons.category_rounded,
+            onTap: () => _showCategoryPicker(categories),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAmountInputCard() {
+    return GlassCard(
+      padding: const EdgeInsets.all(32),
+      borderRadius: 24,
+      child: Column(
+        children: [
+          const AppHeading(
+            'LIMIT PENGELUARAN',
+            size: AppHeadingSize.caption,
+            color: SavaioTheme.onSurfaceVariant,
+            isBold: true,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                'Rp',
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: SavaioTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IntrinsicWidth(
+                child: TextField(
+                  controller: _amountController,
+                  autofocus: false,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 42,
+                    fontWeight: FontWeight.w900,
+                    color: SavaioTheme.onSurface,
+                    letterSpacing: -1,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildQuickAdd(100000),
+              const SizedBox(width: 8),
+              _buildQuickAdd(500000),
+              const SizedBox(width: 8),
+              _buildQuickAdd(1000000),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusSection(double currentSpent, double targetAmount, double progress, bool isOver) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: SavaioTheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
+                      const SizedBox(height: 4),
+                      AppHeading(SavaioTheme.formatCurrency(currentSpent), size: AppHeadingSize.subtitle),
+                    ],
+                  ),
+                  if (targetAmount > 0)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
+                        const SizedBox(height: 4),
+                        AppHeading(
+                          SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent),
+                          size: AppHeadingSize.subtitle,
+                          color: isOver ? SavaioTheme.error : SavaioTheme.tertiary,
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              AppProgressBar(
+                value: progress,
+                color: isOver ? SavaioTheme.error : (progress > 0.8 ? Colors.orange : SavaioTheme.tertiary),
+                height: 8,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isOver ? 'Melebihi Budget!' : '${(progress * 100).toStringAsFixed(0)}% Terpakai',
+                    style: TextStyle(
+                      fontSize: 11, 
+                      fontWeight: FontWeight.bold,
+                      color: isOver ? SavaioTheme.error : SavaioTheme.onSurfaceVariant
+                    ),
+                  ),
+                  Text(
+                    'Target: ${SavaioTheme.formatCurrency(targetAmount)}',
+                    style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildInsightCard(double targetAmount, double currentSpent, bool isOver) {
+    if (targetAmount <= 0) return const SizedBox.shrink();
+    
+    return GlassCard(
+      padding: const EdgeInsets.all(20),
+      borderRadius: 16,
+      color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: SavaioTheme.secondary, size: 20),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              isOver 
+                ? 'Waduh! Pengeluaran kamu sudah lewat dari target. Yuk, lebih ketat lagi!'
+                : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30)} untuk sisa bulan ini.',
+              style: const TextStyle(fontSize: 12, color: SavaioTheme.onSurface, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomButton() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: AppButton(
+        label: 'SIMPAN PERUBAHAN',
+        isLoading: _isSaving,
+        onTap: _saveTarget,
       ),
     );
   }
@@ -448,7 +424,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppHeading('Pilih Kategori', size: AppHeadingSize.h3),
+            const AppHeading('Pilih Kategori', size: AppHeadingSize.h3),
             const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(

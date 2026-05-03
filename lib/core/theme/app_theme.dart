@@ -41,6 +41,7 @@ class SavaioTheme {
   static const Color primaryFixed = Color(0xFF00E3FD);
   static const Color secondary = Color(0xFFBC87FE);
   static const Color tertiary = Color(0xFFAAFFDC);
+  static const Color success = Color(0xFFAAFFDC);
   static const Color error = Color(0xFFFF716C);
   static const Color errorDim = Color(0xFFD7383B);
   static const Color errorContainer = Color(0xFF9F0519);

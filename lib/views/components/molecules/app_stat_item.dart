@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../atoms/app_heading.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppStatItem extends StatelessWidget {
   final String label;

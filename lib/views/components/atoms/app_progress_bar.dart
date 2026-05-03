@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 class AppProgressBar extends StatelessWidget {
   final double value; // 0.0 to 1.0

@@ -1,6 +1,8 @@
-import '../data_sources/remote_data_source.dart';
-import '../entities/app_data.dart';
-import '../entities/nudge_data.dart';
+import 'package:savaio/repositories/data_sources/remote_data_source.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/nudge_data.dart';
+import 'package:savaio/models/notification_data.dart';
+import 'package:savaio/models/checkin_data.dart';
 
 class FinanceRepository {
   final RemoteDataSource remoteDataSource;
@@ -56,6 +58,16 @@ class FinanceRepository {
 
   Future<bool> markNudgeRead(String id) => remoteDataSource.markNudgeRead(id);
 
+  Future<List<NotificationData>> getNotifications() => remoteDataSource.getNotifications();
+
+  Future<bool> markNotificationRead(String id) => remoteDataSource.markNotificationRead(id);
+
+  Future<bool> deleteNotification(String id) => remoteDataSource.deleteNotification(id);
+
+  Future<CheckInStatus> getCheckInStatus() => remoteDataSource.getCheckInStatus();
+
+  Future<bool> performCheckIn() => remoteDataSource.performCheckIn();
+
   Future<bool> saveSpendingTarget({required double amount, required String period, String category = 'All', String? month}) =>
       remoteDataSource.saveSpendingTarget(amount: amount, period: period, category: category, month: month);
 
@@ -96,4 +108,8 @@ class FinanceRepository {
       rethrow;
     }
   }
+
+  Future<List<Map<String, dynamic>>> getCategories() => remoteDataSource.getCategories();
+  
+  Future<Map<String, dynamic>> addCategory(String name, String icon) => remoteDataSource.addCategory(name, icon);
 }

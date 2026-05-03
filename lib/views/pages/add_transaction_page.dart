@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../components/atoms/glass_card.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/atoms/app_button.dart';
-import '../components/atoms/app_progress_bar.dart';
-import '../components/atoms/app_icon_container.dart';
-import '../components/molecules/app_date_time_picker.dart';
-import 'transaction_success_page.dart';
-import 'ocr_scan_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_button.dart';
+import 'package:savaio/views/components/atoms/app_progress_bar.dart';
+import 'package:savaio/views/components/molecules/app_date_time_picker.dart';
+import 'package:savaio/views/components/molecules/transaction_amount_input.dart';
+import 'package:savaio/views/components/molecules/transaction_type_toggle.dart';
+import 'package:savaio/views/components/organisms/transaction_category_grid.dart';
+import 'package:savaio/views/components/organisms/add_category_sheet.dart';
+import 'package:savaio/views/pages/transaction_success_page.dart';
+import 'package:savaio/views/pages/ocr_scan_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final String? initialTitle;
@@ -36,8 +39,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late final TextEditingController _titleController; 
   late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
-  late final TextEditingController _categoryNameController;
-  late final TextEditingController _categoryEmojiController;
   String _selectedCategory = 'Food';
   bool _isSubmitting = false;
   DateTime _selectedDate = DateTime.now();
@@ -51,8 +52,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _amountController = TextEditingController(
       text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
     );
-    _categoryNameController = TextEditingController();
-    _categoryEmojiController = TextEditingController();
     _selectedCategory = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
   }
 
@@ -61,9 +60,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _amountController.dispose();
-    _categoryNameController.dispose();
-    _categoryEmojiController.dispose();
     super.dispose();
+  }
+
+  void _onQuickAmountTap(double amount) {
+    final current = double.tryParse(_amountController.text) ?? 0.0;
+    _amountController.text = (current + amount).toStringAsFixed(0);
+    setState(() {});
   }
 
   Future<void> _pickDate() async {
@@ -125,9 +128,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       );
 
       if (success && mounted) {
-        // Fetch nudges to get any new budget warnings or positive feedback
         sl.financeController.fetchNudges();
-        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const TransactionSuccessPage()),
@@ -145,79 +146,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 24,
-          left: 24,
-          right: 24,
-        ),
-        decoration: const BoxDecoration(
-          color: SavaioTheme.surfaceContainer,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const AppHeading('Tambah Kategori Baru', size: AppHeadingSize.h3),
-            const SizedBox(height: 8),
-            const AppHeading('Sesuaikan dengan kebutuhan mahasiswa kamu!', size: AppHeadingSize.caption, color: SavaioTheme.onSurfaceVariant),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _categoryEmojiController,
-                    decoration: InputDecoration(
-                      labelText: 'Emoji',
-                      hintText: '🚀',
-                      filled: true,
-                      fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 5,
-                  child: TextField(
-                    controller: _categoryNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nama Kategori',
-                      hintText: 'Misal: Fotocopy',
-                      filled: true,
-                      fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: 'TAMBAH KATEGORI',
-              onTap: () {
-                if (_categoryNameController.text.isNotEmpty && _categoryEmojiController.text.isNotEmpty) {
-                  sl.financeController.addCustomCategory(
-                    _categoryNameController.text,
-                    _categoryEmojiController.text,
-                  );
-                  setState(() {
-                    _selectedCategory = _categoryNameController.text;
-                  });
-                  _categoryNameController.clear();
-                  _categoryEmojiController.clear();
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
+      builder: (context) => AddCategorySheet(
+        onAdd: (name, icon) {
+          sl.financeController.addCustomCategory(name, icon);
+          setState(() {
+            _selectedCategory = name;
+          });
+        },
       ),
     );
   }
@@ -227,37 +162,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     return ListenableBuilder(
       listenable: sl.financeController,
       builder: (context, _) {
-        final categories = sl.financeController.categories;
-
         return Scaffold(
           backgroundColor: SavaioTheme.background,
-          appBar: AppBar(
-            backgroundColor: SavaioTheme.background,
-            elevation: 0,
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: SavaioTheme.primary),
-              onPressed: () => Navigator.pop(context), 
-            ),
-            title: AppHeading(
-              'Tambah Transaksi',
-              size: AppHeadingSize.h3,
-              color: SavaioTheme.onSurface,
-            ),
-            actions: [
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const OcrScanPage()),
-                  );
-                },
-                icon: const Icon(Icons.document_scanner_outlined, color: SavaioTheme.primary),
-                tooltip: 'Scan Struk (OCR)',
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
+          appBar: _buildAppBar(),
           body: Stack(
             children: [
               SingleChildScrollView(
@@ -265,361 +172,35 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const AppHeading(
-                      'JUMLAH NOMINAL',
-                      size: AppHeadingSize.caption,
-                      color: SavaioTheme.onSurfaceVariant,
-                      isBold: true,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        const AppHeading(
-                          'Rp',
-                          size: AppHeadingSize.h2,
-                          color: SavaioTheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        IntrinsicWidth(
-                          child: TextField(
-                            controller: _amountController,
-                            autofocus: true,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w900,
-                              color: SavaioTheme.onSurface,
-                              letterSpacing: -1,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '0',
-                              hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Quick amount buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildQuickAmount(10000),
-                        const SizedBox(width: 8),
-                        _buildQuickAmount(50000),
-                        const SizedBox(width: 8),
-                        _buildQuickAmount(100000),
-                      ],
+                    TransactionAmountInput(
+                      controller: _amountController,
+                      onQuickAmountTap: _onQuickAmountTap,
                     ),
                     const SizedBox(height: 32),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildTypeToggleItem(
-                            label: 'Pengeluaran',
-                            icon: Icons.arrow_outward,
-                            isActive: _type == 'Expense',
-                            activeColor: SavaioTheme.errorContainer,
-                            onTap: () => setState(() => _type = 'Expense'),
-                          ),
-                          _buildTypeToggleItem(
-                            label: 'Pemasukan',
-                            icon: Icons.south_west,
-                            isActive: _type == 'Income',
-                            activeColor: SavaioTheme.surfaceContainerHighest,
-                            onTap: () => setState(() => _type = 'Income'),
-                          ),
-                        ],
-                      ),
+                    TransactionTypeToggle(
+                      currentType: _type,
+                      onTypeChanged: (type) => setState(() => _type = type),
                     ),
                     const SizedBox(height: 40),
-                    
-                    // 1. Judul Transaksi (Bento)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.title_rounded, color: SavaioTheme.primary, size: 18),
-                              const SizedBox(width: 8),
-                              const AppHeading(
-                                'Judul Transaksi',
-                                size: AppHeadingSize.subtitle,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _titleController,
-                            style: GoogleFonts.inter(fontSize: 13, color: SavaioTheme.onSurface),
-                            decoration: InputDecoration(
-                              hintText: 'Misal: Makan Siang di Kantin',
-                              hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                              border: InputBorder.none,
-                              fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              filled: true,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildTitleSection(),
                     const SizedBox(height: 16),
-
-                    // 2. Waktu & Tanggal (Bento)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, color: SavaioTheme.secondary, size: 18),
-                              const SizedBox(width: 8),
-                              const AppHeading(
-                                'Waktu & Tanggal',
-                                size: AppHeadingSize.subtitle,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildBentoValueItem(
-                            label: DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
-                            icon: Icons.calendar_today,
-                            onTap: _pickDate,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildBentoValueItem(
-                            label: '${DateFormat('HH:mm').format(_selectedDate)} WIB',
-                            icon: Icons.schedule,
-                            onTap: _pickTime,
-                          ),
-                        ],
-                      ),
+                    _buildDateTimeSection(),
+                    const SizedBox(height: 32),
+                    TransactionCategoryGrid(
+                      categories: sl.financeController.categories,
+                      selectedCategory: _selectedCategory,
+                      onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                      onAddCategoryTap: _showAddCategorySheet,
                     ),
                     const SizedBox(height: 32),
-
-                    // 3. Kategori Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const AppHeading(
-                          'Pilih Kategori',
-                          size: AppHeadingSize.h3,
-                        ),
-                        GestureDetector(
-                          onTap: _showAddCategorySheet,
-                          child: const AppHeading(
-                            '+ Tambah',
-                            size: AppHeadingSize.subtitle,
-                            color: SavaioTheme.primary,
-                            isBold: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.85,
-                      ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = categories[index];
-                        final isSelected = _selectedCategory == cat['name'];
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = cat['name']),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: SavaioTheme.surfaceContainer,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected ? SavaioTheme.primary.withValues(alpha: 0.5) : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                AppIconContainer(
-                                  icon: cat['icon'],
-                                  color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
-                                  size: 40,
-                                  opacity: isSelected ? 0.2 : 0.1,
-                                ),
-                                const SizedBox(height: 8),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                                  child: Text(
-                                    cat['name'].toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 32),
-
-                    // 4. Catatan Tambahan (Bento)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.description, color: SavaioTheme.tertiary, size: 18),
-                              const SizedBox(width: 8),
-                              const AppHeading(
-                                'Catatan Tambahan',
-                                size: AppHeadingSize.subtitle,
-                                isBold: true,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _descriptionController,
-                            maxLines: 3,
-                            style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface),
-                            decoration: InputDecoration(
-                              hintText: 'Makan siang bareng temen...',
-                              hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                              border: InputBorder.none,
-                              fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                              filled: true,
-                              contentPadding: const EdgeInsets.all(12),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildNotesSection(),
                     const SizedBox(height: 24),
-                    GlassCard(
-                      padding: const EdgeInsets.all(24),
-                      borderRadius: 16,
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AppHeading(
-                                    'Progress Tabungan',
-                                    size: AppHeadingSize.subtitle,
-                                    color: SavaioTheme.tertiary,
-                                    isBold: true,
-                                  ),
-                                  AppHeading(
-                                    'Sisa budget makan kamu masih aman!',
-                                    size: AppHeadingSize.caption,
-                                    color: SavaioTheme.onSurfaceVariant,
-                                    isBold: false,
-                                  ),
-                                ],
-                              ),
-                              const AppHeading(
-                                '82%',
-                                size: AppHeadingSize.h3,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const AppProgressBar(
-                            value: 0.82,
-                            color: SavaioTheme.tertiary,
-                            height: 6,
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildProgressCard(),
                     const SizedBox(height: 120), 
                   ],
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                  child: AppButton(
-                    label: 'SIMPAN TRANSAKSI',
-                    isLoading: _isSubmitting,
-                    onTap: _submitData,
-                  ),
-                ),
-              ),
+              _buildSubmitButton(),
             ],
           ),
         );
@@ -627,70 +208,146 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
   }
 
-  Widget _buildTypeToggleItem({
-    required String label,
-    required IconData icon,
-    required bool isActive,
-    required Color activeColor,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isActive ? activeColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(100),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: SavaioTheme.background,
+      elevation: 0,
+      centerTitle: true,
+      leading: IconButton(
+        icon: const Icon(Icons.close, color: SavaioTheme.primary),
+        onPressed: () => Navigator.pop(context), 
+      ),
+      title: const AppHeading(
+        'Tambah Transaksi',
+        size: AppHeadingSize.h3,
+        color: SavaioTheme.onSurface,
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const OcrScanPage()),
+            );
+          },
+          icon: const Icon(Icons.document_scanner_outlined, color: SavaioTheme.primary),
+          tooltip: 'Scan Struk (OCR)',
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  Widget _buildTitleSection() {
+    return _buildBentoContainer(
+      icon: Icons.title_rounded,
+      iconColor: SavaioTheme.primary,
+      title: 'Judul Transaksi',
+      child: TextField(
+        controller: _titleController,
+        style: GoogleFonts.inter(fontSize: 13, color: SavaioTheme.onSurface),
+        decoration: InputDecoration(
+          hintText: 'Misal: Makan Siang di Kantin',
+          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          border: InputBorder.none,
+          fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          filled: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 14,
-                color: isActive ? Colors.white : SavaioTheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.white : SavaioTheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildQuickAmount(double amount) {
-    return InkWell(
-      onTap: () {
-        final current = double.tryParse(_amountController.text) ?? 0.0;
-        _amountController.text = (current + amount).toStringAsFixed(0);
-        setState(() {});
-      },
-      borderRadius: BorderRadius.circular(100),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: SavaioTheme.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
-        ),
-        child: Text(
-          '+${(amount / 1000).toStringAsFixed(0)}rb',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: SavaioTheme.primary,
+  Widget _buildDateTimeSection() {
+    return _buildBentoContainer(
+      icon: Icons.calendar_today,
+      iconColor: SavaioTheme.secondary,
+      title: 'Waktu & Tanggal',
+      child: Column(
+        children: [
+          _buildBentoValueItem(
+            label: DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+            icon: Icons.calendar_today,
+            onTap: _pickDate,
+          ),
+          const SizedBox(height: 8),
+          _buildBentoValueItem(
+            label: '${DateFormat('HH:mm').format(_selectedDate)} WIB',
+            icon: Icons.schedule,
+            onTap: _pickTime,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesSection() {
+    return _buildBentoContainer(
+      icon: Icons.description,
+      iconColor: SavaioTheme.tertiary,
+      title: 'Catatan Tambahan',
+      child: TextField(
+        controller: _descriptionController,
+        maxLines: 3,
+        style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface),
+        decoration: InputDecoration(
+          hintText: 'Makan siang bareng temen...',
+          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          border: InputBorder.none,
+          fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          filled: true,
+          contentPadding: const EdgeInsets.all(12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBentoContainer({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 18),
+              const SizedBox(width: 8),
+              AppHeading(
+                title,
+                size: AppHeadingSize.subtitle,
+                isBold: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
       ),
     );
   }
@@ -717,6 +374,72 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             ),
             Icon(icon, color: SavaioTheme.onSurfaceVariant, size: 14),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressCard() {
+    return const GlassCard(
+      padding: EdgeInsets.all(24),
+      borderRadius: 16,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppHeading(
+                    'Progress Tabungan',
+                    size: AppHeadingSize.subtitle,
+                    color: SavaioTheme.tertiary,
+                    isBold: true,
+                  ),
+                  AppHeading(
+                    'Sisa budget makan kamu masih aman!',
+                    size: AppHeadingSize.caption,
+                    color: SavaioTheme.onSurfaceVariant,
+                    isBold: false,
+                  ),
+                ],
+              ),
+              AppHeading(
+                '82%',
+                size: AppHeadingSize.h3,
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          AppProgressBar(
+            value: 0.82,
+            color: SavaioTheme.tertiary,
+            height: 6,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: AppButton(
+          label: 'SIMPAN TRANSAKSI',
+          isLoading: _isSubmitting,
+          onTap: _submitData,
         ),
       ),
     );

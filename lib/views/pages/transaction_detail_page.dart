@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../../models/entities/app_data.dart';
-import '../components/organisms/app_header.dart';
-import '../components/atoms/app_heading.dart';
-import '../components/atoms/app_icon_container.dart';
-import '../components/atoms/glass_card.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/atoms/app_icon_container.dart';
+import 'package:savaio/views/components/atoms/glass_card.dart';
 
 class TransactionDetailPage extends StatelessWidget {
   final Transaction transaction;

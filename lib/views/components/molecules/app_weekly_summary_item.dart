@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../atoms/app_progress_bar.dart';
-import '../atoms/app_heading.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/components/atoms/app_progress_bar.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppWeeklySummaryItem extends StatelessWidget {
   final String title;

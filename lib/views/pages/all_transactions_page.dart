@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/utils/service_locator.dart';
-import '../../models/entities/app_data.dart';
-import '../components/organisms/app_header.dart';
-import '../components/atoms/app_heading.dart';
-import 'transaction_detail_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/models/app_data.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/pages/transaction_detail_page.dart';
 
 class AllTransactionsPage extends StatefulWidget {
   final String? initialMonth;

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import '../../core/config/api_config.dart';
+import 'package:savaio/core/constants/api_config.dart';
 
 class OcrDataSource {
   static const _timeout = Duration(seconds: 60);
