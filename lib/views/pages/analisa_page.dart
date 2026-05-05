@@ -11,6 +11,7 @@ import 'package:savaio/views/components/organisms/app_category_pie_chart.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
 import 'package:savaio/views/pages/placeholder_page.dart';
 import 'package:savaio/views/pages/spending_target_page.dart';
+import 'package:savaio/core/utils/analysis_calculator.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -38,18 +39,39 @@ class _AnalisaPageState extends State<AnalisaPage> {
         final data = provider.dashboardData;
         final spendingTarget = provider.spendingTarget;
         final allBudgets = provider.allBudgets;
+        final weeklyPulse = provider.weeklyPulse;
         
         // Calculate budget percentage for hero card
         double budgetPercentage = 0.0;
         bool isBelowBudget = true;
         
         final targetAmount = (spendingTarget?['amount'] as num?)?.toDouble() ?? 0.0;
+        final dailyBudget = targetAmount / 30;
+
         if (targetAmount > 0 && data != null) {
-          budgetPercentage = ((targetAmount - data.totalExpense) / targetAmount) * 100;
-          if (budgetPercentage < 0) {
-            isBelowBudget = false;
-            budgetPercentage = budgetPercentage.abs();
+          budgetPercentage = AnalysisCalculator.budgetPercentage(targetAmount, data.totalExpense);
+          isBelowBudget = AnalysisCalculator.isBelowBudget(targetAmount, data.totalExpense);
+          
+          // If we want to show "how much left" or "how much over"
+          if (isBelowBudget) {
+            budgetPercentage = 100 - budgetPercentage;
+          } else {
+            budgetPercentage = budgetPercentage - 100;
           }
+        }
+
+        // Get actual daily expenses from weekly pulse
+        List<double> dailyExpenses = [];
+        if (weeklyPulse != null && weeklyPulse['values'] is List) {
+          dailyExpenses = (weeklyPulse['values'] as List).map((e) => (e as num).toDouble()).toList();
+        }
+
+        // Ensure we have exactly 7 values for the chart
+        while (dailyExpenses.length < 7) {
+          dailyExpenses.add(0.0);
+        }
+        if (dailyExpenses.length > 7) {
+          dailyExpenses = dailyExpenses.sublist(0, 7);
         }
 
         return Scaffold(
@@ -71,10 +93,10 @@ class _AnalisaPageState extends State<AnalisaPage> {
 
                   // Hero Analysis Card (Organism)
                   AppHeroAnalysisCard(
-                    averageAmount: (data?.totalExpense ?? 0.0) / 30,
+                    averageAmount: AnalysisCalculator.averageDailyExpense(data?.totalExpense ?? 0),
                     budgetPercentage: budgetPercentage,
                     isBelowBudget: isBelowBudget,
-                    dailyValues: const [0.4, 0.65, 0.45, 0.9, 0.55, 0.7, 0.35],
+                    dailyValues: AnalysisCalculator.buildDailyValues(dailyExpenses, dailyBudget),
                   ),
                   
                   const SizedBox(height: 20),

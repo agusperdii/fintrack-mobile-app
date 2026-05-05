@@ -98,6 +98,18 @@ class SavaioTheme {
     end: Alignment.bottomRight,
   );
 
+  static const LinearGradient secondaryGradient = LinearGradient(
+    colors: [secondary, Color(0xFFD4B3FF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient errorGradient = LinearGradient(
+    colors: [error, errorDim],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static ThemeData get theme {
     return ThemeData(
       useMaterial3: true,

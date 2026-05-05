@@ -7,7 +7,6 @@ import 'package:savaio/core/constants/api_config.dart';
 class AuthController extends ChangeNotifier {
   final String baseUrl = ApiConfig.baseUrl;
 
-
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 

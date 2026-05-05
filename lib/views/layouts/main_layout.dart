@@ -8,7 +8,7 @@ import 'package:savaio/views/pages/add_transaction_page.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 
 class MainLayout extends StatefulWidget {
-  const MainLayout({super.key});
+  const MainLayout({super.key}); //parent: main.dart
 
   @override
   State<MainLayout> createState() => _MainLayoutState();

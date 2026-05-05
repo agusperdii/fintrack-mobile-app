@@ -8,7 +8,7 @@ class ApiConfig {
   // --- CONFIGURATION ---
 
   // Replace 'localhost' with your computer's IP address (e.g., '192.168.1.10')
-  static const String _host = '172.20.10.3';
+  static const String _host = '192.168.68.171';
 
   // --- ENDPOINTS ---
 

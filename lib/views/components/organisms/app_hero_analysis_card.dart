@@ -39,7 +39,9 @@ class _AppHeroAnalysisCardState extends State<AppHeroAnalysisCard> {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: 1.0,
+                    maxY: (widget.dailyValues.isEmpty 
+                        ? 1.0 
+                        : widget.dailyValues.reduce((a, b) => a > b ? a : b).clamp(1.0, 5.0) * 1.2),
                     barTouchData: BarTouchData(
                       enabled: true,
                       touchCallback: (FlTouchEvent event, barTouchResponse) {
@@ -60,8 +62,8 @@ class _AppHeroAnalysisCardState extends State<AppHeroAnalysisCard> {
                         getTooltipItem: (group, groupIndex, rod, rodIndex) {
                           return BarTooltipItem(
                             '${(rod.toY * 100).toStringAsFixed(0)}%',
-                            const TextStyle(
-                              color: SavaioTheme.primary,
+                            TextStyle(
+                              color: rod.toY > 1.0 ? SavaioTheme.error : SavaioTheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                           );
@@ -105,14 +107,19 @@ class _AppHeroAnalysisCardState extends State<AppHeroAnalysisCard> {
                     barGroups: widget.dailyValues.asMap().entries.map((entry) {
                       final isMax = entry.value == widget.dailyValues.reduce((a, b) => a > b ? a : b);
                       final isTouched = entry.key == touchedIndex;
+                      final isOverBudget = entry.value > 1.0;
                       
                       return BarChartGroupData(
                         x: entry.key,
                         barRods: [
                           BarChartRodData(
-                            toY: entry.value.clamp(0.1, 1.0),
-                            gradient: (isMax || isTouched) ? SavaioTheme.primaryGradient : null,
-                            color: (isMax || isTouched) ? null : SavaioTheme.secondary.withValues(alpha: 0.4),
+                            toY: entry.value.clamp(0.05, 5.0),
+                            gradient: isOverBudget 
+                                ? SavaioTheme.errorGradient 
+                                : ((isMax || isTouched) ? SavaioTheme.primaryGradient : null),
+                            color: (isOverBudget || isMax || isTouched) 
+                                ? null 
+                                : SavaioTheme.secondary.withValues(alpha: 0.4),
                             width: 16,
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                             backDrawRodData: BackgroundBarChartRodData(

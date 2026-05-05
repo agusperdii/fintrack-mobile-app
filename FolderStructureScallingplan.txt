@@ -1,0 +1,12 @@
+lib/
+ core/
+ shared/
+ features/
+   dashboard/
+     data/
+     presentation/
+     controller/
+   transaction/
+   analysis/
+   profile/
+ main.dart
