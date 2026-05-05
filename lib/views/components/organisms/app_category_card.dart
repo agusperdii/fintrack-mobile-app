@@ -5,7 +5,7 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
 class AppCategoryCard extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final String amount;
   final double progress;

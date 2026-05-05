@@ -130,6 +130,12 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     ...data.analysis.map((item) {
                       final color = Color(int.parse('FF${item.colorHex}', radix: 16));
                       
+                      // Find category info from controller for better emoji/naming
+                      final categoryInfo = provider.categories.firstWhere(
+                        (c) => c['name'].toLowerCase() == item.label.toLowerCase(),
+                        orElse: () => {'name': item.label, 'icon': Icons.category},
+                      );
+
                       // Find matching budget for this category
                       final categoryBudget = allBudgets.firstWhere(
                         (b) => b['category'].toString().toLowerCase() == item.label.toLowerCase(),
@@ -152,8 +158,8 @@ class _AnalisaPageState extends State<AnalisaPage> {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
                         child: AppCategoryCard(
-                          icon: _getIconForCategory(item.label),
-                          title: item.label,
+                          icon: categoryInfo['icon'],
+                          title: categoryInfo['name'],
                           amount: SavaioTheme.formatCurrency(item.amount),
                           progress: progress.clamp(0.0, 1.0),
                           limit: limitText,
@@ -202,26 +208,5 @@ class _AnalisaPageState extends State<AnalisaPage> {
         );
       },
     );
-  }
-
-  IconData _getIconForCategory(String category) {
-    switch (category.toLowerCase()) {
-      case 'food':
-      case 'makanan':
-        return Icons.restaurant;
-      case 'transport':
-      case 'transportasi':
-        return Icons.directions_car;
-      case 'shopping':
-      case 'belanja':
-        return Icons.shopping_bag;
-      case 'bills':
-      case 'tagihan':
-        return Icons.receipt;
-      case 'coffee':
-        return Icons.coffee;
-      default:
-        return Icons.category;
-    }
   }
 }

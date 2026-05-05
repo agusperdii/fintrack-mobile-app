@@ -42,11 +42,7 @@ class SelectionCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  icon is IconData ? icon : Icons.category,
-                  size: 16,
-                  color: SavaioTheme.onSurface,
-                ),
+                _buildIcon(),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -66,5 +62,21 @@ class SelectionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildIcon() {
+    if (icon is IconData) {
+      return Icon(
+        icon as IconData,
+        size: 16,
+        color: SavaioTheme.onSurface,
+      );
+    } else if (icon is String) {
+      return Text(
+        icon as String,
+        style: const TextStyle(fontSize: 14),
+      );
+    }
+    return const Icon(Icons.category, size: 16, color: SavaioTheme.onSurface);
   }
 }

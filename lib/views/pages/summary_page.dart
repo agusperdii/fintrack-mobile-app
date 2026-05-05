@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/core/utils/summary_utils.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
@@ -18,6 +19,15 @@ class SummaryPage extends StatelessWidget {
         final provider = sl.financeController;
         final summary = provider.monthlySummary;
         
+        // Find max transaction count across ALL data for relative scaling
+        final maxTxCount = summary != null ? SummaryUtils.getMaxTransactionCount(summary) : 0;
+
+        // Group summary by year using Utility
+        final Map<String, List<Map<String, dynamic>>> groupedSummary = 
+            summary != null ? SummaryUtils.groupByYear(summary) : {};
+
+        final sortedYears = groupedSummary.keys.toList()..sort((a, b) => b.compareTo(a));
+
         return Scaffold(
           backgroundColor: SavaioTheme.background,
           appBar: AppHeader(
@@ -37,34 +47,47 @@ class SummaryPage extends StatelessWidget {
                   _ArchiveHero(monthCount: summary?.length ?? 0),
                   const SizedBox(height: 32),
                   
-                  if (summary != null && summary.isNotEmpty) ...[
-                    // Grouping by year (simplified)
-                    const _YearGroupHeader(year: '2026', color: SavaioTheme.secondary),
-                    const SizedBox(height: 16),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: summary.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final item = summary[index];
-                        final monthStr = item['month']; // e.g., "2026-04"
-                        return AppWeeklySummaryItem(
-                          title: _formatMonth(monthStr),
-                          amount: '${item['count']} Transaksi',
-                          progress: 0.7, // Mock progress
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AllTransactionsPage(initialMonth: monthStr),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ] else if (summary != null)
+                  if (summary != null && summary.isNotEmpty)
+                    ...sortedYears.map((year) {
+                      final yearItems = groupedSummary[year]!;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _YearGroupHeader(year: year, color: SavaioTheme.secondary),
+                          const SizedBox(height: 16),
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: yearItems.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final item = yearItems[index];
+                              final monthStr = item['month']; // e.g., "2026-04"
+                              final count = item['count'] as int? ?? 0;
+                              
+                              // Relative progress calculation based on transaction count
+                              final progress = SummaryUtils.calculateRelativeProgress(count, maxTxCount);
+
+                              return AppWeeklySummaryItem(
+                                title: SummaryUtils.formatMonthYear(monthStr),
+                                amount: '$count Transaksi',
+                                progress: progress, 
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AllTransactionsPage(initialMonth: monthStr),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      );
+                    }).toList()
+                  else if (summary != null)
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(40),
@@ -80,22 +103,6 @@ class SummaryPage extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatMonth(String monthYear) {
-    // Basic formatting for YYYY-MM
-    try {
-      final parts = monthYear.split('-');
-      if (parts.length < 2) return monthYear;
-      final months = [
-        '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-      ];
-      final monthIdx = int.parse(parts[1]);
-      return "${months[monthIdx]} ${parts[0]}";
-    } catch (e) {
-      return monthYear;
-    }
   }
 }
 

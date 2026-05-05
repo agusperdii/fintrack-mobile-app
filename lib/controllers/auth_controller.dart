@@ -1,23 +1,41 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:savaio/core/constants/api_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:savaio/repositories/finance_repository.dart';
 
 class AuthController extends ChangeNotifier {
-  final String baseUrl = ApiConfig.baseUrl;
+  final SupabaseClient _supabase = Supabase.instance.client;
+  FinanceRepository? _financeRepository;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  String? _token;
-  String? get token => _token;
+  Session? _session;
+  String? get token => _session?.accessToken;
 
-  bool get isAuthenticated => _token != null;
+  bool get isAuthenticated => _session != null;
+
+  User? get currentUser => _session?.user;
+
+  AuthController() {
+    _init();
+  }
+
+  /// Injects FinanceRepository after initialization to avoid circular dependency
+  void setFinanceRepository(FinanceRepository repository) {
+    _financeRepository = repository;
+  }
+
+  void _init() {
+    // Listen to auth state changes to keep the session in sync
+    _supabase.auth.onAuthStateChange.listen((data) {
+      _session = data.session;
+      notifyListeners();
+    });
+  }
 
   Future<void> checkAuth() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token');
+    // Supabase SDK handles persistence automatically
+    _session = _supabase.auth.currentSession;
     notifyListeners();
   }
 
@@ -26,32 +44,29 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'username': email,
-          'password': password,
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      
+      _session = response.session;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _token = data['access_token'];
-        
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
-        
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        _isLoading = false;
-        notifyListeners();
-        return false;
+      // Sync with FastAPI backend if login was successful
+      if (_session != null && _financeRepository != null) {
+        try {
+          await _financeRepository!.syncUser();
+          debugPrint('Successfully synced user with FastAPI');
+        } catch (e) {
+          debugPrint('FastAPI Sync Error: $e');
+          // We continue even if sync fails, but the app might face 403s later
+        }
       }
+      
+      _isLoading = false;
+      notifyListeners();
+      return _session != null;
     } catch (e) {
-      debugPrint('Login Error: $e');
+      debugPrint('Supabase Login Error: $e');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -63,26 +78,17 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        _isLoading = false;
-        notifyListeners();
-        return true; // Registration success
-      } else {
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+      final response = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      
+      _isLoading = false;
+      notifyListeners();
+      // SignUp might return a user but no session if email confirmation is enabled
+      return response.user != null;
     } catch (e) {
-      debugPrint('Register Error: $e');
+      debugPrint('Supabase Register Error: $e');
       _isLoading = false;
       notifyListeners();
       return false;
@@ -90,9 +96,12 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _token = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    notifyListeners();
+    try {
+      await _supabase.auth.signOut();
+      _session = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Supabase Logout Error: $e');
+    }
   }
 }

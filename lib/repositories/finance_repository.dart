@@ -9,6 +9,8 @@ class FinanceRepository {
 
   FinanceRepository({required this.remoteDataSource});
 
+  Future<Map<String, String>> syncUser() => remoteDataSource.syncUser();
+
   // --- In-Memory Cache ---
   AppData? _cachedDashboard;
   Map<String, String>? _cachedProfile;

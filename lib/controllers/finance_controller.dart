@@ -87,31 +87,53 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<void> fetchAllData() async {
-    _setLoading(true);
+    // We don't necessarily want to set a global loading state for every background refresh
+    // but we want the UI to be responsive.
     try {
-      final results = await Future.wait([
-        _repository.getDashboardData(),
-        _repository.getSpendingTarget(),
-        _repository.getUserProfile(),
-        _repository.getAllBudgets(),
-        _repository.getWeeklyPulse(),
-        _repository.getNudges(),
-        loadCategories(),
-        _repository.getNotifications(),
-        _repository.getCheckInStatus(),
-      ]);
-      _dashboardData = results[0] as AppData;
-      _spendingTarget = results[1] as Map<String, dynamic>;
-      _userProfile = results[2] as Map<String, String>;
-      _allBudgets = results[3] as List<Map<String, dynamic>>;
-      _weeklyPulse = results[4] as Map<String, dynamic>;
-      _nudges = results[5] as List<NudgeData>;
-      _notifications = results[7] as List<NotificationData>;
-      _checkInStatus = results[8] as CheckInStatus;
+      // Start all requests in parallel
+      _repository.getDashboardData().then((data) {
+        _dashboardData = data;
+        notifyListeners();
+      });
+
+      _repository.getSpendingTarget().then((data) {
+        _spendingTarget = data;
+        notifyListeners();
+      });
+
+      _repository.getUserProfile().then((data) {
+        _userProfile = data;
+        notifyListeners();
+      });
+
+      _repository.getAllBudgets().then((data) {
+        _allBudgets = data;
+        notifyListeners();
+      });
+
+      _repository.getWeeklyPulse().then((data) {
+        _weeklyPulse = data;
+        notifyListeners();
+      });
+
+      _repository.getNudges().then((data) {
+        _nudges = data;
+        notifyListeners();
+      });
+
+      loadCategories();
+
+      _repository.getNotifications().then((data) {
+        _notifications = data;
+        notifyListeners();
+      });
+
+      _repository.getCheckInStatus().then((data) {
+        _checkInStatus = data;
+        notifyListeners();
+      });
     } catch (e) {
-      debugPrint("Error fetching data: $e");
-    } finally {
-      _setLoading(false);
+      debugPrint("Error fetching data in background: $e");
     }
   }
 
@@ -409,22 +431,45 @@ class FinanceController extends ChangeNotifier {
     DateTime? date,
   }) async {
     _setLoading(true);
-    final success = await _repository.addTransaction(
-      title: title,
-      description: description,
-      amount: amount,
-      category: category,
-      type: type,
-      date: date,
-    );
-    if (success) {
-      await Future.wait([
-        fetchAllData(),
-        fetchTransactions(),
-      ]);
+    try {
+      final success = await _repository.addTransaction(
+        title: title,
+        description: description,
+        amount: amount,
+        category: category,
+        type: type,
+        date: date,
+      );
+      
+      if (success) {
+        // Essential refreshes - don't block the whole app, just update these
+        // and notify listeners when they are done.
+        _repository.getDashboardData().then((data) {
+          _dashboardData = data;
+          notifyListeners();
+        });
+        _repository.getTransactions().then((data) {
+          _transactions = data;
+          notifyListeners();
+        });
+        _repository.getNudges().then((data) {
+          _nudges = data;
+          notifyListeners();
+        });
+        
+        // Non-essential refreshes can happen in the background
+        _repository.getNotifications().then((data) {
+          _notifications = data;
+          notifyListeners();
+        });
+      }
+      return success;
+    } catch (e) {
+      debugPrint("Error adding transaction: $e");
+      return false;
+    } finally {
+      _setLoading(false);
     }
-    _setLoading(false);
-    return success;
   }
 
   void _setLoading(bool value) {

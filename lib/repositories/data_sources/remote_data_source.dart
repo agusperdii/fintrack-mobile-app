@@ -10,6 +10,7 @@ import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/models/checkin_data.dart';
 
 abstract class RemoteDataSource {
+  Future<Map<String, String>> syncUser();
   Future<AppData> getDashboardData();
   Future<List<AnalysisData>> getAnalysisData();
   Future<Map<String, String>> getUserProfile();
@@ -58,8 +59,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       };
 
   Future<http.Response> _handleResponse(http.Response response) async {
-    if (response.statusCode == 401 || response.statusCode == 403 || response.statusCode == 404) {
-      // Token invalid, expired, or user deleted (404), logout user
+    if (response.statusCode == 401) {
+      // Token strictly invalid or expired, logout user
       authController.logout();
     }
     return response;
@@ -98,6 +99,20 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   // --- Implementations ---
+
+  @override
+  Future<Map<String, String>> syncUser() async {
+    final response = await _get('$baseUrl/auth/me');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        'id': data['id'].toString(),
+        'email': data['email'] ?? '',
+        'full_name': data['full_name'] ?? '',
+      };
+    }
+    throw Exception('Failed to sync user with backend: ${response.statusCode}');
+  }
 
   @override
   Future<AppData> getDashboardData() async {

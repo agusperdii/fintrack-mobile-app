@@ -28,25 +28,31 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
       _selectedMonth = widget.initialMonth;
     }
     if (widget.initialTransactions != null) {
-      // Use microtask to avoid calling notifyListeners during build/init if possible, 
-      // though here it's initState so it's usually fine.
       Future.microtask(() => sl.financeController.setTransactions(widget.initialTransactions!));
     }
-    sl.financeController.fetchTransactions();
+    // Fetch specifically for the selected month if we have one, otherwise all
+    sl.financeController.fetchTransactions(month: _selectedMonth);
   }
 
   String _formatMonth(String month) {
+    if (month.isEmpty) return 'Bulan';
     final parts = month.split('-');
     if (parts.length != 2) return month;
     const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    final m = int.tryParse(parts[1]) ?? 0;
-    return '${months[m]} ${parts[0]}';
+    try {
+      final m = int.parse(parts[1]);
+      if (m >= 1 && m <= 12) {
+        return '${months[m]} ${parts[0]}';
+      }
+    } catch (_) {}
+    return month;
   }
 
   List<Transaction> _filteredTransactions(List<Transaction> all) {
     return all.where((t) {
       if (_selectedType == 'income' && t.type != TransactionType.income) return false;
       if (_selectedType == 'expense' && t.type != TransactionType.expense) return false;
+      // If we are filtering by month via dropdown, apply it
       if (_selectedMonth != null && !t.date.startsWith(_selectedMonth!)) return false;
       return true;
     }).toList();
@@ -55,7 +61,9 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
   Map<String, List<Transaction>> _groupByDate(List<Transaction> txs) {
     final map = <String, List<Transaction>>{};
     for (final t in txs) {
-      map.putIfAbsent(t.date, () => []).add(t);
+      // Use date part only (YYYY-MM-DD)
+      final dateOnly = t.date.length >= 10 ? t.date.substring(0, 10) : t.date;
+      map.putIfAbsent(dateOnly, () => []).add(t);
     }
     return map;
   }
@@ -70,17 +78,27 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
         builder: (context, _) {
           final controller = sl.financeController;
           final allTxs = controller.transactions ?? [];
-          final filtered = _filteredTransactions(allTxs);
-          final grouped = _groupByDate(filtered);
-          final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-
-          // Build unique months for filter
+          
+          // Build unique months for filter from data
           final months = allTxs
               .where((t) => t.date.length >= 7)
               .map((t) => t.date.substring(0, 7))
               .toSet()
               .toList()
             ..sort((a, b) => b.compareTo(a));
+
+          // Safety check: if _selectedMonth is set but not in data, and data is loaded,
+          // we should still keep it in the dropdown if it was passed via initialMonth
+          // so the user can see it's empty instead of crashing.
+          final dropdownMonths = List<String>.from(months);
+          if (_selectedMonth != null && !dropdownMonths.contains(_selectedMonth)) {
+             dropdownMonths.add(_selectedMonth!);
+             dropdownMonths.sort((a, b) => b.compareTo(a));
+          }
+
+          final filtered = _filteredTransactions(allTxs);
+          final grouped = _groupByDate(filtered);
+          final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
 
           return Column(
             children: [
@@ -92,30 +110,40 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                   children: [
                     // Type filter
                     _TypeChip(label: 'Semua', value: 'all', selected: _selectedType == 'all', onTap: () => setState(() { _selectedType = 'all'; })),
-                    const SizedBox(width: 8),
-                    _TypeChip(label: 'Pemasukan', value: 'income', selected: _selectedType == 'income', onTap: () => setState(() { _selectedType = 'income'; })),
-                    const SizedBox(width: 8),
-                    _TypeChip(label: 'Pengeluaran', value: 'expense', selected: _selectedType == 'expense', onTap: () => setState(() { _selectedType = 'expense'; })),
+                    const SizedBox(width: 4),
+                    _TypeChip(label: 'Masuk', value: 'income', selected: _selectedType == 'income', onTap: () => setState(() { _selectedType = 'income'; })),
+                    const SizedBox(width: 4),
+                    _TypeChip(label: 'Keluar', value: 'expense', selected: _selectedType == 'expense', onTap: () => setState(() { _selectedType = 'expense'; })),
                     const Spacer(),
                     // Month dropdown
-                    if (months.isNotEmpty)
+                    if (dropdownMonths.isNotEmpty)
                       DropdownButton<String?>(
                         value: _selectedMonth,
-                        hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
+                        hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceVariant)),
                         dropdownColor: SavaioTheme.surfaceContainerHigh,
                         underline: const SizedBox(),
-                        icon: const Icon(Icons.expand_more, color: SavaioTheme.onSurfaceVariant, size: 16),
+                        icon: const Icon(Icons.expand_more, color: SavaioTheme.onSurfaceVariant, size: 14),
                         items: [
-                          DropdownMenuItem<String?>(value: null, child: Text('Semua', style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface))),
-                          ...months.map((m) => DropdownMenuItem<String?>(value: m, child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface)))),
+                          DropdownMenuItem<String?>(
+                            value: null, 
+                            child: Text('Semua', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
+                          ),
+                          ...dropdownMonths.map((m) => DropdownMenuItem<String?>(
+                            value: m, 
+                            child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
+                          )),
                         ],
-                        onChanged: (v) => setState(() => _selectedMonth = v),
+                        onChanged: (v) {
+                          setState(() => _selectedMonth = v);
+                          // Re-fetch when month changes to ensure we have data for that month if paginated
+                          controller.fetchTransactions(month: v);
+                        },
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 8),
-              if (controller.isLoading)
+              if (controller.isLoading && allTxs.isEmpty)
                 const Expanded(child: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)))
               else if (filtered.isEmpty)
                 Expanded(
@@ -125,7 +153,13 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                       children: [
                         Icon(Icons.receipt_long_outlined, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.4)),
                         const SizedBox(height: 16),
-                        AppHeading('Tidak ada transaksi', size: AppHeadingSize.h3, color: SavaioTheme.onSurfaceVariant),
+                        AppHeading(
+                          _selectedMonth != null 
+                              ? 'Belum ada transaksi di ${_formatMonth(_selectedMonth!)}'
+                              : 'Tidak ada transaksi', 
+                          size: AppHeadingSize.subtitle, 
+                          color: SavaioTheme.onSurfaceVariant
+                        ),
                       ],
                     ),
                   ),
@@ -133,7 +167,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
               else
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: () => sl.financeController.fetchTransactions(),
+                    onRefresh: () => sl.financeController.fetchTransactions(month: _selectedMonth),
                     color: SavaioTheme.primary,
                     child: ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -141,13 +175,20 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                       itemBuilder: (context, i) {
                         final date = sortedDates[i];
                         final txs = grouped[date]!;
+                        
+                        String displayDate = date;
+                        try {
+                          final dt = DateTime.parse(date);
+                          displayDate = DateFormat('d MMMM yyyy').format(dt);
+                        } catch (_) {}
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Text(
-                                DateFormat('d MMMM yyyy').format(DateTime.parse(date)),
+                                displayDate,
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -164,7 +205,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                                   MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
                                 );
                                 if (deleted == true) {
-                                  sl.financeController.fetchTransactions();
+                                  sl.financeController.fetchTransactions(month: _selectedMonth);
                                 }
                               },
                             )),

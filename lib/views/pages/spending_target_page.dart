@@ -184,9 +184,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
           child: SelectionCard(
             label: 'KATEGORI',
             value: _selectedCategory == 'All' ? 'Total' : _selectedCategory,
-            icon: provider.getCategoryIcon(_selectedCategory) is IconData 
-                ? provider.getCategoryIcon(_selectedCategory) as IconData
-                : Icons.category_rounded,
+            icon: provider.getCategoryIcon(_selectedCategory),
             onTap: () => _showCategoryPicker(categories),
           ),
         ),

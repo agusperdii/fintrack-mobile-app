@@ -24,7 +24,10 @@ class ServiceLocator {
     remoteDataSource = RemoteDataSourceImpl(authController: authController);
     financeRepository = FinanceRepository(remoteDataSource: remoteDataSource);
     financeController = FinanceController(financeRepository);
-    
+
+    // Inject repository into AuthController for sync
+    authController.setFinanceRepository(financeRepository);
+
     // OCR
     ocrDataSource = OcrDataSource();
     ocrRepository = OcrRepository(ocrDataSource);

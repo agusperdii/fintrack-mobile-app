@@ -19,36 +19,41 @@ class AppWeeklySummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOverBudget = progress > 1.0;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: SavaioTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                AppHeading(
-                  title,
-                  size: AppHeadingSize.subtitle,
+                Expanded(
+                  child: AppHeading(
+                    title,
+                    size: AppHeadingSize.subtitle,
+                    isBold: true,
+                  ),
                 ),
                 AppHeading(
                   amount,
                   size: AppHeadingSize.subtitle,
-                  color: isOverBudget ? SavaioTheme.error : SavaioTheme.onSurface,
+                  color: SavaioTheme.onSurface,
+                  isBold: true,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             AppProgressBar(
               value: progress,
-              color: isOverBudget ? SavaioTheme.error : SavaioTheme.primary,
-              height: 4,
+              color: SavaioTheme.primary,
+              height: 6,
             ),
           ],
         ),
