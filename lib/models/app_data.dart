@@ -1,4 +1,4 @@
-import '../../core/utils/parser_utils.dart';
+import 'package:savaio/others.dart';
 
 enum TransactionType { income, expense }
 
@@ -28,12 +28,14 @@ class AppData {
       initialBalance: ParserUtils.toDouble(json['initialBalance']),
       totalIncome: ParserUtils.toDouble(json['totalIncome']),
       totalExpense: ParserUtils.toDouble(json['totalExpense']),
-      recentTransactions: (json['recentTransactions'] as List)
-          .map((t) => Transaction.fromJson(t))
-          .toList(),
-      analysis: (json['analysis'] as List)
-          .map((a) => AnalysisData.fromJson(a))
-          .toList(),
+      recentTransactions: ParserUtils.toList(
+        json['recentTransactions'],
+        (t) => Transaction.fromJson(t),
+      ),
+      analysis: ParserUtils.toList(
+        json['analysis'],
+        (a) => AnalysisData.fromJson(a),
+      ),
       spendingTarget: ParserUtils.toDouble(json['spendingTarget']),
       targetPeriod: json['targetPeriod'] as String?,
     );
@@ -120,7 +122,7 @@ class Transaction {
       amount: ParserUtils.toDouble(json['amount']),
       category: json['category']?.toString() ?? 'Lainnya',
       date: dateStr,
-      type: json['type']?.toString() == 'income'
+      type: json['type']?.toString().toLowerCase() == 'income'
           ? TransactionType.income
           : TransactionType.expense,
       source: json['source']?.toString(),
@@ -142,9 +144,9 @@ class AnalysisData {
 
   factory AnalysisData.fromJson(Map<String, dynamic> json) {
     return AnalysisData(
-      label: json['label'] as String,
+      label: json['label']?.toString() ?? 'Lainnya',
       amount: ParserUtils.toDouble(json['amount']),
-      colorHex: json['colorHex'] as String,
+      colorHex: json['colorHex']?.toString() ?? '9E9E9E',
     );
   }
 }

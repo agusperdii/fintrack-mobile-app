@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/models/app_data.dart';
-import 'package:savaio/repositories/finance_repository.dart';
-
+import 'package:savaio/models/finance_repository.dart';
 import 'package:savaio/models/nudge_data.dart';
 import 'package:savaio/models/notification_data.dart';
+import 'package:savaio/models/analysis_view_data.dart';
 import 'package:savaio/models/checkin_data.dart';
 
 class FinanceController extends ChangeNotifier {
@@ -13,62 +13,138 @@ class FinanceController extends ChangeNotifier {
 
   // --- States ---
   AppData? _dashboardData;
-  Map<String, dynamic>? _spendingTarget;
-  List<Map<String, dynamic>> _allBudgets = [];
   Map<String, dynamic>? _weeklyPulse;
   Map<String, String>? _userProfile;
+  List<Map<String, dynamic>>? _allBudgets;
+  List<Map<String, dynamic>>? _categories;
+  List<NudgeData>? _nudges;
+  List<NotificationData>? _notifications;
+  CheckInStatus? _checkInStatus;
   List<Transaction>? _transactions;
   List<Map<String, dynamic>>? _monthlySummary;
-  List<NudgeData> _nudges = [];
-  List<NotificationData> _notifications = [];
-  CheckInStatus? _checkInStatus;
   bool _isLoading = false;
-
-  // --- Categories ---
-  final List<Map<String, dynamic>> _categories = [
-    {'name': 'Food', 'icon': '🍔', 'isEmoji': true},
-    {'name': 'Salary', 'icon': '💰', 'isEmoji': true},
-    {'name': 'Coffee', 'icon': '☕', 'isEmoji': true},
-    {'name': 'Transport', 'icon': '🚌', 'isEmoji': true},
-    {'name': 'Investment', 'icon': '📈', 'isEmoji': true},
-    {'name': 'Education', 'icon': '📚', 'isEmoji': true},
-    {'name': 'Gift', 'icon': '🎁', 'isEmoji': true},
-    {'name': 'Fun', 'icon': '🎮', 'isEmoji': true},
-    {'name': 'Uang Saku', 'icon': '💸', 'isEmoji': true},
-    {'name': 'Kost/Sewa', 'icon': '🏠', 'isEmoji': true},
-  ];
 
   // --- Getters ---
   AppData? get dashboardData => _dashboardData;
-  Map<String, dynamic>? get spendingTarget => _spendingTarget;
-  List<Map<String, dynamic>> get allBudgets => _allBudgets;
   Map<String, dynamic>? get weeklyPulse => _weeklyPulse;
   Map<String, String>? get userProfile => _userProfile;
-  List<Transaction>? get transactions => _transactions;
-  List<Map<String, dynamic>>? get monthlySummary => _monthlySummary;
-  List<NudgeData> get nudges => _nudges;
-  List<NotificationData> get notifications => _notifications;
+  List<Map<String, dynamic>> get allBudgets => _allBudgets ?? [];
+  List<NudgeData> get nudges => _nudges ?? [];
+  List<NotificationData> get notifications => _notifications ?? [];
   CheckInStatus? get checkInStatus => _checkInStatus;
+  List<Transaction> get transactions => _transactions ?? [];
+  List<Map<String, dynamic>> get monthlySummary => _monthlySummary ?? [];
   bool get isLoading => _isLoading;
-  List<Map<String, dynamic>> get categories => _categories;
+  List<Map<String, dynamic>> get categories => _categories ?? [];
   
-  int get unreadNotificationsCount => _notifications.where((n) => !n.isRead).length;
+  int get unreadNotificationsCount => notifications.where((n) => !n.isRead).length;
 
   NudgeData? get latestUnreadNudge {
-    if (_nudges.isEmpty) return null;
+    if (nudges.isEmpty) return null;
     try {
-      return _nudges.firstWhere((n) => !n.isRead);
-    } catch (e) {
-      return null;
+      return nudges.firstWhere((n) => !n.isRead);
+    } catch (_) {
+      return nudges.first;
     }
   }
   
-  dynamic getCategoryIcon(String categoryName) {
-    final cat = _categories.firstWhere(
-      (c) => c['name'].toLowerCase() == categoryName.toLowerCase(),
+  dynamic getCategoryIcon(String name) {
+    if (_categories == null) return Icons.category;
+    final cat = _categories!.firstWhere(
+      (c) => c['name'].toString().toLowerCase() == name.toLowerCase(), 
       orElse: () => {'icon': Icons.category},
     );
     return cat['icon'];
+  }
+
+  // --- Actions ---
+
+  Future<void> loadInitialData() => fetchAllData();
+
+  Future<void> fetchAllData({bool forceRefresh = false}) async {
+    if (_isLoading) return;
+    _setLoading(true);
+    
+    try {
+      if (forceRefresh) _repository.clearCache();
+
+      final results = await Future.wait([
+        _repository.getDashboardData(forceRefresh: forceRefresh),
+        _repository.getWeeklyPulse(forceRefresh: forceRefresh),
+        _repository.getUserProfile(forceRefresh: forceRefresh),
+        _repository.getCategories(forceRefresh: forceRefresh),
+        _repository.getNudges(forceRefresh: forceRefresh),
+        _repository.getNotifications(forceRefresh: forceRefresh),
+        _repository.getCheckInStatus(forceRefresh: forceRefresh),
+        _repository.getAllBudgets(),
+        _repository.getMonthlySummary(forceRefresh: forceRefresh),
+        _repository.getTransactions(),
+      ]);
+
+      _dashboardData = results[0] as AppData;
+      _weeklyPulse = results[1] as Map<String, dynamic>;
+      _userProfile = results[2] as Map<String, String>;
+      _categories = (results[3] as List<Map<String, dynamic>>).map((c) => {...c, 'isEmoji': true}).toList();
+      _nudges = results[4] as List<NudgeData>;
+      _notifications = results[5] as List<NotificationData>;
+      _checkInStatus = results[6] as CheckInStatus;
+      _allBudgets = results[7] as List<Map<String, dynamic>>;
+      _monthlySummary = results[8] as List<Map<String, dynamic>>;
+      _transactions = results[9] as List<Transaction>;
+
+    } catch (e) {
+      debugPrint("FinanceController Load Error: $e");
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<AnalysisViewData> getAnalysisViewData(String month) async {
+    final raw = await _repository.getAnalysisSnapshot(month);
+    return AnalysisViewData.fromMap(raw);
+  }
+
+  Future<void> fetchNudges() async {
+    _nudges = await _repository.getNudges(forceRefresh: true);
+    notifyListeners();
+  }
+
+  Future<void> markNudgeAsRead(String id) async {
+    if (await _repository.markNudgeRead(id)) {
+      await fetchNudges();
+    }
+  }
+
+  Future<void> fetchNotifications() async {
+    _notifications = await _repository.getNotifications(forceRefresh: true);
+    notifyListeners();
+  }
+
+  Future<void> markNotificationAsRead(String id) async {
+    if (await _repository.markNotificationRead(id)) {
+      await fetchNotifications();
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    if (await _repository.deleteNotification(id)) {
+      await fetchNotifications();
+    }
+  }
+
+  Future<void> performCheckIn() async {
+    if (await _repository.performCheckIn()) {
+      _checkInStatus = await _repository.getCheckInStatus(forceRefresh: true);
+      _notifications = await _repository.getNotifications(forceRefresh: true);
+      notifyListeners();
+    }
+  }
+
+  Future<List<Transaction>> fetchTransactions({String? month}) async {
+    final txs = await _repository.getTransactions(month: month);
+    _transactions = txs;
+    notifyListeners();
+    return txs;
   }
 
   void setTransactions(List<Transaction> txs) {
@@ -78,358 +154,62 @@ class FinanceController extends ChangeNotifier {
 
   double getSpentAmountFor(String category, String month) {
     if (_transactions == null) return 0.0;
-    
     return _transactions!
         .where((t) => t.type == TransactionType.expense)
         .where((t) => t.date.startsWith(month))
-        .where((t) => category == 'All' || t.category.toLowerCase() == category.toLowerCase())
+        .where((t) => category.toLowerCase() == 'all' || t.category.toLowerCase() == category.toLowerCase())
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 
-  Future<void> fetchAllData() async {
-    _setLoading(true);
-    try {
-      final results = await Future.wait([
-        _repository.getDashboardData(),
-        _repository.getSpendingTarget(),
-        _repository.getUserProfile(),
-        _repository.getAllBudgets(),
-        _repository.getWeeklyPulse(),
-        _repository.getNudges(),
-        loadCategories(),
-        _repository.getNotifications(),
-        _repository.getCheckInStatus(),
-      ]);
-      _dashboardData = results[0] as AppData;
-      _spendingTarget = results[1] as Map<String, dynamic>;
-      _userProfile = results[2] as Map<String, String>;
-      _allBudgets = results[3] as List<Map<String, dynamic>>;
-      _weeklyPulse = results[4] as Map<String, dynamic>;
-      _nudges = results[5] as List<NudgeData>;
-      _notifications = results[7] as List<NotificationData>;
-      _checkInStatus = results[8] as CheckInStatus;
-    } catch (e) {
-      debugPrint("Error fetching data: $e");
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> loadInitialData() async {
-    if (_isLoading) return;
-    
-    _setLoading(true);
-    try {
-      await loadCategories();
-      
-      // Start all requests in parallel
-      final dashboardFuture = _repository.getDashboardData();
-      final targetFuture = _repository.getSpendingTarget();
-      final allBudgetsFuture = _repository.getAllBudgets();
-      final weeklyPulseFuture = _repository.getWeeklyPulse();
-      final profileFuture = _repository.getUserProfile();
-      final summaryFuture = _repository.getMonthlySummary();
-      final nudgesFuture = _repository.getNudges();
-      final notificationsFuture = _repository.getNotifications();
-      final checkInStatusFuture = _repository.getCheckInStatus();
-
-      // Handle each result as it arrives to update UI incrementally
-      dashboardFuture.then((data) {
-        _dashboardData = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error dashboard: $e");
-      });
-
-      nudgesFuture.then((data) {
-        _nudges = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error nudges: $e");
-      });
-
-      notificationsFuture.then((data) {
-        _notifications = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error notifications: $e");
-      });
-
-      checkInStatusFuture.then((data) {
-        _checkInStatus = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error checkin status: $e");
-      });
-
-      targetFuture.then((data) {
-        _spendingTarget = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error target: $e");
-      });
-
-      allBudgetsFuture.then((data) {
-        _allBudgets = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error all budgets: $e");
-      });
-
-      weeklyPulseFuture.then((data) {
-        _weeklyPulse = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error weekly pulse: $e");
-      });
-
-      profileFuture.then((data) {
-        _userProfile = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error profile: $e");
-      });
-
-      summaryFuture.then((data) {
-        _monthlySummary = data;
-        notifyListeners();
-      }).catchError((e) {
-        debugPrint("Error summary: $e");
-      });
-
-      // Wait for at least the essential dashboard data before hiding initial loading
-      // but add a local timeout just in case the repository timeout is too long
-      try {
-        await dashboardFuture.timeout(const Duration(seconds: 5));
-      } catch (e) {
-        debugPrint("Essential data timed out or failed: $e");
-      }
-    } catch (e) {
-      debugPrint("Error loading initial data: $e");
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // --- Category Management ---
-
-  Future<void> fetchNudges() async {
-    try {
-      _nudges = await _repository.getNudges();
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error fetching nudges: $e");
-    }
-  }
-
-  Future<void> fetchNotifications() async {
-    try {
-      _notifications = await _repository.getNotifications();
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error fetching notifications: $e");
-    }
-  }
-
-  Future<void> markNotificationAsRead(String id) async {
-    final success = await _repository.markNotificationRead(id);
-    if (success) {
-      final index = _notifications.indexWhere((n) => n.id == id);
-      if (index != -1) {
-        _notifications[index] = NotificationData(
-          id: _notifications[index].id,
-          title: _notifications[index].title,
-          message: _notifications[index].message,
-          type: _notifications[index].type,
-          isRead: true,
-          createdAt: _notifications[index].createdAt,
-          extraData: _notifications[index].extraData,
-        );
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> deleteNotification(String id) async {
-    final success = await _repository.deleteNotification(id);
-    if (success) {
-      _notifications.removeWhere((n) => n.id == id);
-      notifyListeners();
-    }
-  }
-
-  Future<void> fetchCheckInStatus() async {
-    try {
-      _checkInStatus = await _repository.getCheckInStatus();
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error fetching check-in status: $e");
-    }
-  }
-
-  Future<bool> performCheckIn() async {
-    final success = await _repository.performCheckIn();
-    if (success) {
-      await Future.wait([
-        fetchCheckInStatus(),
-        fetchNotifications(),
-      ]);
-    }
-    return success;
-  }
-
-  Future<void> markNudgeAsRead(String id) async {
-    final success = await _repository.markNudgeRead(id);
-    if (success) {
-      final index = _nudges.indexWhere((n) => n.id == id);
-      if (index != -1) {
-        _nudges[index] = NudgeData(
-          id: _nudges[index].id,
-          type: _nudges[index].type,
-          category: _nudges[index].category,
-          message: _nudges[index].message,
-          isRead: true,
-          createdAt: _nudges[index].createdAt,
-        );
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> loadCategories() async {
-    try {
-      final fetchedCategories = await _repository.getCategories();
-      
-      // Clear current categories and add fetched ones
-      _categories.clear();
-      for (var cat in fetchedCategories) {
-        _categories.add({
-          'id': cat['id'],
-          'name': cat['name'],
-          'icon': cat['icon'],
-          'isEmoji': true, // Assuming icons are emojis for now
-          'isSystem': cat['is_system'] ?? false,
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading categories from API: $e");
-      // Fallback to defaults if needed, but the API should return them
-    }
-    notifyListeners();
-  }
-
-  Future<void> addCustomCategory(String name, String icon) async {
-    if (name.isEmpty || icon.isEmpty) return;
-    
-    // Avoid duplicates locally first
-    if (_categories.any((c) => c['name'].toLowerCase() == name.toLowerCase())) {
-      return;
-    }
-
-    try {
-      final newCat = await _repository.addCategory(name, icon);
-      _categories.add({
-        'id': newCat['id'],
-        'name': newCat['name'],
-        'icon': newCat['icon'],
-        'isEmoji': true,
-        'isSystem': false,
-      });
-      notifyListeners();
-    } catch (e) {
-      debugPrint("Error saving category to API: $e");
-    }
-  }
-
-  Future<void> fetchTransactions({String? month}) async {
-    _setLoading(true);
-    try {
-      _transactions = await _repository.getTransactions(month: month);
-    } catch (e) {
-      debugPrint("Error fetching transactions: $e");
-      _transactions = [];
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> fetchMonthlySummary() async {
-    _setLoading(true);
-    try {
-      _monthlySummary = await _repository.getMonthlySummary();
-    } catch (e) {
-      debugPrint("Error fetching monthly summary: $e");
-      _monthlySummary = [];
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<bool> deleteTransaction(String id) async {
-    final success = await _repository.deleteTransaction(id);
-    if (success) {
-      await fetchAllData();
-      if (_transactions != null) {
-        _transactions = _transactions!.where((t) => t.id != id).toList();
-        notifyListeners();
-      }
-    }
-    return success;
-  }
-
-  Future<bool> updateProfile({required String fullName, String? username}) async {
-    final success = await _repository.updateProfile(fullName: fullName, username: username);
-    if (success) {
-      await fetchAllData();
-    }
-    return success;
-  }
-
-  Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
-    final success = await _repository.updatePassword(currentPassword: currentPassword, newPassword: newPassword);
-    return success;
-  }
-
   Future<void> updateSpendingTarget(double amount, String period, {String category = 'All', String? month}) async {
+    if (await _repository.saveSpendingTarget(amount: amount, period: period, category: category, month: month)) {
+      await fetchAllData(forceRefresh: true);
+    }
+  }
+
+  Future<bool> addTransaction({required String title, String? description, required double amount, required String category, required String type, DateTime? date}) async {
     _setLoading(true);
-    final success = await _repository.saveSpendingTarget(amount: amount, period: period, category: category, month: month);
+    final success = await _repository.addTransaction(title: title, description: description, amount: amount, category: category, type: type, date: date);
     if (success) {
-      await fetchAllData();
+      await fetchAllData(forceRefresh: true);
     } else {
       _setLoading(false);
     }
-  }
-
-  Future<bool> addTransaction({
-    required String title,
-    String? description,
-    required double amount,
-    required String category,
-    required String type,
-    DateTime? date,
-  }) async {
-    _setLoading(true);
-    final success = await _repository.addTransaction(
-      title: title,
-      description: description,
-      amount: amount,
-      category: category,
-      type: type,
-      date: date,
-    );
-    if (success) {
-      await Future.wait([
-        fetchAllData(),
-        fetchTransactions(),
-      ]);
-    }
-    _setLoading(false);
     return success;
   }
 
-  void _setLoading(bool value) {
-    _isLoading = value;
-    // Use microtask to avoid "setState during build" if fetch completes too fast
-    Future.microtask(() => notifyListeners());
+  Future<bool> deleteTransaction(String id) async {
+    if (await _repository.deleteTransaction(id)) {
+      await fetchAllData(forceRefresh: true);
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> updateProfile({required String fullName, String? username}) async {
+    if (await _repository.updateProfile(fullName: fullName, username: username)) {
+      await fetchAllData(forceRefresh: true);
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
+    return await _repository.updatePassword(currentPassword: currentPassword, newPassword: newPassword);
+  }
+
+  Future<void> addCustomCategory(String name, String icon) async {
+    await _repository.addCategory(name, icon);
+    await fetchAllData(forceRefresh: true);
+  }
+
+  Future<void> fetchMonthlySummary() async {
+    _monthlySummary = await _repository.getMonthlySummary(forceRefresh: true);
+    notifyListeners();
+  }
+
+  void _setLoading(bool val) {
+    _isLoading = val;
+    notifyListeners();
   }
 }

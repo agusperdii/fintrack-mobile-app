@@ -1,4 +1,4 @@
-import '../../core/utils/parser_utils.dart';
+import 'package:savaio/others.dart';
 
 class OcrResult {
   final String merchantName;

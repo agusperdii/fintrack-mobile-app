@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/core/utils/service_locator.dart';
-import 'package:savaio/views/layouts/main_layout.dart';
-import 'package:savaio/views/pages/login_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:savaio/others.dart';
+import 'package:savaio/views/main_layout.dart';
+import 'package:savaio/views/pages/auth/login_page.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Warning: .env file not found, skipping dotenv load.");
+  }
+
   sl.setup();
   await sl.authController.checkAuth();
   runApp(const MyApp());

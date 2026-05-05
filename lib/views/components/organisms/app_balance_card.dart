@@ -1,73 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/molecules/app_balance_mini_item.dart';
 
 class AppBalanceCard extends StatelessWidget {
-  final double balance;
-  final double income;
-  final double expense;
+  final String balanceText;
+  final String incomeText;
+  final String expenseText;
   final bool isLoading;
   final VoidCallback? onIncomeTap;
   final VoidCallback? onExpenseTap;
+  final String labelText;
 
   const AppBalanceCard({
     super.key,
-    required this.balance,
-    required this.income,
-    required this.expense,
+    required this.balanceText,
+    required this.incomeText,
+    required this.expenseText,
     this.isLoading = false,
     this.onIncomeTap,
     this.onExpenseTap,
+    this.labelText = 'TOTAL SALDO ANDA',
   });
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      padding: const EdgeInsets.all(SavaioTheme.spacingXl),
-      borderRadius: SavaioTheme.radius2xl,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppHeading(
-                'TOTAL SALDO ANDA'.toUpperCase(),
-                size: AppHeadingSize.caption,
-                color: SavaioTheme.onSurfaceVariant,
-                isBold: true,
-              ),
-              const Icon(Icons.wallet_rounded, color: SavaioTheme.primary, size: 20),
-            ],
-          ),
-          const SizedBox(height: SavaioTheme.spacingS),
-          AppHeading(
-            isLoading ? 'Rp --.---.---' : SavaioTheme.formatCurrency(balance),
-            size: AppHeadingSize.h1,
-          ),
-          const SizedBox(height: SavaioTheme.spacingXl),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppBalanceMiniItem(
-                label: 'Pemasukan',
-                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(income),
-                icon: Icons.south_west_rounded,
-                color: SavaioTheme.tertiary,
-                onTap: onIncomeTap,
-              ),
-              AppBalanceMiniItem(
-                label: 'Pengeluaran',
-                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(expense),
-                icon: Icons.north_east_rounded,
-                color: SavaioTheme.error,
-                onTap: onExpenseTap,
-              ),
-            ],
-          ),
-        ],
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      container: true,
+      label: 'Balance Card',
+      child: GlassCard(
+        padding: const EdgeInsets.all(24),
+        borderRadius: 32,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppHeading(
+                  labelText.toUpperCase(),
+                  size: AppHeadingSize.caption,
+                  color: colorScheme.onSurfaceVariant,
+                  isBold: true,
+                ),
+                Icon(Icons.wallet_rounded, color: colorScheme.primary, size: 20),
+              ],
+            ),
+            const SizedBox(height: 8),
+            AppHeading(
+              balanceText,
+              size: AppHeadingSize.h1,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppBalanceMiniItem(
+                  label: 'Pemasukan',
+                  amount: incomeText,
+                  icon: Icons.south_west_rounded,
+                  color: colorScheme.tertiary,
+                  onTap: onIncomeTap,
+                ),
+                AppBalanceMiniItem(
+                  label: 'Pengeluaran',
+                  amount: expenseText,
+                  icon: Icons.north_east_rounded,
+                  color: colorScheme.error,
+                  onTap: onExpenseTap,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

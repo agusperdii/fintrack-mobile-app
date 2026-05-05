@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/others.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 
 class PlaceholderPage extends StatelessWidget {
@@ -10,12 +9,17 @@ class PlaceholderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppHeader(
         title: featureName,
         showBackButton: true,
         showNotification: false,
+        onBackTap: () => Navigator.pop(context),
+        unreadCount: sl.financeController.unreadNotificationsCount,
       ),
       body: Stack(
         children: [
@@ -28,31 +32,29 @@ class PlaceholderPage extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.construction_rounded,
-                      color: SavaioTheme.primary,
+                      color: colorScheme.primary,
                       size: 64,
                     ),
                   ),
                   const SizedBox(height: 32),
                   Text(
                     'Segera Hadir!',
-                    style: GoogleFonts.inter(
-                      fontSize: 24,
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: SavaioTheme.onSurface,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Fitur "$featureName" sedang dalam tahap pengembangan untuk memberikan pengalaman finansial terbaik bagi Anda.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: SavaioTheme.onSurfaceVariant,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                       height: 1.5,
                     ),
                   ),
@@ -60,14 +62,14 @@ class PlaceholderPage extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: SavaioTheme.primary,
-                      foregroundColor: SavaioTheme.onPrimaryFixed,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'KEMBALI',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontWeight: FontWeight.w800,
                       ),
                     ),

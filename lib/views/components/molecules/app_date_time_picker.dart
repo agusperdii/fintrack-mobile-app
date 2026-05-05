@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 
@@ -10,17 +9,20 @@ class AppDateTimePicker {
     required DateTime initialDate,
     CupertinoDatePickerMode mode = CupertinoDatePickerMode.dateAndTime,
     String title = 'Pilih Waktu',
+    String confirmLabel = 'KONFIRMASI',
   }) async {
     DateTime? selectedDate = initialDate;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return showModalBottomSheet<DateTime>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: SavaioTheme.surfaceContainer,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -32,7 +34,7 @@ class AppDateTimePicker {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: SavaioTheme.outlineVariant.withValues(alpha: 0.3),
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -48,7 +50,7 @@ class AppDateTimePicker {
                 data: CupertinoThemeData(
                   textTheme: CupertinoTextThemeData(
                     dateTimePickerTextStyle: TextStyle(
-                      color: SavaioTheme.onSurface,
+                      color: colorScheme.onSurface,
                       fontSize: 18,
                     ),
                   ),
@@ -66,7 +68,7 @@ class AppDateTimePicker {
             
             const SizedBox(height: 32),
             AppButton(
-              label: 'KONFIRMASI',
+              label: confirmLabel,
               onTap: () => Navigator.pop(context, selectedDate),
             ),
             const SizedBox(height: 16),

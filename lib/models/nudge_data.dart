@@ -21,12 +21,12 @@ class NudgeData {
 
   factory NudgeData.fromJson(Map<String, dynamic> json) {
     return NudgeData(
-      id: json['id'] as String,
-      type: _parseType(json['type']),
+      id: json['id']?.toString() ?? '',
+      type: _parseType(json['type']?.toString()),
       category: json['category'] as String?,
-      message: json['message'] as String,
+      message: json['message']?.toString() ?? '',
       isRead: json['is_read'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 

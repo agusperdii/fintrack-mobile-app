@@ -11,10 +11,10 @@ class CheckInStatus {
 
   factory CheckInStatus.fromJson(Map<String, dynamic> json) {
     return CheckInStatus(
-      isCheckedInToday: json['is_checked_in_today'],
-      streakCount: json['streak_count'],
+      isCheckedInToday: json['is_checked_in_today'] as bool? ?? false,
+      streakCount: json['streak_count'] as int? ?? 0,
       lastCheckinDate: json['last_checkin_date'] != null 
-          ? DateTime.parse(json['last_checkin_date']) 
+          ? DateTime.tryParse(json['last_checkin_date']?.toString() ?? '') 
           : null,
     );
   }

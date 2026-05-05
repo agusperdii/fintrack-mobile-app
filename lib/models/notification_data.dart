@@ -47,13 +47,13 @@ class NotificationData {
 
   factory NotificationData.fromJson(Map<String, dynamic> json) {
     return NotificationData(
-      id: json['id'],
-      title: json['title'],
-      message: json['message'],
-      type: _parseType(json['type']),
-      isRead: json['is_read'],
-      createdAt: DateTime.parse(json['created_at']),
-      extraData: json['extra_data'],
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      type: _parseType(json['type']?.toString() ?? 'info'),
+      isRead: json['is_read'] as bool? ?? false,
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      extraData: json['extra_data'] as Map<String, dynamic>?,
     );
   }
 

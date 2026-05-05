@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
+import 'package:intl/intl.dart';
+import 'package:savaio/others.dart';
 import 'package:savaio/models/app_data.dart';
 import '../molecules/app_section_header.dart';
 import '../molecules/app_transaction_item.dart';
@@ -20,6 +21,8 @@ class DashboardRecentTransactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -46,8 +49,24 @@ class DashboardRecentTransactions extends StatelessWidget {
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final tx = transactions[index];
+              final isExpense = tx.type == TransactionType.expense;
+              final accentColor = isExpense ? theme.colorScheme.error : theme.colorScheme.tertiary;
+              
+              String subtitle = tx.date;
+              try {
+                final dt = DateTime.parse(tx.date);
+                subtitle = '${DateFormat('d MMM yyyy').format(dt)} @${DateFormat('HH:mm').format(dt)}';
+              } catch (_) {}
+
               return AppTransactionItem(
-                transaction: tx,
+                title: tx.title,
+                subtitle: subtitle,
+                icon: sl.financeController.getCategoryIcon(tx.category),
+                amountText: '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(tx.amount, isExpense: isExpense)}',
+                amountColor: isExpense ? theme.colorScheme.onSurface : theme.colorScheme.primary,
+                statusText: isExpense ? 'Expense' : 'Income',
+                statusColor: accentColor.withValues(alpha: 0.7),
+                iconBgColor: accentColor,
                 onTap: () => onTransactionTap(tx),
               );
             },

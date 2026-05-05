@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
@@ -28,94 +27,107 @@ class AppNotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     Color color;
     IconData icon;
 
     switch (variant) {
       case AppNotificationVariant.warning:
-        color = SavaioTheme.error;
+        color = colorScheme.error;
         icon = Icons.warning;
         break;
       case AppNotificationVariant.success:
-        color = SavaioTheme.tertiary;
+        color = colorScheme.tertiary;
         icon = Icons.check_circle;
         break;
       case AppNotificationVariant.streak:
-        color = SavaioTheme.secondary;
+        color = colorScheme.secondary;
         icon = Icons.fireplace;
         break;
       case AppNotificationVariant.info:
-        color = SavaioTheme.primary;
+        color = colorScheme.primary;
         icon = Icons.lightbulb;
         break;
     }
 
-    // Dim color if read
     final effectiveColor = isRead ? color.withValues(alpha: 0.5) : color;
 
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      borderColor: variant == AppNotificationVariant.warning && !isRead
-          ? color.withValues(alpha: 0.5) 
-          : SavaioTheme.onSurfaceVariant.withValues(alpha: 0.1),
-      borderWidth: 1,
-      child: Opacity(
-        opacity: isRead ? 0.6 : 1.0,
-        child: Container(
-          decoration: variant == AppNotificationVariant.warning && !isRead ? BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: color.withValues(alpha: 0.5),
-                width: 4,
-              ),
-            ),
-          ) : null,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppIconContainer(
-                icon: icon,
-                color: effectiveColor,
-                size: 40,
-                opacity: 0.1,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        AppHeading(
-                          category,
-                          size: AppHeadingSize.caption,
-                          color: effectiveColor,
-                          isBold: !isRead,
-                        ),
-                        AppHeading(
-                          time,
-                          size: AppHeadingSize.caption,
-                          color: SavaioTheme.onSurface.withValues(alpha: 0.4),
-                          isBold: false,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    content,
-                    if (actions != null && actions!.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Row(children: actions!),
-                    ],
-                    if (footer != null) ...[
-                      const SizedBox(height: 12),
-                      footer!,
-                    ],
-                  ],
+    return Semantics(
+      container: true,
+      label: 'Notification: $category, $time',
+      child: GlassCard(
+        padding: EdgeInsets.zero,
+        borderColor: variant == AppNotificationVariant.warning && !isRead
+            ? color.withValues(alpha: 0.5) 
+            : colorScheme.outlineVariant.withValues(alpha: 0.1),
+        borderWidth: 1,
+        child: Opacity(
+          opacity: isRead ? 0.6 : 1.0,
+          child: Container(
+            decoration: variant == AppNotificationVariant.warning && !isRead ? BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: color.withValues(alpha: 0.5),
+                  width: 4,
                 ),
               ),
-            ],
+            ) : null,
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppIconContainer(
+                  icon: icon,
+                  color: effectiveColor,
+                  size: 40,
+                  opacity: 0.1,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: AppHeading(
+                              category,
+                              size: AppHeadingSize.caption,
+                              color: effectiveColor,
+                              isBold: !isRead,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppHeading(
+                            time,
+                            size: AppHeadingSize.caption,
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                            isBold: false,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      content,
+                      if (actions != null && actions!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Row(children: actions!),
+                      ],
+                      if (footer != null) ...[
+                        const SizedBox(height: 12),
+                        footer!,
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

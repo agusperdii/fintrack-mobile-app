@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppBalanceMiniItem extends StatelessWidget {
@@ -20,31 +19,44 @@ class AppBalanceMiniItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 12),
-              const SizedBox(width: 4),
-              AppHeading(
-                label,
-                size: AppHeadingSize.caption,
-                color: SavaioTheme.onSurfaceVariant,
-                isBold: false,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          AppHeading(
-            amount,
-            size: AppHeadingSize.subtitle,
-            isBold: true,
-          ),
-        ],
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      button: onTap != null,
+      label: '$label: $amount',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 12),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: AppHeading(
+                    label,
+                    size: AppHeadingSize.caption,
+                    color: colorScheme.onSurfaceVariant,
+                    isBold: false,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            AppHeading(
+              amount,
+              size: AppHeadingSize.subtitle,
+              isBold: true,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

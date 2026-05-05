@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/others.dart';
 
 enum AppIconShape { circle, rounded }
 
@@ -11,6 +11,7 @@ class AppIconContainer extends StatelessWidget {
   final AppIconShape shape;
   final double opacity;
   final Color? iconColor;
+  final String? semanticLabel;
 
   const AppIconContainer({
     super.key,
@@ -21,29 +22,40 @@ class AppIconContainer extends StatelessWidget {
     this.shape = AppIconShape.circle,
     this.opacity = 0.1,
     this.iconColor,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: gradient == null ? (color ?? SavaioTheme.primary).withValues(alpha: opacity) : null,
-        gradient: gradient,
-        shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(SavaioTheme.radiusM) : null,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    final effectiveColor = color ?? colorScheme.primary;
+
+    return Semantics(
+      label: semanticLabel ?? (icon is String ? icon as String : 'Icon Container'),
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: gradient == null ? effectiveColor.withValues(alpha: opacity) : null,
+          gradient: gradient,
+          shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: shape == AppIconShape.rounded 
+            ? BorderRadius.circular(SavaioTheme.radiusM) 
+            : null,
+        ),
+        child: _buildIcon(effectiveColor),
       ),
-      child: _buildIcon(),
     );
   }
 
-  Widget _buildIcon() {
+  Widget _buildIcon(Color effectiveColor) {
     if (icon is IconData) {
       return Icon(
         icon as IconData,
-        color: iconColor ?? color ?? SavaioTheme.primary,
+        color: iconColor ?? effectiveColor,
         size: size * 0.5,
       );
     } else if (icon is String) {

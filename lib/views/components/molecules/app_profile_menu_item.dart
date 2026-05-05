@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppProfileMenuItem extends StatelessWidget {
@@ -22,46 +21,59 @@ class AppProfileMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.vertical(
-          top: isTop ? const Radius.circular(8) : Radius.zero,
-          bottom: isBottom ? const Radius.circular(8) : Radius.zero,
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            border: isTop ? null : Border(
-              top: BorderSide(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
-            ),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      button: true,
+      label: title,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.vertical(
+            top: isTop ? const Radius.circular(8) : Radius.zero,
+            bottom: isBottom ? const Radius.circular(8) : Radius.zero,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon, 
-                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.6) : SavaioTheme.onSurfaceVariant, 
-                    size: 18
-                  ),
-                  const SizedBox(width: 16),
-                  AppHeading(
-                    title,
-                    size: AppHeadingSize.subtitle,
-                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.8) : SavaioTheme.onSurface,
-                    isBold: false,
-                  ),
-                ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              border: isTop ? null : Border(
+                top: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.1)),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: SavaioTheme.outline.withValues(alpha: 0.4),
-                size: 12,
-              ),
-            ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        icon, 
+                        color: isDestructive ? colorScheme.error.withValues(alpha: 0.6) : colorScheme.onSurfaceVariant, 
+                        size: 18
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: AppHeading(
+                          title,
+                          size: AppHeadingSize.subtitle,
+                          color: isDestructive ? colorScheme.error.withValues(alpha: 0.8) : colorScheme.onSurface,
+                          isBold: false,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: colorScheme.outline.withValues(alpha: 0.4),
+                  size: 12,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,0 +1,37 @@
+{
+	"id": "savaio-env-id",
+	"name": "Savaio Environment",
+	"values": [
+		{
+			"key": "supabaseUrl",
+			"value": "https://tunkdqiqthccdumvjcdf.supabase.co",
+			"enabled": true
+		},
+		{
+			"key": "supabaseAnonKey",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1bmtkcWlxdGhjY2R1bXZqY2RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NzI3MjUsImV4cCI6MjA5MzQ0ODcyNX0.TZOiOsfOJ1vQDDea67GaUE8XF_ClxBXuDqIoZX6QIh4",
+			"enabled": true
+		},
+		{
+			"key": "email",
+			"value": "test1@savaio.com",
+			"enabled": true
+		},
+		{
+			"key": "password",
+			"value": "password123",
+			"enabled": true
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment"
+}

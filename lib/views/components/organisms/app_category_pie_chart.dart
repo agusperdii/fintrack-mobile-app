@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/models/app_data.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
-class AppCategoryPieChart extends StatefulWidget {
-  final List<AnalysisData> data;
+class PieChartItem {
+  final String label;
+  final double value;
+  final Color color;
 
-  const AppCategoryPieChart({super.key, required this.data});
+  const PieChartItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+}
+
+class AppCategoryPieChart extends StatefulWidget {
+  final List<PieChartItem> data;
+  final String title;
+
+  const AppCategoryPieChart({
+    super.key, 
+    required this.data,
+    this.title = 'DISTRIBUSI PENGELUARAN',
+  });
 
   @override
   State<AppCategoryPieChart> createState() => _AppCategoryPieChartState();
@@ -22,54 +37,62 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          const AppHeading(
-            'DISTRIBUSI PENGELUARAN',
-            size: AppHeadingSize.caption,
-            color: SavaioTheme.onSurfaceVariant,
-            isBold: true,
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                pieTouchData: PieTouchData(
-                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                    setState(() {
-                      if (!event.isInterestedForInteractions ||
-                          pieTouchResponse == null ||
-                          pieTouchResponse.touchedSection == null) {
-                        touchedIndex = -1;
-                        return;
-                      }
-                      touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                    });
-                  },
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Semantics(
+      container: true,
+      label: 'Category Distribution Chart',
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            AppHeading(
+              widget.title,
+              size: AppHeadingSize.caption,
+              color: colorScheme.onSurfaceVariant,
+              isBold: true,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                      setState(() {
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          touchedIndex = -1;
+                          return;
+                        }
+                        touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                      });
+                    },
+                  ),
+                  borderData: FlBorderData(show: false),
+                  sectionsSpace: 4,
+                  centerSpaceRadius: 50,
+                  sections: _showingSections(),
                 ),
-                borderData: FlBorderData(show: false),
-                sectionsSpace: 4,
-                centerSpaceRadius: 50,
-                sections: _showingSections(),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _buildLegend(),
-        ],
+            const SizedBox(height: 24),
+            _buildLegend(context),
+          ],
+        ),
       ),
     );
   }
 
   List<PieChartSectionData> _showingSections() {
-    final total = widget.data.fold<double>(0, (sum, item) => sum + item.amount);
+    final total = widget.data.fold<double>(0, (sum, item) => sum + item.value);
     
     return widget.data.asMap().entries.map((entry) {
       final index = entry.key;
@@ -77,12 +100,11 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
       final isTouched = index == touchedIndex;
       final fontSize = isTouched ? 16.0 : 12.0;
       final radius = isTouched ? 60.0 : 50.0;
-      final percentage = (item.amount / total * 100).toStringAsFixed(1);
-      final color = Color(int.parse('FF${item.colorHex}', radix: 16));
+      final percentage = (item.value / total * 100).toStringAsFixed(1);
 
       return PieChartSectionData(
-        color: color,
-        value: item.amount,
+        color: item.color,
+        value: item.value,
         title: isTouched ? '$percentage%' : '',
         radius: radius,
         titleStyle: TextStyle(
@@ -94,13 +116,14 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     }).toList();
   }
 
-  Widget _buildLegend() {
+  Widget _buildLegend(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Wrap(
       spacing: 16,
       runSpacing: 8,
       alignment: WrapAlignment.center,
       children: widget.data.map((item) {
-        final color = Color(int.parse('FF${item.colorHex}', radix: 16));
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -108,16 +131,16 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: color,
+                color: item.color,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 8),
             Text(
               item.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: SavaioTheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
