@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/models/app_data.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppCategoryPieChart extends StatefulWidget {
-  final List<AnalysisData> data;
+  final List<PieSegment> segments;
+  final List<CategoryVM> categories;
 
-  const AppCategoryPieChart({super.key, required this.data});
+  const AppCategoryPieChart({
+    super.key, 
+    required this.segments,
+    required this.categories,
+  });
 
   @override
   State<AppCategoryPieChart> createState() => _AppCategoryPieChartState();
@@ -18,7 +23,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.data.isEmpty) {
+    if (widget.segments.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -57,7 +62,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
                 borderData: FlBorderData(show: false),
                 sectionsSpace: 4,
                 centerSpaceRadius: 50,
-                sections: _showingSections(),
+                sections: _buildSections(),
               ),
             ),
           ),
@@ -68,30 +73,42 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     );
   }
 
-  List<PieChartSectionData> _showingSections() {
-    final total = widget.data.fold<double>(0, (sum, item) => sum + item.amount);
-    
-    return widget.data.asMap().entries.map((entry) {
-      final index = entry.key;
-      final item = entry.value;
-      final isTouched = index == touchedIndex;
-      final fontSize = isTouched ? 16.0 : 12.0;
-      final radius = isTouched ? 60.0 : 50.0;
-      final percentage = (item.amount / total * 100).toStringAsFixed(1);
-      final color = Color(int.parse('FF${item.colorHex}', radix: 16));
+  List<PieChartSectionData> _buildSections() {
+    return widget.segments.asMap().entries.map((entry) {
+      final idx = entry.key;
+      final segment = entry.value;
+      final isTouched = idx == touchedIndex;
+      
+      // Convert pure PieSegment to PieChartSectionData
+      final color = _parseColor(segment.colorHex);
 
       return PieChartSectionData(
         color: color,
-        value: item.amount,
-        title: isTouched ? '$percentage%' : '',
-        radius: radius,
+        value: segment.value,
+        radius: isTouched ? 60.0 : 50.0,
         titleStyle: TextStyle(
-          fontSize: fontSize,
+          fontSize: isTouched ? 16.0 : 12.0,
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
+        title: isTouched ? '${_calculatePercentage(segment.value)}%' : '',
+        showTitle: isTouched,
       );
     }).toList();
+  }
+
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return SavaioTheme.primary;
+    }
+  }
+
+  String _calculatePercentage(double value) {
+    final total = widget.segments.fold<double>(0, (sum, item) => sum + item.value);
+    if (total == 0) return '0';
+    return (value / total * 100).toStringAsFixed(1);
   }
 
   Widget _buildLegend() {
@@ -99,8 +116,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
       spacing: 16,
       runSpacing: 8,
       alignment: WrapAlignment.center,
-      children: widget.data.map((item) {
-        final color = Color(int.parse('FF${item.colorHex}', radix: 16));
+      children: widget.categories.where((cat) => cat.progress > 0 || cat.amount.contains(' terpakai')).map((cat) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -108,13 +124,13 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: color,
+                color: _getLegendColor(cat),
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 8),
             Text(
-              item.label,
+              cat.name,
               style: const TextStyle(
                 fontSize: 12,
                 color: SavaioTheme.onSurfaceVariant,
@@ -124,5 +140,11 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
         );
       }).toList(),
     );
+  }
+
+  Color _getLegendColor(CategoryVM cat) {
+    if (cat.isOver) return SavaioTheme.error;
+    if (cat.progress > 0.8) return Colors.orange;
+    return cat.isBudgetExists ? SavaioTheme.tertiary : SavaioTheme.primary;
   }
 }

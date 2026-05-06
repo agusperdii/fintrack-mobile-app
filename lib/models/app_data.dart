@@ -96,6 +96,8 @@ class Transaction {
   final String? receiptUrl;
   final SyncStatus syncStatus;
 
+  String get categoryKey => ParserUtils.normalizeCategory(category);
+
   Transaction({
     this.id,
     required this.title,
@@ -160,6 +162,8 @@ class AnalysisData {
   final String label;
   final double amount;
   final String colorHex;
+
+  String get categoryKey => ParserUtils.normalizeCategory(label);
 
   AnalysisData({
     required this.label,

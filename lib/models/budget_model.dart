@@ -9,6 +9,9 @@ class BudgetModel {
   final String category;
   final SyncStatus syncStatus;
 
+  String get categoryKey => ParserUtils.normalizeCategory(category);
+  bool get isBudgetExists => id.isNotEmpty;
+
   BudgetModel({
     required this.id,
     required this.amount,

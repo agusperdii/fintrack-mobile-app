@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/repositories/transaction_repository.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
+import 'package:savaio/core/utils/parser_utils.dart';
 
 class TransactionController extends ChangeNotifier {
   final TransactionRepository _repository;
@@ -67,6 +68,7 @@ class TransactionController extends ChangeNotifier {
 
     // 1. Optimistic UI update
     _transactions = [newTransaction, ...?_transactions];
+    dashboardController.isSyncingTransaction = true; // Start global sync indicator
     dashboardController.applyTransactionOptimistically(newTransaction);
     notifyListeners();
     
@@ -117,6 +119,7 @@ class TransactionController extends ChangeNotifier {
         
         // Update status to synced
         dashboardController.updateTransactionStatus(tempTx.id!, SyncStatus.synced);
+        dashboardController.isSyncingTransaction = false; // Stop global sync indicator early on success
         
         // Update local transaction list status
         if (_transactions != null) {
@@ -148,37 +151,61 @@ class TransactionController extends ChangeNotifier {
       // Remove the failed transaction from the list
       _transactions = _transactions?.where((tx) => tx.id != tempTx.id).toList();
       notifyListeners();
+    } finally {
+      dashboardController.isSyncingTransaction = false; // Stop global sync indicator
     }
   }
 
   Future<bool> deleteTransaction(String id, {DashboardController? dashboardController}) async {
     _isDeletingTransaction = true;
+    if (dashboardController != null) {
+      dashboardController.isSyncingTransaction = true;
+    }
     _error = null;
 
     final previousTransactions = _transactions != null ? List<Transaction>.from(_transactions!) : null;
     
-    // Optimistic Update
+    // 1. Find the transaction for incremental balance update
+    Transaction? deletedTx;
+    try {
+      deletedTx = _transactions?.firstWhere((t) => t.id == id);
+    } catch (_) {
+      // Not found in current list
+    }
+
+    // 2. Optimistic Update (List & Balance)
     if (_transactions != null) {
       _transactions = _transactions!.where((t) => t.id != id).toList();
       notifyListeners();
+    }
+    
+    if (deletedTx != null && dashboardController != null) {
+      dashboardController.applyTransactionRemovalOptimistically(deletedTx);
     }
 
     try {
       final success = await _repository.deleteTransaction(id);
       if (!success) throw Exception('Failed to delete transaction');
       
-      if (dashboardController != null) {
-        await dashboardController.fetchDashboardData();
-      }
+      // NO FULL REFRESH NEEDED - We updated incrementally!
+      // dashboardController?.fetchDashboardData(); 
       
       return true;
     } catch (e) {
       _error = e.toString();
+      
+      // 3. Rollback (List & Balance)
       _transactions = previousTransactions;
+      if (dashboardController != null) {
+        dashboardController.rollbackTransaction();
+      }
       notifyListeners();
       return false;
     } finally {
       _isDeletingTransaction = false;
+      if (dashboardController != null) {
+        dashboardController.isSyncingTransaction = false;
+      }
       notifyListeners();
     }
   }
@@ -186,10 +213,12 @@ class TransactionController extends ChangeNotifier {
   double getSpentAmountFor(String category, String month) {
     if (_transactions == null) return 0.0;
     
+    final normalizedSearch = ParserUtils.normalizeCategory(category);
+    
     return _transactions!
         .where((t) => t.type == TransactionType.expense)
         .where((t) => t.date.startsWith(month))
-        .where((t) => category == 'All' || t.category.toLowerCase() == category.toLowerCase())
+        .where((t) => normalizedSearch == 'all' || ParserUtils.normalizeCategory(t.category) == normalizedSearch)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 }

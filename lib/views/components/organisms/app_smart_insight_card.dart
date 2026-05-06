@@ -2,18 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppSmartInsightCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final String buttonLabel;
+  final AnalysisInsight vm;
   final VoidCallback onTap;
 
   const AppSmartInsightCard({
     super.key,
-    required this.title,
-    required this.description,
-    required this.buttonLabel,
+    required this.vm,
     required this.onTap,
   });
 
@@ -29,22 +26,23 @@ class AppSmartInsightCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppHeading(
-            title,
+            vm.title,
             size: AppHeadingSize.h3,
           ),
           const SizedBox(height: 12),
           AppHeading(
-            description,
+            vm.description,
             size: AppHeadingSize.subtitle,
             color: SavaioTheme.onSurfaceVariant,
             isBold: false,
           ),
           const SizedBox(height: 24),
-          AppButton(
-            label: buttonLabel,
-            onTap: onTap,
-            icon: Icons.arrow_forward,
-          ),
+          if (vm.buttonLabel != null)
+            AppButton(
+              label: vm.buttonLabel!,
+              onTap: onTap,
+              icon: Icons.arrow_forward,
+            ),
         ],
       ),
     );

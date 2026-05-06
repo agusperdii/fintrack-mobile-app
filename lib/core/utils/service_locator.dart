@@ -22,6 +22,7 @@ import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/controllers/profile_controller.dart';
 import 'package:savaio/controllers/analytics_controller.dart';
+import 'package:savaio/services/analytics_service.dart';
 
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/controllers/ocr_controller.dart';
@@ -58,6 +59,7 @@ class ServiceLocator {
   late final BudgetController budgetController;
   late final ProfileController profileController;
   late final AnalyticsController analyticsController;
+  late final AnalyticsService analyticsService;
   
   late final AuthController authController;
   late final OcrController ocrController;
@@ -91,7 +93,8 @@ class ServiceLocator {
     dashboardController = DashboardController(dashboardRepository);
     budgetController = BudgetController(budgetRepository, categoryRepository);
     profileController = ProfileController(profileRepository);
-    analyticsController = AnalyticsController(analyticsRepository);
+    analyticsService = AnalyticsService();
+    analyticsController = AnalyticsController(analyticsRepository, analyticsService);
 
     // Inject repository into AuthController for sync
     authController.setProfileRepository(profileRepository);

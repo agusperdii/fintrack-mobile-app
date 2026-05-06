@@ -5,6 +5,7 @@ import 'package:savaio/models/category_model.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/repositories/budget_repository.dart';
 import 'package:savaio/repositories/category_repository.dart';
+import 'package:savaio/core/utils/parser_utils.dart';
 
 class SpendingTargetItemVM {
   final String category;
@@ -15,6 +16,7 @@ class SpendingTargetItemVM {
   final double progress;
   final bool isOver;
   final SyncStatus syncStatus;
+  final bool isBudgetExists;
 
   SpendingTargetItemVM({
     required this.category,
@@ -25,6 +27,7 @@ class SpendingTargetItemVM {
     required this.progress,
     required this.isOver,
     this.syncStatus = SyncStatus.synced,
+    this.isBudgetExists = true,
   });
 
   @override
@@ -37,10 +40,11 @@ class SpendingTargetItemVM {
           spent == other.spent &&
           progress == other.progress &&
           isOver == other.isOver &&
-          syncStatus == other.syncStatus;
+          syncStatus == other.syncStatus &&
+          isBudgetExists == other.isBudgetExists;
 
   @override
-  int get hashCode => Object.hash(category, target, spent, progress, isOver, syncStatus);
+  int get hashCode => Object.hash(category, target, spent, progress, isOver, syncStatus, isBudgetExists);
 }
 
 class BudgetController extends ChangeNotifier {
@@ -68,15 +72,16 @@ class BudgetController extends ChangeNotifier {
   bool get isSyncingAny => _allBudgets.any((b) => b.syncStatus == SyncStatus.syncing);
   String? get error => _error;
 
-  // Helper Key Generator
+  // Helper Key Generator - Uses standard normalization
   String _budgetKey(String category, String? month) =>
-      '${category.toLowerCase()}|${month?.toLowerCase() ?? 'all'}';
+      '${ParserUtils.normalizeCategory(category)}|${month?.toLowerCase() ?? 'all'}';
 
   BudgetModel? _findBudget(String category, String? month) {
     final searchMonth = month ?? '';
+    final searchKey = ParserUtils.normalizeCategory(category);
     try {
       return _allBudgets.firstWhere(
-        (b) => b.category.toLowerCase() == category.toLowerCase() && b.month == searchMonth
+        (b) => b.categoryKey == searchKey && b.month == searchMonth
       );
     } catch (_) {
       return null;
@@ -85,7 +90,7 @@ class BudgetController extends ChangeNotifier {
 
   void _upsertBudget(BudgetModel item) {
     final index = _allBudgets.indexWhere(
-      (b) => b.category.toLowerCase() == item.category.toLowerCase() && b.month == item.month
+      (b) => b.categoryKey == item.categoryKey && b.month == item.month
     );
     
     if (index != -1) {
@@ -198,6 +203,7 @@ class BudgetController extends ChangeNotifier {
         progress: progress,
         isOver: spent > targetAmount && targetAmount > 0,
         syncStatus: budgetModel.syncStatus,
+        isBudgetExists: budgetModel.isBudgetExists,
       ));
     }
 
@@ -219,7 +225,7 @@ class BudgetController extends ChangeNotifier {
       syncStatus: SyncStatus.pending,
     );
 
-    if (category == 'All') {
+    if (ParserUtils.normalizeCategory(category) == 'all') {
       _spendingTarget = updatedBudget;
     }
 
@@ -276,8 +282,9 @@ class BudgetController extends ChangeNotifier {
 
   void _updateSyncStatus(String category, String? month, SyncStatus status) {
     bool changed = false;
+    final normalizedCategory = ParserUtils.normalizeCategory(category);
     
-    if (category == 'All' && _spendingTarget != null) {
+    if (normalizedCategory == 'all' && _spendingTarget != null) {
       _spendingTarget = _spendingTarget!.copyWith(syncStatus: status);
       changed = true;
     }
@@ -309,7 +316,9 @@ class BudgetController extends ChangeNotifier {
 
   Future<void> addCustomCategory(String name, String icon) async {
     if (name.isEmpty || icon.isEmpty) return;
-    if (_categories.any((c) => c['name'].toLowerCase() == name.toLowerCase())) return;
+    
+    final searchKey = ParserUtils.normalizeCategory(name);
+    if (_categories.any((c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey)) return;
 
     try {
       final newCat = await _categoryRepository.addCategory(name, icon);
@@ -326,8 +335,9 @@ class BudgetController extends ChangeNotifier {
   }
 
   dynamic getCategoryIcon(String categoryName) {
+    final searchKey = ParserUtils.normalizeCategory(categoryName);
     final cat = _categories.firstWhere(
-      (c) => c['name'].toLowerCase() == categoryName.toLowerCase(),
+      (c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey,
       orElse: () => <String, dynamic>{'icon': Icons.category},
     );
     return cat['icon'];

@@ -9,10 +9,17 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 
-class TransactionDetailPage extends StatelessWidget {
+class TransactionDetailPage extends StatefulWidget {
   final Transaction transaction;
 
   const TransactionDetailPage({super.key, required this.transaction});
+
+  @override
+  State<TransactionDetailPage> createState() => _TransactionDetailPageState();
+}
+
+class _TransactionDetailPageState extends State<TransactionDetailPage> {
+  bool _isDeleting = false;
 
   String _formatDate(String dateStr) {
     try {
@@ -23,46 +30,102 @@ class TransactionDetailPage extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: SavaioTheme.surfaceContainerHigh,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Transaksi?', style: GoogleFonts.inter(color: SavaioTheme.onSurface, fontWeight: FontWeight.bold)),
-        content: Text('Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.', style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariant, fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Hapus', style: TextStyle(color: SavaioTheme.error, fontWeight: FontWeight.bold)),
-          ),
-        ],
+  Future<void> _handleDelete() async {
+    if (_isDeleting || widget.transaction.id == null) return;
+
+    final confirm = await _showConfirmDialog();
+    if (confirm != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+
+    // 1. Optimistic Feedback: Show SnackBar immediately
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Menghapus transaksi...'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 1),
       ),
     );
 
-    if (confirm == true && transaction.id != null) {
-      final success = await sl.transactionController.deleteTransaction(transaction.id!);
-      if (success && context.mounted) {
-        sl.dashboardController.fetchDashboardData();
-        ScaffoldMessenger.of(context).showSnackBar(
+    // 2. Instant Close: Pop page immediately
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
+
+    // 3. Background Processing: Delete and refresh dashboard
+    sl.transactionController.deleteTransaction(
+      widget.transaction.id!,
+      dashboardController: sl.dashboardController,
+    ).then((success) {
+      if (success) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
           const SnackBar(
-            content: Text('Transaksi berhasil dihapus'), 
+            content: Text('Transaksi berhasil dihapus'),
             backgroundColor: SavaioTheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.pop(context, true);
+      } else {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menghapus transaksi. Silakan coba lagi.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    }
+    });
+  }
+
+  Future<bool?> _showConfirmDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        bool dialogLoading = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: SavaioTheme.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Hapus Transaksi?', 
+                style: GoogleFonts.inter(color: SavaioTheme.onSurface, fontWeight: FontWeight.bold)
+              ),
+              content: Text(
+                'Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.', 
+                style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariant, fontSize: 14)
+              ),
+              actions: [
+                TextButton(
+                  onPressed: dialogLoading ? null : () => Navigator.pop(ctx, false),
+                  child: Text('Batal', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
+                ),
+                TextButton(
+                  onPressed: dialogLoading ? null : () {
+                    setDialogState(() => dialogLoading = true);
+                    Navigator.pop(ctx, true);
+                  },
+                  child: dialogLoading 
+                    ? const SizedBox(
+                        width: 20, 
+                        height: 20, 
+                        child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.error)
+                      )
+                    : Text('Hapus', style: TextStyle(color: SavaioTheme.error, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = transaction.type == TransactionType.income;
+    final isIncome = widget.transaction.type == TransactionType.income;
 
     return Scaffold(
       backgroundColor: SavaioTheme.background,
@@ -90,7 +153,7 @@ class TransactionDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   AppHeading(
-                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(transaction.amount)}',
+                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(widget.transaction.amount)}',
                     size: AppHeadingSize.h1,
                     color: isIncome ? SavaioTheme.tertiary : SavaioTheme.onSurface,
                   ),
@@ -122,35 +185,35 @@ class TransactionDetailPage extends StatelessWidget {
                   _buildDetailItem(
                     icon: Icons.title_rounded, 
                     label: 'Judul Transaksi', 
-                    value: transaction.title,
+                    value: widget.transaction.title,
                     isFirst: true,
                   ),
-                  if (transaction.description != null && transaction.description!.isNotEmpty)
+                  if (widget.transaction.description != null && widget.transaction.description!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.notes_rounded, 
                       label: 'Catatan', 
-                      value: transaction.description!,
+                      value: widget.transaction.description!,
                     ),
                   _buildDetailItem(
                     icon: Icons.category_rounded, 
                     label: 'Kategori', 
-                    value: transaction.category,
+                    value: widget.transaction.category,
                   ),
                   _buildDetailItem(
                     icon: Icons.calendar_today_rounded, 
                     label: 'Waktu & Tanggal', 
-                    value: _formatDate(transaction.date),
+                    value: _formatDate(widget.transaction.date),
                   ),
                   _buildDetailItem(
                     icon: Icons.account_balance_wallet_rounded, 
                     label: 'Sumber Dana', 
-                    value: transaction.source ?? 'Dompet Utama',
+                    value: widget.transaction.source ?? 'Dompet Utama',
                   ),
-                  if (transaction.id != null)
+                  if (widget.transaction.id != null)
                     _buildDetailItem(
                       icon: Icons.tag_rounded, 
                       label: 'ID Transaksi', 
-                      value: transaction.id!.split('-').first.toUpperCase(),
+                      value: widget.transaction.id!.split('-').first.toUpperCase(),
                       isLast: true,
                     ),
                 ],
@@ -160,11 +223,13 @@ class TransactionDetailPage extends StatelessWidget {
             const SizedBox(height: 48),
 
             // Actions
-            if (transaction.id != null)
+            if (widget.transaction.id != null)
               OutlinedButton.icon(
-                onPressed: () => _confirmDelete(context),
-                icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                label: const Text('HAPUS DATA INI'),
+                onPressed: _isDeleting ? null : _handleDelete,
+                icon: _isDeleting 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.delete_outline_rounded, size: 20),
+                label: Text(_isDeleting ? 'MENGHAPUS...' : 'HAPUS DATA INI'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: SavaioTheme.error,
                   side: BorderSide(color: SavaioTheme.error.withValues(alpha: 0.5)),

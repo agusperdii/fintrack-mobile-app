@@ -3,31 +3,30 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_progress_bar.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppCategoryCard extends StatelessWidget {
-  final dynamic icon;
-  final String title;
-  final String amount;
-  final double progress;
-  final String limit;
-  final String status;
-  final Color accentColor;
+  final CategoryVM vm;
   final VoidCallback onTap;
 
   const AppCategoryCard({
     super.key,
-    required this.icon,
-    required this.title,
-    required this.amount,
-    required this.progress,
-    required this.limit,
-    required this.status,
-    required this.accentColor,
+    required this.vm,
     required this.onTap,
   });
 
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return SavaioTheme.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final accentColor = _parseColor(vm.accentColorHex);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -43,41 +42,47 @@ class AppCategoryCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    AppIconContainer(
-                      icon: icon,
-                      color: accentColor,
-                      shape: AppIconShape.rounded,
-                      size: 40,
-                    ),
+                    if (vm.icon is String)
+                      Text(
+                        vm.icon as String,
+                        style: const TextStyle(fontSize: 24),
+                      )
+                    else
+                      AppIconContainer(
+                        icon: (vm.icon as IconData?) ?? Icons.category,
+                        color: accentColor,
+                        shape: AppIconShape.rounded,
+                        size: 40,
+                      ),
                     const SizedBox(width: 12),
                     AppHeading(
-                      title,
+                      vm.name,
                       size: AppHeadingSize.subtitle,
                     ),
                   ],
                 ),
                 AppHeading(
-                  amount,
+                  vm.amount,
                   size: AppHeadingSize.h3,
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            AppProgressBar(value: progress, color: accentColor, height: 4),
+            AppProgressBar(value: vm.progress, color: accentColor, height: 4),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 AppHeading(
-                  limit,
+                  vm.limitText,
                   size: AppHeadingSize.caption,
                   color: SavaioTheme.onSurfaceVariant,
                   isBold: true,
                 ),
                 AppHeading(
-                  status.toUpperCase(),
+                  vm.statusText.toUpperCase(),
                   size: AppHeadingSize.caption,
-                  color: status == 'Aman' || status == 'Stabil' ? SavaioTheme.tertiary : SavaioTheme.error,
+                  color: accentColor,
                   isBold: true,
                 ),
               ],

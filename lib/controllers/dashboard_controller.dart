@@ -66,6 +66,24 @@ class DashboardController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Optimistically removes a transaction from the local dashboard state.
+  void applyTransactionRemovalOptimistically(Transaction tx) {
+    if (_data == null) return;
+
+    // Save snapshot for potential rollback
+    _previousDataSnapshot = _data;
+
+    final isExpense = tx.type == TransactionType.expense;
+    
+    _data = _data!.copyWith(
+      totalIncome: isExpense ? _data!.totalIncome : _data!.totalIncome - tx.amount,
+      totalExpense: isExpense ? _data!.totalExpense - tx.amount : _data!.totalExpense,
+      recentTransactions: _data!.recentTransactions.where((t) => t.id != tx.id).toList(),
+    );
+    
+    notifyListeners();
+  }
+
   /// Updates a transaction's status and potentially its ID.
   void updateTransactionStatus(String id, SyncStatus status, {String? newId}) {
     if (_data == null) return;

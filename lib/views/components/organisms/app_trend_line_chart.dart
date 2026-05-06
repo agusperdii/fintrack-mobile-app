@@ -3,23 +3,22 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppTrendLineChart extends StatefulWidget {
-  final String title;
-  final List<FlSpot>? spots;
-  final List<String> days;
-  final int activeDayIndex;
+  final List<TrendPoint> trendPoints;
   final bool isWeekly;
+  final String title;
   final Function(bool) onPeriodChanged;
+  final List<String> days;
 
   const AppTrendLineChart({
     super.key,
+    required this.trendPoints,
+    required this.isWeekly,
     required this.title,
-    this.spots,
-    this.days = const ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'],
-    this.activeDayIndex = 3,
-    this.isWeekly = true,
     required this.onPeriodChanged,
+    this.days = const ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'],
   });
 
   @override
@@ -34,16 +33,6 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
 
   @override
   Widget build(BuildContext context) {
-    final spots = widget.spots ?? const [
-      FlSpot(0, 3),
-      FlSpot(1, 1),
-      FlSpot(2, 4),
-      FlSpot(3, 2),
-      FlSpot(4, 5),
-      FlSpot(5, 3),
-      FlSpot(6, 4),
-    ];
-
     return GlassCard(
       padding: const EdgeInsets.all(24),
       borderRadius: 24,
@@ -157,7 +146,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                 ),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: spots,
+                    spots: widget.trendPoints.map((p) => FlSpot(p.x, p.y)).toList(),
                     isCurved: true,
                     gradient: LinearGradient(colors: gradientColors),
                     barWidth: 4,

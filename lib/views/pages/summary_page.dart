@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/summary_utils.dart';
 import 'package:savaio/controllers/analytics_controller.dart';
+import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
@@ -27,11 +28,26 @@ class SummaryPage extends StatelessWidget {
 
     final sortedYears = groupedSummary.keys.toList()..sort((a, b) => b.compareTo(a));
 
+    final isSyncing = context.select<DashboardController, bool>((c) => c.isSyncingTransaction);
+
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: 'Ringkasan Transaksi',
         showNotification: false,
+        actions: [
+          if (isSyncing)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(right: 12.0),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+                ),
+              ),
+            ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => controller.fetchMonthlySummary(),

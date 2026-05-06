@@ -12,4 +12,6 @@ class ParserUtils {
     if (value is String) return int.tryParse(value) ?? 0;
     return 0;
   }
+
+  static String normalizeCategory(String v) => v.trim().toLowerCase();
 }
