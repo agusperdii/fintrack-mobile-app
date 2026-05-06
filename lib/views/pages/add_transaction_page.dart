@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
@@ -13,7 +15,6 @@ import 'package:savaio/views/components/molecules/transaction_amount_input.dart'
 import 'package:savaio/views/components/molecules/transaction_type_toggle.dart';
 import 'package:savaio/views/components/organisms/transaction_category_grid.dart';
 import 'package:savaio/views/components/organisms/add_category_sheet.dart';
-import 'package:savaio/views/pages/transaction_success_page.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -40,7 +41,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
   String _selectedCategory = 'Food';
-  bool _isSubmitting = false;
   DateTime _selectedDate = DateTime.now();
 
   @override
@@ -110,35 +110,33 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Future<void> _submitData() async {
+    // 1. Validation
     if (_amountController.text.isEmpty || double.tryParse(_amountController.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tolong masukkan nominal yang valid')));
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    // 2. Create Optimistic Transaction & Update State
+    // We don't await this because it returns immediately after local update
+    sl.transactionController.addTransactionOptimistic(
+      dashboardController: sl.dashboardController,
+      title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
+      description: _descriptionController.text,
+      amount: double.parse(_amountController.text),
+      category: _selectedCategory,
+      type: _type.toLowerCase() == 'expense' ? 'expense' : 'income',
+      date: _selectedDate,
+    );
 
-    try {
-      final success = await sl.financeController.addTransaction(
-        title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
-        description: _descriptionController.text,
-        amount: double.parse(_amountController.text),
-        category: _selectedCategory,
-        type: _type,
-        date: _selectedDate,
-      );
-
-      if (success && mounted) {
-        sl.financeController.fetchNudges();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const TransactionSuccessPage()),
-        );
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    // 3. Instant Navigation back to Dashboard
+    if (mounted) {
+      Navigator.pop(context, true);
     }
+
+    // 4. Background Sync (Analytics/Notifications)
+    // These run in the background without blocking the UI
+    sl.notificationController.fetchAll();
+    sl.analyticsController.fetchAll();
   }
 
   void _showAddCategorySheet() {
@@ -148,7 +146,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => AddCategorySheet(
         onAdd: (name, icon) {
-          sl.financeController.addCustomCategory(name, icon);
+          sl.budgetController.addCustomCategory(name, icon);
           setState(() {
             _selectedCategory = name;
           });
@@ -159,52 +157,49 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: sl.financeController,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: SavaioTheme.background,
-          appBar: _buildAppBar(),
-          body: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    TransactionAmountInput(
-                      controller: _amountController,
-                      onQuickAmountTap: _onQuickAmountTap,
-                    ),
-                    const SizedBox(height: 32),
-                    TransactionTypeToggle(
-                      currentType: _type,
-                      onTypeChanged: (type) => setState(() => _type = type),
-                    ),
-                    const SizedBox(height: 40),
-                    _buildTitleSection(),
-                    const SizedBox(height: 16),
-                    _buildDateTimeSection(),
-                    const SizedBox(height: 32),
-                    TransactionCategoryGrid(
-                      categories: sl.financeController.categories,
-                      selectedCategory: _selectedCategory,
-                      onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
-                      onAddCategoryTap: _showAddCategorySheet,
-                    ),
-                    const SizedBox(height: 32),
-                    _buildNotesSection(),
-                    const SizedBox(height: 24),
-                    _buildProgressCard(),
-                    const SizedBox(height: 120), 
-                  ],
+    final budgetController = context.watch<BudgetController>();
+    
+    return Scaffold(
+      backgroundColor: SavaioTheme.background,
+      appBar: _buildAppBar(),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                TransactionAmountInput(
+                  controller: _amountController,
+                  onQuickAmountTap: _onQuickAmountTap,
                 ),
-              ),
-              _buildSubmitButton(),
-            ],
+                const SizedBox(height: 32),
+                TransactionTypeToggle(
+                  currentType: _type,
+                  onTypeChanged: (type) => setState(() => _type = type),
+                ),
+                const SizedBox(height: 40),
+                _buildTitleSection(),
+                const SizedBox(height: 16),
+                _buildDateTimeSection(),
+                const SizedBox(height: 32),
+                TransactionCategoryGrid(
+                  categories: budgetController.categories,
+                  selectedCategory: _selectedCategory,
+                  onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                  onAddCategoryTap: _showAddCategorySheet,
+                ),
+                const SizedBox(height: 32),
+                _buildNotesSection(),
+                const SizedBox(height: 24),
+                _buildProgressCard(),
+                const SizedBox(height: 120), 
+              ],
+            ),
           ),
-        );
-      },
+          _buildSubmitButton(),
+        ],
+      ),
     );
   }
 
@@ -438,7 +433,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         ),
         child: AppButton(
           label: 'SIMPAN TRANSAKSI',
-          isLoading: _isSubmitting,
           onTap: _submitData,
         ),
       ),

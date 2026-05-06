@@ -76,9 +76,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         if (actions != null) ...actions!,
         if (showNotification) ...[
           ListenableBuilder(
-            listenable: sl.financeController,
+            listenable: sl.notificationController,
             builder: (context, _) {
-              final unreadCount = sl.financeController.unreadNotificationsCount;
+              final unreadCount = sl.notificationController.unreadNotificationsCount;
               return Center(
                 child: Stack(
                   clipBehavior: Clip.none,

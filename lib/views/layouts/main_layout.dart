@@ -22,9 +22,15 @@ class _MainLayoutState extends State<MainLayout> {
     super.initState();
     // Fetch data only if not already present or loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final controller = sl.financeController;
-      if (controller.dashboardData == null && !controller.isLoading) {
-        controller.loadInitialData();
+      if (sl.dashboardController.data == null && !sl.dashboardController.isLoading) {
+        Future.wait([
+          sl.dashboardController.fetchDashboardData(),
+          sl.budgetController.fetchAll(),
+          sl.profileController.fetchProfile(),
+          sl.analyticsController.fetchAll(),
+          sl.notificationController.fetchAll(),
+          sl.transactionController.fetchTransactions(),
+        ]);
       }
     });
   }

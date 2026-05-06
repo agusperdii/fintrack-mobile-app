@@ -1,16 +1,17 @@
 import 'package:intl/intl.dart';
+import 'package:savaio/models/monthly_summary_model.dart';
 
 class SummaryUtils {
   /// Groups monthly summary data by year.
-  static Map<String, List<Map<String, dynamic>>> groupByYear(List<Map<String, dynamic>> summary) {
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
+  static Map<String, List<MonthlySummaryModel>> groupByYear(List<MonthlySummaryModel> summary) {
+    final Map<String, List<MonthlySummaryModel>> grouped = {};
     
     // Sort summary by month descending (newest first)
-    final sortedSummary = List<Map<String, dynamic>>.from(summary)
-      ..sort((a, b) => (b['month'] as String).compareTo(a['month'] as String));
+    final sortedSummary = List<MonthlySummaryModel>.from(summary)
+      ..sort((a, b) => b.month.compareTo(a.month));
 
     for (var item in sortedSummary) {
-      final monthStr = item['month'] as String? ?? '';
+      final monthStr = item.month;
       final parts = monthStr.split('-');
       if (parts.isNotEmpty) {
         final year = parts[0];
@@ -35,10 +36,10 @@ class SummaryUtils {
   }
 
   /// Finds the maximum transaction count from a list of monthly summaries.
-  static int getMaxTransactionCount(List<Map<String, dynamic>> summary) {
+  static int getMaxTransactionCount(List<MonthlySummaryModel> summary) {
     int maxVal = 0;
     for (var item in summary) {
-      final val = item['count'] as int? ?? 0;
+      final val = item.transactionCount;
       if (val > maxVal) maxVal = val;
     }
     return maxVal;

@@ -51,7 +51,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
     setState(() { _isSaving = true; _errorMessage = null; });
     
-    final success = await sl.financeController.updatePassword(
+    final success = await sl.profileController.updatePassword(
       currentPassword: currentPass,
       newPassword: newPass,
     );
@@ -73,7 +73,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: AppHeader(title: 'Ganti Password', showBackButton: true, showNotification: false),
+      appBar: const AppHeader(title: 'Ganti Password', showBackButton: true, showNotification: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

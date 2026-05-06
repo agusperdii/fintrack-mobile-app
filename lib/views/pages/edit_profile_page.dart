@@ -36,7 +36,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       return;
     }
     setState(() { _isSaving = true; _errorMessage = null; });
-    final success = await sl.financeController.updateProfile(fullName: name);
+    final success = await sl.profileController.updateProfile(fullName: name);
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
@@ -54,7 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: AppHeader(title: 'Edit Profil', showBackButton: true, showNotification: false),
+      appBar: const AppHeader(title: 'Edit Profil', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

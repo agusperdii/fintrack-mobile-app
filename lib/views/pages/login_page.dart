@@ -4,7 +4,6 @@ import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
 import 'package:savaio/views/pages/register_page.dart';
-import 'package:savaio/core/utils/service_locator.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -28,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     if (success) {
       if (!mounted) return;
       // Pre-fetch data while transitioning
-      sl.financeController.loadInitialData();
+      // MainLayout will handle the initial data loading using the new controllers
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MainLayout()),
       );

@@ -1,20 +1,6 @@
-/// Configuration file for API endpoints.
-///
-/// How to use:
-/// 1. Find your computer's local IP address (e.g., 192.168.1.10).
-/// 2. Replace 'localhost' with your local IP address if you are testing on a real device.
-/// 3. If using an Android Emulator, use '10.0.2.2' instead of 'localhost'.
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConfig {
-  // --- CONFIGURATION ---
-
-  // Replace 'localhost' with your computer's IP address (e.g., '192.168.1.10')
-  static const String _host = '192.168.68.171';
-
-  // --- ENDPOINTS ---
-
-  /// Base URL for the Fintech Backend API
-  static const String baseUrl = 'http://$_host:8000/api/v1';
-
-  /// Base URL for the Receipt OCR Service
-  static const String ocrBaseUrl = 'http://$_host:8002';
+  static String get baseUrl => dotenv.get('API_BASE_URL', fallback: 'https://fastapi-fintrack-backend-production.up.railway.app/api/v1');
+  static String get ocrBaseUrl => dotenv.get('OCR_BASE_URL', fallback: 'http://localhost:8002');
 }

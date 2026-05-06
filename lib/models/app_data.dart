@@ -1,6 +1,7 @@
 import '../../core/utils/parser_utils.dart';
 
 enum TransactionType { income, expense }
+enum SyncStatus { idle, pending, syncing, synced, failed }
 
 class AppData {
   final double initialBalance;
@@ -23,6 +24,26 @@ class AppData {
 
   double get balance => initialBalance + totalIncome - totalExpense;
 
+  AppData copyWith({
+    double? initialBalance,
+    double? totalIncome,
+    double? totalExpense,
+    List<Transaction>? recentTransactions,
+    List<AnalysisData>? analysis,
+    double? spendingTarget,
+    String? targetPeriod,
+  }) {
+    return AppData(
+      initialBalance: initialBalance ?? this.initialBalance,
+      totalIncome: totalIncome ?? this.totalIncome,
+      totalExpense: totalExpense ?? this.totalExpense,
+      recentTransactions: recentTransactions ?? this.recentTransactions,
+      analysis: analysis ?? this.analysis,
+      spendingTarget: spendingTarget ?? this.spendingTarget,
+      targetPeriod: targetPeriod ?? this.targetPeriod,
+    );
+  }
+
   factory AppData.fromJson(Map<String, dynamic> json) {
     return AppData(
       initialBalance: ParserUtils.toDouble(json['initialBalance']),
@@ -39,8 +60,6 @@ class AppData {
     );
   }
 
-
-  // Dummy data generator
   static AppData getDummyData() {
     return AppData(
       initialBalance: 0,
@@ -57,31 +76,9 @@ class AppData {
           date: '2026-04-10',
           type: TransactionType.expense,
         ),
-        Transaction(
-          title: 'Gaji Bulanan',
-          description: 'Gaji bulan April',
-          amount: 10000000,
-          category: 'Salary',
-          date: '2026-04-01',
-          type: TransactionType.income,
-        ),
-        Transaction(
-          title: 'Tagihan Listrik',
-          description: 'Listrik pascabayar',
-          amount: 250000,
-          category: 'Bills',
-          date: '2026-04-05',
-          type: TransactionType.expense,
-        ),
       ],
       analysis: [
         AnalysisData(label: 'Food', amount: 3000000, colorHex: 'FF4242'),
-        AnalysisData(label: 'Transport', amount: 1500000, colorHex: '4285F4'),
-        AnalysisData(
-          label: 'Entertainment',
-          amount: 1000000,
-          colorHex: '34A853',
-        ),
       ],
     );
   }
@@ -97,6 +94,7 @@ class Transaction {
   final TransactionType type;
   final String? source;
   final String? receiptUrl;
+  final SyncStatus syncStatus;
 
   Transaction({
     this.id,
@@ -108,11 +106,38 @@ class Transaction {
     required this.type,
     this.source,
     this.receiptUrl,
+    this.syncStatus = SyncStatus.synced,
   });
+
+  Transaction copyWith({
+    String? id,
+    String? title,
+    String? description,
+    double? amount,
+    String? category,
+    String? date,
+    TransactionType? type,
+    String? source,
+    String? receiptUrl,
+    SyncStatus? syncStatus,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      amount: amount ?? this.amount,
+      category: category ?? this.category,
+      date: date ?? this.date,
+      type: type ?? this.type,
+      source: source ?? this.source,
+      receiptUrl: receiptUrl ?? this.receiptUrl,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     String dateStr = json['date']?.toString() ?? '';
-    
+
     return Transaction(
       id: json['id']?.toString(),
       title: json['title']?.toString() ?? 'Transaksi',
@@ -124,7 +149,9 @@ class Transaction {
           ? TransactionType.income
           : TransactionType.expense,
       source: json['source']?.toString(),
-      receiptUrl: json['receipt_url']?.toString() ?? json['receiptUrl']?.toString(),
+      receiptUrl:
+          json['receipt_url']?.toString() ?? json['receiptUrl']?.toString(),
+      syncStatus: SyncStatus.synced,
     );
   }
 }

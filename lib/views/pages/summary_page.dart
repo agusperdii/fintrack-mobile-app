@@ -1,107 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/core/utils/summary_utils.dart';
+import 'package:savaio/controllers/analytics_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/molecules/app_weekly_summary_item.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
+import 'package:savaio/models/monthly_summary_model.dart';
 
 class SummaryPage extends StatelessWidget {
   const SummaryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: sl.financeController,
-      builder: (context, _) {
-        final provider = sl.financeController;
-        final summary = provider.monthlySummary;
-        
-        // Find max transaction count across ALL data for relative scaling
-        final maxTxCount = summary != null ? SummaryUtils.getMaxTransactionCount(summary) : 0;
+    final controller = context.watch<AnalyticsController>();
+    final summary = controller.monthlySummary;
+    
+    // Find max transaction count across ALL data for relative scaling
+    final maxTxCount = summary != null ? SummaryUtils.getMaxTransactionCount(summary) : 0;
 
-        // Group summary by year using Utility
-        final Map<String, List<Map<String, dynamic>>> groupedSummary = 
-            summary != null ? SummaryUtils.groupByYear(summary) : {};
+    // Group summary by year using Utility
+    final Map<String, List<MonthlySummaryModel>> groupedSummary = 
+        summary != null ? SummaryUtils.groupByYear(summary) : {};
 
-        final sortedYears = groupedSummary.keys.toList()..sort((a, b) => b.compareTo(a));
+    final sortedYears = groupedSummary.keys.toList()..sort((a, b) => b.compareTo(a));
 
-        return Scaffold(
-          backgroundColor: SavaioTheme.background,
-          appBar: AppHeader(
-            title: 'Ringkasan Transaksi',
-            showNotification: false,
-          ),
-          body: RefreshIndicator(
-            onRefresh: () => provider.fetchMonthlySummary(),
-            color: SavaioTheme.primary,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  _ArchiveHero(monthCount: summary?.length ?? 0),
-                  const SizedBox(height: 32),
-                  
-                  if (summary != null && summary.isNotEmpty)
-                    ...sortedYears.map((year) {
-                      final yearItems = groupedSummary[year]!;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _YearGroupHeader(year: year, color: SavaioTheme.secondary),
-                          const SizedBox(height: 16),
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: yearItems.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final item = yearItems[index];
-                              final monthStr = item['month']; // e.g., "2026-04"
-                              final count = item['count'] as int? ?? 0;
-                              
-                              // Relative progress calculation based on transaction count
-                              final progress = SummaryUtils.calculateRelativeProgress(count, maxTxCount);
+    return Scaffold(
+      backgroundColor: SavaioTheme.background,
+      appBar: const AppHeader(
+        title: 'Ringkasan Transaksi',
+        showNotification: false,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => controller.fetchMonthlySummary(),
+        color: SavaioTheme.primary,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              _ArchiveHero(monthCount: summary?.length ?? 0),
+              const SizedBox(height: 32),
+              
+              if (summary != null && summary.isNotEmpty)
+                ...sortedYears.map((year) {
+                  final yearItems = groupedSummary[year]!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _YearGroupHeader(year: year, color: SavaioTheme.secondary),
+                      const SizedBox(height: 16),
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: yearItems.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = yearItems[index];
+                          final monthStr = item.month; // e.g., "2026-04"
+                          final count = item.transactionCount;
+                          
+                          // Relative progress calculation based on transaction count
+                          final progress = SummaryUtils.calculateRelativeProgress(count, maxTxCount);
 
-                              return AppWeeklySummaryItem(
-                                title: SummaryUtils.formatMonthYear(monthStr),
-                                amount: '$count Transaksi',
-                                progress: progress, 
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AllTransactionsPage(initialMonth: monthStr),
-                                    ),
-                                  );
-                                },
+                          return AppWeeklySummaryItem(
+                            title: SummaryUtils.formatMonthYear(monthStr),
+                            amount: '$count Transaksi',
+                            progress: progress, 
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AllTransactionsPage(initialMonth: monthStr),
+                                ),
                               );
                             },
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-                      );
-                    }).toList()
-                  else if (summary != null)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(40),
-                        child: Text('Belum ada riwayat bulanan', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
+                          );
+                        },
                       ),
-                    )
-                  else
-                    const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
-                ],
-              ),
-            ),
+                      const SizedBox(height: 32),
+                    ],
+                  );
+                })
+              else if (summary != null)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Text('Belum ada riwayat bulanan', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
+                  ),
+                )
+              else
+                const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

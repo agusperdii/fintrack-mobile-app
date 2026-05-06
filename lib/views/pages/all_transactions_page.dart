@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/models/app_data.dart';
+import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/pages/transaction_detail_page.dart';
@@ -27,11 +29,9 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
     if (widget.initialMonth != null) {
       _selectedMonth = widget.initialMonth;
     }
-    if (widget.initialTransactions != null) {
-      Future.microtask(() => sl.financeController.setTransactions(widget.initialTransactions!));
-    }
+    
     // Fetch specifically for the selected month if we have one, otherwise all
-    sl.financeController.fetchTransactions(month: _selectedMonth);
+    sl.transactionController.fetchTransactions(month: _selectedMonth);
   }
 
   String _formatMonth(String month) {
@@ -70,154 +70,146 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<TransactionController>();
+    final allTxs = controller.transactions ?? [];
+    
+    // Build unique months for filter from data
+    final months = allTxs
+        .where((t) => t.date.length >= 7)
+        .map((t) => t.date.substring(0, 7))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    // Safety check
+    final dropdownMonths = List<String>.from(months);
+    if (_selectedMonth != null && !dropdownMonths.contains(_selectedMonth)) {
+        dropdownMonths.add(_selectedMonth!);
+        dropdownMonths.sort((a, b) => b.compareTo(a));
+    }
+
+    final filtered = _filteredTransactions(allTxs);
+    final grouped = _groupByDate(filtered);
+    final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: AppHeader(title: 'Semua Transaksi', showBackButton: true, showNotification: false),
-      body: ListenableBuilder(
-        listenable: sl.financeController,
-        builder: (context, _) {
-          final controller = sl.financeController;
-          final allTxs = controller.transactions ?? [];
-          
-          // Build unique months for filter from data
-          final months = allTxs
-              .where((t) => t.date.length >= 7)
-              .map((t) => t.date.substring(0, 7))
-              .toSet()
-              .toList()
-            ..sort((a, b) => b.compareTo(a));
-
-          // Safety check: if _selectedMonth is set but not in data, and data is loaded,
-          // we should still keep it in the dropdown if it was passed via initialMonth
-          // so the user can see it's empty instead of crashing.
-          final dropdownMonths = List<String>.from(months);
-          if (_selectedMonth != null && !dropdownMonths.contains(_selectedMonth)) {
-             dropdownMonths.add(_selectedMonth!);
-             dropdownMonths.sort((a, b) => b.compareTo(a));
-          }
-
-          final filtered = _filteredTransactions(allTxs);
-          final grouped = _groupByDate(filtered);
-          final sortedDates = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-
-          return Column(
-            children: [
-              // Filter bar
-              Container(
-                height: 44,
-                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    // Type filter
-                    _TypeChip(label: 'Semua', value: 'all', selected: _selectedType == 'all', onTap: () => setState(() { _selectedType = 'all'; })),
-                    const SizedBox(width: 4),
-                    _TypeChip(label: 'Masuk', value: 'income', selected: _selectedType == 'income', onTap: () => setState(() { _selectedType = 'income'; })),
-                    const SizedBox(width: 4),
-                    _TypeChip(label: 'Keluar', value: 'expense', selected: _selectedType == 'expense', onTap: () => setState(() { _selectedType = 'expense'; })),
-                    const Spacer(),
-                    // Month dropdown
-                    if (dropdownMonths.isNotEmpty)
-                      DropdownButton<String?>(
-                        value: _selectedMonth,
-                        hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceVariant)),
-                        dropdownColor: SavaioTheme.surfaceContainerHigh,
-                        underline: const SizedBox(),
-                        icon: const Icon(Icons.expand_more, color: SavaioTheme.onSurfaceVariant, size: 14),
-                        items: [
-                          DropdownMenuItem<String?>(
-                            value: null, 
-                            child: Text('Semua', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
-                          ),
-                          ...dropdownMonths.map((m) => DropdownMenuItem<String?>(
-                            value: m, 
-                            child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
-                          )),
-                        ],
-                        onChanged: (v) {
-                          setState(() => _selectedMonth = v);
-                          // Re-fetch when month changes to ensure we have data for that month if paginated
-                          controller.fetchTransactions(month: v);
-                        },
+      appBar: const AppHeader(title: 'Semua Transaksi', showBackButton: true, showNotification: false),
+      body: Column(
+        children: [
+          // Filter bar
+          Container(
+            height: 44,
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                // Type filter
+                _TypeChip(label: 'Semua', value: 'all', selected: _selectedType == 'all', onTap: () => setState(() { _selectedType = 'all'; })),
+                const SizedBox(width: 4),
+                _TypeChip(label: 'Masuk', value: 'income', selected: _selectedType == 'income', onTap: () => setState(() { _selectedType = 'income'; })),
+                const SizedBox(width: 4),
+                _TypeChip(label: 'Keluar', value: 'expense', selected: _selectedType == 'expense', onTap: () => setState(() { _selectedType = 'expense'; })),
+                const Spacer(),
+                // Month dropdown
+                if (dropdownMonths.isNotEmpty)
+                  DropdownButton<String?>(
+                    value: _selectedMonth,
+                    hint: Text('Bulan', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceVariant)),
+                    dropdownColor: SavaioTheme.surfaceContainerHigh,
+                    underline: const SizedBox(),
+                    icon: const Icon(Icons.expand_more, color: SavaioTheme.onSurfaceVariant, size: 14),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null, 
+                        child: Text('Semua', style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
                       ),
+                      ...dropdownMonths.map((m) => DropdownMenuItem<String?>(
+                        value: m, 
+                        child: Text(_formatMonth(m), style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface))
+                      )),
+                    ],
+                    onChanged: (v) {
+                      setState(() => _selectedMonth = v);
+                      controller.fetchTransactions(month: v);
+                    },
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (controller.isLoading && allTxs.isEmpty)
+            const Expanded(child: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)))
+          else if (filtered.isEmpty)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.receipt_long_outlined, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                    const SizedBox(height: 16),
+                    AppHeading(
+                      _selectedMonth != null 
+                          ? 'Belum ada transaksi di ${_formatMonth(_selectedMonth!)}'
+                          : 'Tidak ada transaksi', 
+                      size: AppHeadingSize.subtitle, 
+                      color: SavaioTheme.onSurfaceVariant
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              if (controller.isLoading && allTxs.isEmpty)
-                const Expanded(child: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)))
-              else if (filtered.isEmpty)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.receipt_long_outlined, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.4)),
-                        const SizedBox(height: 16),
-                        AppHeading(
-                          _selectedMonth != null 
-                              ? 'Belum ada transaksi di ${_formatMonth(_selectedMonth!)}'
-                              : 'Tidak ada transaksi', 
-                          size: AppHeadingSize.subtitle, 
-                          color: SavaioTheme.onSurfaceVariant
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () => sl.financeController.fetchTransactions(month: _selectedMonth),
-                    color: SavaioTheme.primary,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-                      itemCount: sortedDates.length,
-                      itemBuilder: (context, i) {
-                        final date = sortedDates[i];
-                        final txs = grouped[date]!;
-                        
-                        String displayDate = date;
-                        try {
-                          final dt = DateTime.parse(date);
-                          displayDate = DateFormat('d MMMM yyyy').format(dt);
-                        } catch (_) {}
+            )
+          else
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => controller.fetchTransactions(month: _selectedMonth),
+                color: SavaioTheme.primary,
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  itemCount: sortedDates.length,
+                  itemBuilder: (context, i) {
+                    final date = sortedDates[i];
+                    final txs = grouped[date]!;
+                    
+                    String displayDate = date;
+                    try {
+                      final dt = DateTime.parse(date);
+                      displayDate = DateFormat('d MMMM yyyy').format(dt);
+                    } catch (_) {}
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Text(
-                                displayDate,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: SavaioTheme.onSurfaceVariant,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            displayDate,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: SavaioTheme.onSurfaceVariant,
+                              letterSpacing: 0.5,
                             ),
-                            ...txs.map((tx) => _TransactionListItem(
-                              transaction: tx,
-                              onTap: () async {
-                                final deleted = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
-                                );
-                                if (deleted == true) {
-                                  sl.financeController.fetchTransactions(month: _selectedMonth);
-                                }
-                              },
-                            )),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                          ),
+                        ),
+                        ...txs.map((tx) => _TransactionListItem(
+                          transaction: tx,
+                          onTap: () async {
+                            final deleted = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
+                            );
+                            if (deleted == true) {
+                              controller.fetchTransactions(month: _selectedMonth);
+                            }
+                          },
+                        )),
+                      ],
+                    );
+                  },
                 ),
-            ],
-          );
-        },
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/controllers/profile_controller.dart';
 import 'package:savaio/views/components/atoms/app_avatar.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
@@ -31,180 +33,175 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: sl.financeController,
-      builder: (context, _) {
-        final provider = sl.financeController;
-        
-        if (provider.isLoading || provider.userProfile == null) {
-          return const Scaffold(
-            backgroundColor: SavaioTheme.background,
-            body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
-          );
-        }
+    final controller = context.watch<ProfileController>();
+    
+    if (controller.isLoading || controller.userProfile == null) {
+      return const Scaffold(
+        backgroundColor: SavaioTheme.background,
+        body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
+      );
+    }
 
-        final profile = provider.userProfile!;
+    final profile = controller.userProfile!;
 
-        return Scaffold(
-          backgroundColor: SavaioTheme.background,
-          appBar: AppHeader(
-            title: 'Profil',
-            showNotification: false,
-          ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Profile Hero Header
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: SavaioTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        AppAvatar(imageUrl: profile['avatar']!),
-                        const SizedBox(height: 12),
-                        AppHeading(
-                          profile['name']!,
-                          size: AppHeadingSize.h2,
-                        ),
-                        const SizedBox(height: 2),
-                        AppHeading(
-                          profile['handle'] ?? '@user',
-                          size: AppHeadingSize.subtitle,
-                          color: SavaioTheme.primary,
-                        ),
-                        const SizedBox(height: 4),
-                        AppHeading(
-                          profile['email']!,
-                          size: AppHeadingSize.caption,
-                          color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
-                          isBold: false,
-                        ),
-                      ],
+    return Scaffold(
+      backgroundColor: SavaioTheme.background,
+      appBar: const AppHeader(
+        title: 'Profil',
+        showNotification: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Profile Hero Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: SavaioTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    AppAvatar(imageUrl: profile.avatar),
+                    const SizedBox(height: 12),
+                    AppHeading(
+                      profile.name,
+                      size: AppHeadingSize.h2,
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    AppHeading(
+                      profile.handle,
+                      size: AppHeadingSize.subtitle,
+                      color: SavaioTheme.primary,
+                    ),
+                    const SizedBox(height: 4),
+                    AppHeading(
+                      profile.email,
+                      size: AppHeadingSize.caption,
+                      color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      isBold: false,
+                    ),
+                  ],
                 ),
-                
-                const SizedBox(height: 32),
+              ),
+            ),
+            
+            const SizedBox(height: 32),
 
-                // Spending Targets Section
-                const AppSectionHeader(title: 'Keuangan'),
-                const SizedBox(height: 12),
-                
-                Container(
-                  decoration: BoxDecoration(
-                    color: SavaioTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: AppProfileMenuItem(
-                    icon: Icons.track_changes_rounded,
-                    title: 'Target Pengeluaran',
+            // Spending Targets Section
+            const AppSectionHeader(title: 'Keuangan'),
+            const SizedBox(height: 12),
+            
+            Container(
+              decoration: BoxDecoration(
+                color: SavaioTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: AppProfileMenuItem(
+                icon: Icons.track_changes_rounded,
+                title: 'Target Pengeluaran',
+                isTop: true,
+                isBottom: true,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Profile Management Section
+            const AppSectionHeader(title: 'Profil'),
+            const SizedBox(height: 12),
+            
+            Container(
+              decoration: BoxDecoration(
+                color: SavaioTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  AppProfileMenuItem(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Edit nama',
                     isTop: true,
-                    isBottom: true,
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final updated = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
+                        MaterialPageRoute(
+                          builder: (_) => EditProfilePage(currentName: profile.name),
+                        ),
                       );
+                      if (updated == true) {
+                        controller.fetchProfile();
+                      }
                     },
                   ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Profile Management Section
-                const AppSectionHeader(title: 'Profil'),
-                const SizedBox(height: 12),
-                
-                Container(
-                  decoration: BoxDecoration(
-                    color: SavaioTheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      AppProfileMenuItem(
-                        icon: Icons.person_outline_rounded,
-                        title: 'Edit nama',
-                        isTop: true,
-                        onTap: () async {
-                          final updated = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => EditProfilePage(currentName: profile['name'] ?? ''),
-                            ),
-                          );
-                          if (updated == true) {
-                            sl.financeController.fetchAllData();
-                          }
-                        },
-                      ),
-                      AppProfileMenuItem(
-                        icon: Icons.alternate_email_rounded,
-                        title: 'Ganti username',
-                        onTap: () async {
-                          final updated = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChangeUsernamePage(
-                                currentUsername: profile['username'] ?? '',
-                                currentFullName: profile['name'] ?? '',
-                              ),
-                            ),
-                          );
-                          if (updated == true) {
-                            sl.financeController.fetchAllData();
-                          }
-                        },
-                      ),
-                      AppProfileMenuItem(
-                        icon: Icons.lock_reset_rounded,
-                        title: 'Ganti password',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                  AppProfileMenuItem(
+                    icon: Icons.alternate_email_rounded,
+                    title: 'Ganti username',
+                    onTap: () async {
+                      final updated = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChangeUsernamePage(
+                            currentUsername: profile.username,
+                            currentFullName: profile.name,
+                          ),
                         ),
-                      ),
-                      AppProfileMenuItem(
-                        icon: Icons.delete_forever_rounded,
-                        title: 'Hapus akun saya',
-                        isDestructive: true,
-                        isBottom: true,
-                        onTap: () => _navigateToPlaceholder('Hapus Akun'),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 48),
-
-                // Logout Button
-                AppButton(
-                  label: 'Log Out',
-                  variant: AppButtonVariant.error,
-                  icon: Icons.logout_rounded,
-                  width: 200,
-                  onTap: () async {
-                    await sl.authController.logout();
-                    if (context.mounted) {
-                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
-                        (route) => false,
                       );
-                    }
-                  },
-                ),
-              ],
+                      if (updated == true) {
+                        controller.fetchProfile();
+                      }
+                    },
+                  ),
+                  AppProfileMenuItem(
+                    icon: Icons.lock_reset_rounded,
+                    title: 'Ganti password',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                    ),
+                  ),
+                  AppProfileMenuItem(
+                    icon: Icons.delete_forever_rounded,
+                    title: 'Hapus akun saya',
+                    isDestructive: true,
+                    isBottom: true,
+                    onTap: () => _navigateToPlaceholder('Hapus Akun'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+
+            const SizedBox(height: 48),
+
+            // Logout Button
+            AppButton(
+              label: 'Log Out',
+              variant: AppButtonVariant.error,
+              icon: Icons.logout_rounded,
+              width: 200,
+              onTap: () async {
+                await sl.authController.logout();
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

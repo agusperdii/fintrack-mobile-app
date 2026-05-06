@@ -45,8 +45,9 @@ class TransactionDetailPage extends StatelessWidget {
     );
 
     if (confirm == true && transaction.id != null) {
-      final success = await sl.financeController.deleteTransaction(transaction.id!);
+      final success = await sl.transactionController.deleteTransaction(transaction.id!);
       if (success && context.mounted) {
+        sl.dashboardController.fetchDashboardData();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Transaksi berhasil dihapus'), 
@@ -65,7 +66,7 @@ class TransactionDetailPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: AppHeader(title: 'Detail Transaksi', showBackButton: true, showNotification: false),
+      appBar: const AppHeader(title: 'Detail Transaksi', showBackButton: true, showNotification: false),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -110,7 +111,7 @@ class TransactionDetailPage extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Details Section
-            AppHeading('INFORMASI TRANSAKSI', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
+            const AppHeading('INFORMASI TRANSAKSI', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
             const SizedBox(height: 16),
             
             GlassCard(

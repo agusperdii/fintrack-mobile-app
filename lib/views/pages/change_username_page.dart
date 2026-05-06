@@ -46,7 +46,7 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
     setState(() { _isSaving = true; _errorMessage = null; });
     
     // We update both because updateProfile expects fullName
-    final success = await sl.financeController.updateProfile(
+    final success = await sl.profileController.updateProfile(
       fullName: widget.currentFullName,
       username: username,
     );
@@ -68,7 +68,7 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SavaioTheme.background,
-      appBar: AppHeader(title: 'Ganti Username', showBackButton: true, showNotification: false),
+      appBar: const AppHeader(title: 'Ganti Username', showBackButton: true, showNotification: false),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

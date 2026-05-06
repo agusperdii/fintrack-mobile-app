@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
+import 'package:savaio/controllers/budget_controller.dart';
+import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
@@ -9,6 +12,8 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_progress_bar.dart';
 import 'package:savaio/views/components/molecules/app_date_time_picker.dart';
 import 'package:savaio/views/components/molecules/selection_card.dart';
+import 'package:savaio/models/budget_model.dart';
+import 'package:savaio/models/app_data.dart';
 
 class SpendingTargetPage extends StatefulWidget {
   final String? initialCategory;
@@ -19,10 +24,11 @@ class SpendingTargetPage extends StatefulWidget {
 }
 
 class _SpendingTargetPageState extends State<SpendingTargetPage> {
-  final _amountController = TextEditingController();
-  late String _selectedCategory;
-  late String _selectedMonth;
-  bool _isSaving = false;
+  final TextEditingController _amountController = TextEditingController();
+  late String _selectedCategory = 'All';
+  String _selectedMonth = '';
+  double _originalAmount = 0.0;
+  bool _isSavingLocal = false; 
 
   @override
   void initState() {
@@ -31,7 +37,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
     
     String initial = widget.initialCategory ?? 'All';
-    final categories = sl.financeController.categories;
+    final categories = sl.budgetController.categories;
     try {
       final match = categories.firstWhere(
         (c) => c['name'].toString().toLowerCase() == initial.toLowerCase(),
@@ -42,21 +48,31 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     }
     
     _loadBudgetData();
-    sl.financeController.fetchTransactions(month: _selectedMonth);
+    sl.transactionController.fetchTransactions(month: _selectedMonth);
   }
 
   void _loadBudgetData() {
-    final budgets = sl.financeController.allBudgets;
+    final budgets = sl.budgetController.allBudgets;
+    
+    // Find precise match or fallback
     final budget = budgets.firstWhere(
-      (b) => b['category'] == _selectedCategory && b['period'] == _selectedMonth,
+      (b) => b.category.toLowerCase() == _selectedCategory.toLowerCase() && b.month == _selectedMonth,
       orElse: () => budgets.firstWhere(
-        (b) => b['category'] == _selectedCategory,
-        orElse: () => {'amount': 0.0, 'period': 'Bulanan'},
+        (b) => b.category.toLowerCase() == _selectedCategory.toLowerCase(),
+        orElse: () => BudgetModel(
+          id: '', 
+          amount: 0.0, 
+          periodType: 'monthly', 
+          month: _selectedMonth, 
+          category: _selectedCategory,
+          syncStatus: SyncStatus.idle,
+        ),
       ),
     );
     
-    _amountController.text = (budget['amount'] as double) > 0 
-        ? (budget['amount'] as double).toStringAsFixed(0) 
+    _originalAmount = budget.amount;
+    _amountController.text = budget.amount > 0 
+        ? budget.amount.toStringAsFixed(0) 
         : '';
   }
 
@@ -66,43 +82,32 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     super.dispose();
   }
 
-  Future<void> _saveTarget() async {
-    final amountText = _amountController.text.trim();
-    if (amountText.isEmpty) {
+  void _saveTarget() {
+    final amountText = _amountController.text.replaceAll('.', '');
+    final amount = double.tryParse(amountText) ?? 0;
+
+    if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan nominal target pengeluaran'), behavior: SnackBarBehavior.floating),
+        const SnackBar(content: Text('Tolong masukkan nominal yang valid di atas 0')),
       );
       return;
     }
 
-    final amount = double.tryParse(amountText);
-    if (amount == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nominal tidak valid'), behavior: SnackBarBehavior.floating),
-      );
+    if (amount == _originalAmount) {
+      Navigator.pop(context);
       return;
     }
 
-    setState(() => _isSaving = true);
-    
-    await sl.financeController.updateSpendingTarget(
-      amount, 
-      'Bulanan', 
+    setState(() => _isSavingLocal = true);
+
+    sl.budgetController.updateSpendingTargetOptimistic(
+      amount,
+      'monthly',
       category: _selectedCategory,
       month: _selectedMonth,
     );
-    
-    if (mounted) {
-      setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Target pengeluaran berhasil disimpan'),
-          backgroundColor: SavaioTheme.tertiary,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      Navigator.pop(context);
-    }
+
+    Navigator.pop(context, true);
   }
 
   String _formatMonth(String month) {
@@ -115,41 +120,50 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: sl.financeController,
-      builder: (context, _) {
-        final provider = sl.financeController;
-        final categories = [
-          {'name': 'All', 'icon': Icons.all_inclusive, 'isEmoji': false},
-          ...provider.categories
-        ];
+    final budgetController = context.watch<BudgetController>();
+    final transactionController = context.watch<TransactionController>();
 
-        final currentSpent = provider.getSpentAmountFor(_selectedCategory, _selectedMonth);
-        final targetAmount = double.tryParse(_amountController.text) ?? 0.0;
-        final progress = targetAmount > 0 ? (currentSpent / targetAmount).clamp(0.0, 1.0) : 0.0;
-        final isOver = currentSpent > targetAmount && targetAmount > 0;
+    final categories = [
+      {'name': 'All', 'icon': Icons.all_inclusive, 'isEmoji': false},
+      ...budgetController.categories
+    ];
 
-        return Scaffold(
-          backgroundColor: SavaioTheme.background,
-          appBar: _buildAppBar(),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeaderSelection(provider, categories),
-                const SizedBox(height: 32),
-                _buildAmountInputCard(),
-                const SizedBox(height: 32),
-                _buildStatusSection(currentSpent, targetAmount, progress, isOver),
-                const SizedBox(height: 24),
-                _buildInsightCard(targetAmount, currentSpent, isOver),
-              ],
-            ),
-          ),
-          bottomNavigationBar: _buildBottomButton(),
-        );
-      }
+    final currentSpent = transactionController.getSpentAmountFor(_selectedCategory, _selectedMonth);
+    final inputAmount = double.tryParse(_amountController.text.replaceAll('.', '')) ?? 0.0;
+    final progress = inputAmount > 0 ? (currentSpent / inputAmount).clamp(0.0, 1.0) : 0.0;
+    final isOver = currentSpent > inputAmount && inputAmount > 0;
+    
+    final isUnchanged = inputAmount == _originalAmount || inputAmount <= 0;
+
+    return Scaffold(
+      backgroundColor: SavaioTheme.background,
+      appBar: _buildAppBar(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderSelection(budgetController, categories),
+            const SizedBox(height: 32),
+            _buildAmountInputCard(),
+            if (budgetController.error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Center(
+                  child: Text(
+                    budgetController.error!,
+                    style: const TextStyle(color: SavaioTheme.error, fontSize: 12),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 32),
+            _buildStatusSection(currentSpent, inputAmount, progress, isOver),
+            const SizedBox(height: 24),
+            _buildInsightCard(inputAmount, currentSpent, isOver),
+          ],
+        ),
+      ),
+      bottomNavigationBar: _buildBottomButton(isUnchanged),
     );
   }
 
@@ -166,7 +180,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     );
   }
 
-  Widget _buildHeaderSelection(dynamic provider, List<Map<String, dynamic>> categories) {
+  Widget _buildHeaderSelection(BudgetController budgetController, List<Map<String, dynamic>> categories) {
     return Row(
       children: [
         Expanded(
@@ -184,7 +198,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
           child: SelectionCard(
             label: 'KATEGORI',
             value: _selectedCategory == 'All' ? 'Total' : _selectedCategory,
-            icon: provider.getCategoryIcon(_selectedCategory),
+            icon: budgetController.getCategoryIcon(_selectedCategory),
             onTap: () => _showCategoryPicker(categories),
           ),
         ),
@@ -354,7 +368,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     );
   }
 
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(bool isUnchanged) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(
@@ -365,9 +379,9 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         ),
       ),
       child: AppButton(
-        label: 'SIMPAN PERUBAHAN',
-        isLoading: _isSaving,
-        onTap: _saveTarget,
+        label: isUnchanged ? 'TIDAK ADA PERUBAHAN' : 'SIMPAN PERUBAHAN',
+        variant: isUnchanged ? AppButtonVariant.secondary : AppButtonVariant.primary,
+        onTap: (isUnchanged || _isSavingLocal) ? null : _saveTarget,
       ),
     );
   }
@@ -403,7 +417,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       setState(() {
         _selectedMonth = picked;
         _loadBudgetData();
-        sl.financeController.fetchTransactions(month: _selectedMonth);
+        sl.transactionController.fetchTransactions(month: _selectedMonth);
       });
     }
   }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
-import 'package:savaio/controllers/finance_controller.dart';
+import 'package:savaio/controllers/dashboard_controller.dart';
+import 'package:savaio/controllers/profile_controller.dart';
+import 'package:savaio/controllers/analytics_controller.dart';
 import 'package:savaio/views/components/organisms/app_balance_card.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/organisms/app_weekly_pulse_chart.dart';
 import 'package:savaio/views/components/organisms/dashboard_recent_transactions.dart';
 import 'package:savaio/views/components/molecules/dashboard_quick_actions.dart';
-import 'package:savaio/views/components/molecules/app_section_header.dart';
 import 'package:savaio/views/components/molecules/app_greeting_header.dart';
 import 'package:savaio/views/pages/notifications_page.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
@@ -17,6 +19,7 @@ import 'package:savaio/views/pages/add_transaction_page.dart';
 import 'package:savaio/views/pages/streak_page.dart';
 import 'package:savaio/views/components/organisms/nudge_overlay.dart';
 import 'package:savaio/views/components/molecules/daily_checkin_card.dart';
+import 'package:savaio/views/components/molecules/app_section_header.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -29,23 +32,15 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    final controller = sl.financeController;
-    if (controller.dashboardData == null && !controller.isLoading) {
-      controller.loadInitialData();
-    }
     _checkAndShowNudge();
   }
 
   void _checkAndShowNudge() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final nudge = sl.financeController.latestUnreadNudge;
+      final nudge = sl.notificationController.latestUnreadNudge;
       if (nudge != null && mounted) {
         NudgeOverlay.show(context, nudge, () {
-          sl.financeController.markNudgeAsRead(nudge.id);
+          sl.notificationController.markNudgeAsRead(nudge.id);
         });
       }
     });
@@ -55,99 +50,92 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddTransactionPage(
-          initialType: type,
-          initialCategory: category,
+        builder: (context) =>
+            AddTransactionPage(initialType: type, initialCategory: category),
+      ),
+    );
+  }
+
+  Future<void> _handleRefresh() async {
+    await Future.wait([
+      sl.dashboardController.fetchDashboardData(),
+      sl.profileController.fetchProfile(),
+      sl.analyticsController.fetchAll(),
+      sl.notificationController.fetchAll(),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Optimization: Watch only specific parts of the state to avoid full rebuilds
+    final isLoading = context.select<DashboardController, bool>((c) => c.isLoading);
+    final hasData = context.select<DashboardController, bool>((c) => c.data != null);
+    final userProfile = context.watch<ProfileController>().userProfile;
+    final checkInStatus = context.select<DashboardController, dynamic>((c) => c.checkInStatus);
+
+    if (isLoading && !hasData) {
+      return const Scaffold(
+        backgroundColor: SavaioTheme.background,
+        body: Center(
+          child: CircularProgressIndicator(color: SavaioTheme.primary),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: SavaioTheme.background,
+      appBar: _buildAppBar(context),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: SavaioTheme.primary,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppGreetingHeader(
+                userName: userProfile?.name.split(' ').first ?? 'User',
+              ),
+              const SizedBox(height: 16),
+              if (checkInStatus?.isCheckedInToday == false) ...[
+                const DailyCheckInCard(),
+                const SizedBox(height: 24),
+              ],
+
+              // Optimized Balance Card
+              const _DashboardBalanceSection(),
+              const SizedBox(height: 32),
+
+              DashboardQuickActions(
+                onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
+                onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
+                onScanTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const OcrScanPage()),
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Optimized Recent Transactions
+              const _DashboardRecentTransactionsSection(),
+
+              const SizedBox(height: 32),
+
+              _buildWeeklyPulseSection(context),
+
+              const SizedBox(height: 100),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: sl.financeController,
-      builder: (context, _) {
-        final provider = sl.financeController;
-        
-        if (provider.isLoading && provider.dashboardData == null) {
-          return const Scaffold(
-            backgroundColor: SavaioTheme.background,
-            body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
-          );
-        }
-
-        final data = provider.dashboardData;
-        final profile = provider.userProfile;
-        
-        return Scaffold(
-          backgroundColor: SavaioTheme.background,
-          appBar: _buildAppBar(provider),
-          body: RefreshIndicator(
-            onRefresh: () => provider.loadInitialData(),
-            color: SavaioTheme.primary,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppGreetingHeader(
-                    userName: profile?['name']?.split(' ').first ?? 'User',
-                  ),
-                  const SizedBox(height: 16),
-                  if (provider.checkInStatus?.isCheckedInToday == false) ...[
-                    const DailyCheckInCard(),
-                    const SizedBox(height: 24),
-                  ],
-
-                  _buildBalanceCard(data),
-                  const SizedBox(height: 32),
-
-                  DashboardQuickActions(
-                    onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
-                    onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
-                    onScanTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const OcrScanPage()),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  DashboardRecentTransactions(
-                    transactions: data?.recentTransactions ?? [],
-                    onViewAllTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AllTransactionsPage(
-                          initialTransactions: data?.recentTransactions ?? [],
-                        ),
-                      ),
-                    ),
-                    onTransactionTap: (tx) => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
-                    ),
-                    isLoading: data == null,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  _buildWeeklyPulseSection(provider),
-                  
-                  const SizedBox(height: 100), 
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(FinanceController provider) {
-    final streakCount = provider.checkInStatus?.streakCount ?? 0;
-    final txCount = provider.dashboardData?.recentTransactions.length ?? 0;
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final streakCount = context.select<DashboardController, int>((c) => c.checkInStatus?.streakCount ?? 0);
+    final txCount = context.select<DashboardController, int>((c) => c.data?.recentTransactions.length ?? 0);
+    final isSyncing = context.select<DashboardController, bool>((c) => c.isSyncingTransaction);
 
     return AppHeader(
       leading: Center(
@@ -164,11 +152,17 @@ class _DashboardPageState extends State<DashboardPage> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 20),
+                  icon: const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const StreakPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const StreakPage(),
+                      ),
                     );
                   },
                   padding: EdgeInsets.zero,
@@ -185,17 +179,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       shape: BoxShape.circle,
                       border: Border.all(color: SavaioTheme.background, width: 2),
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       streakCount > 99 ? '99+' : streakCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -205,6 +192,17 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
       actions: [
+        if (isSyncing)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: 12.0),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+              ),
+            ),
+          ),
         Center(
           child: Stack(
             clipBehavior: Clip.none,
@@ -223,7 +221,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => AllTransactionsPage(
-                          initialTransactions: provider.dashboardData?.recentTransactions ?? [],
+                          initialTransactions: sl.dashboardController.data?.recentTransactions ?? [],
                         ),
                       ),
                     );
@@ -242,17 +240,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       shape: BoxShape.circle,
                       border: Border.all(color: SavaioTheme.background, width: 2),
                     ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
+                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       txCount > 99 ? '99+' : txCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 8,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -270,41 +261,81 @@ class _DashboardPageState extends State<DashboardPage> {
       },
     );
   }
-  Widget _buildBalanceCard(dynamic data) {
-    if (data != null) {
-      return AppBalanceCard(
-        balance: data.balance,
-        income: data.totalIncome,
-        expense: data.totalExpense,
-        onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
-        onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
-      );
-    }
-    return const AppBalanceCard(
-      balance: 0,
-      income: 0,
-      expense: 0,
-      isLoading: true,
-    );
-  }
 
-  Widget _buildWeeklyPulseSection(dynamic provider) {
+  Widget _buildWeeklyPulseSection(BuildContext context) {
+    final weeklyPulse = context.select<AnalyticsController, dynamic>((c) => c.weeklyPulse);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AppSectionHeader(title: 'Wawasan Mingguan'),
         const SizedBox(height: 16),
-        if (provider.weeklyPulse != null)
+        if (weeklyPulse != null)
           AppWeeklyPulseChart(
-            growth: (provider.weeklyPulse!['growth'] as num).toDouble(),
-            values: (provider.weeklyPulse!['values'] as List).map((v) => (v as num).toDouble()).toList(),
+            growth: weeklyPulse.growth,
+            values: weeklyPulse.values,
           )
         else
-          const AppWeeklyPulseChart(
-            growth: 0,
-            values: [0, 0, 0, 0, 0, 0, 0],
-          ),
+          const AppWeeklyPulseChart(growth: 0, values: [0, 0, 0, 0, 0, 0, 0]),
       ],
+    );
+  }
+}
+
+class _DashboardBalanceSection extends StatelessWidget {
+  const _DashboardBalanceSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final balance = context.select<DashboardController, double>((c) => c.data?.balance ?? 0.0);
+    final income = context.select<DashboardController, double>((c) => c.data?.totalIncome ?? 0.0);
+    final expense = context.select<DashboardController, double>((c) => c.data?.totalExpense ?? 0.0);
+    final hasData = context.select<DashboardController, bool>((c) => c.data != null);
+
+    return AppBalanceCard(
+      balance: balance,
+      income: income,
+      expense: expense,
+      onIncomeTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTransactionPage(initialType: 'Income')),
+        );
+      },
+      onExpenseTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTransactionPage(initialType: 'Expense')),
+        );
+      },
+      isLoading: !hasData,
+    );
+  }
+}
+
+class _DashboardRecentTransactionsSection extends StatelessWidget {
+  const _DashboardRecentTransactionsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final transactions = context.select<DashboardController, List>((c) => c.data?.recentTransactions ?? []);
+    final hasData = context.select<DashboardController, bool>((c) => c.data != null);
+
+    return DashboardRecentTransactions(
+      transactions: List.from(transactions),
+      onViewAllTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AllTransactionsPage(
+            initialTransactions: List.from(transactions),
+          ),
+        ),
+      ),
+      onTransactionTap: (tx) => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
+      ),
+      isLoading: !hasData,
     );
   }
 }

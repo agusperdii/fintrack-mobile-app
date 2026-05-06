@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
@@ -10,10 +11,13 @@ import 'package:savaio/controllers/auth_controller.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://tnqssbtofbrewtlbipbf.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucXNzYnRvZmJyZXd0bGJpcGJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NzMyNDcsImV4cCI6MjA5MzU0OTI0N30.piaYQzHW0w_W1dVsTagSZKFOFIP12q10oxoeEM10Os8',
+    url: dotenv.get('SUPABASE_URL'),
+    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
   );
 
   sl.setup();
@@ -29,7 +33,12 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: sl.authController),
-        ChangeNotifierProvider.value(value: sl.financeController),
+        ChangeNotifierProvider.value(value: sl.transactionController),
+        ChangeNotifierProvider.value(value: sl.notificationController),
+        ChangeNotifierProvider.value(value: sl.dashboardController),
+        ChangeNotifierProvider.value(value: sl.budgetController),
+        ChangeNotifierProvider.value(value: sl.profileController),
+        ChangeNotifierProvider.value(value: sl.analyticsController),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:savaio/repositories/finance_repository.dart';
+import 'package:savaio/repositories/profile_repository.dart';
 
 class AuthController extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
-  FinanceRepository? _financeRepository;
+  ProfileRepository? _profileRepository;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -20,9 +20,9 @@ class AuthController extends ChangeNotifier {
     _init();
   }
 
-  /// Injects FinanceRepository after initialization to avoid circular dependency
-  void setFinanceRepository(FinanceRepository repository) {
-    _financeRepository = repository;
+  /// Injects ProfileRepository after initialization to avoid circular dependency
+  void setProfileRepository(ProfileRepository repository) {
+    _profileRepository = repository;
   }
 
   void _init() {
@@ -52,9 +52,9 @@ class AuthController extends ChangeNotifier {
       _session = response.session;
 
       // Sync with FastAPI backend if login was successful
-      if (_session != null && _financeRepository != null) {
+      if (_session != null && _profileRepository != null) {
         try {
-          await _financeRepository!.syncUser();
+          await _profileRepository!.syncUser();
           debugPrint('Successfully synced user with FastAPI');
         } catch (e) {
           debugPrint('FastAPI Sync Error: $e');
