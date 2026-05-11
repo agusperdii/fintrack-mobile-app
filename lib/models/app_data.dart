@@ -45,18 +45,37 @@ class AppData {
   }
 
   factory AppData.fromJson(Map<String, dynamic> json) {
+    final analysisRaw = json['analysis'] ?? json['category_breakdown'];
+    final List<AnalysisData> parsedAnalysis;
+
+    if (analysisRaw is List) {
+      parsedAnalysis = analysisRaw.map((a) => AnalysisData.fromJson(a)).toList();
+    } else if (analysisRaw is Map) {
+      final colors = ['FF4242', '4285F4', '34A853', 'FBBC05', '9C27B0', '00BCD4'];
+      int i = 0;
+      parsedAnalysis = analysisRaw.entries.map((e) {
+        final color = colors[i % colors.length];
+        i++;
+        return AnalysisData(
+          label: e.key.toString(),
+          amount: ParserUtils.toDouble(e.value),
+          colorHex: color,
+        );
+      }).toList();
+    } else {
+      parsedAnalysis = const [];
+    }
+
     return AppData(
-      initialBalance: ParserUtils.toDouble(json['initialBalance']),
-      totalIncome: ParserUtils.toDouble(json['totalIncome']),
-      totalExpense: ParserUtils.toDouble(json['totalExpense']),
-      recentTransactions: (json['recentTransactions'] as List)
+      initialBalance: ParserUtils.toDouble(json['initialBalance'] ?? json['initial_balance']),
+      totalIncome: ParserUtils.toDouble(json['totalIncome'] ?? json['total_income']),
+      totalExpense: ParserUtils.toDouble(json['totalExpense'] ?? json['total_expense']),
+      recentTransactions: ((json['recentTransactions'] ?? json['recent_transactions']) as List? ?? const [])
           .map((t) => Transaction.fromJson(t))
           .toList(),
-      analysis: (json['analysis'] as List)
-          .map((a) => AnalysisData.fromJson(a))
-          .toList(),
-      spendingTarget: ParserUtils.toDouble(json['spendingTarget']),
-      targetPeriod: json['targetPeriod'] as String?,
+      analysis: parsedAnalysis,
+      spendingTarget: ParserUtils.toDouble(json['spendingTarget'] ?? json['spending_target']),
+      targetPeriod: (json['targetPeriod'] ?? json['target_period']) as String?,
     );
   }
 

@@ -16,8 +16,8 @@ class NetworkException extends AppException {
       : super(message, 'Network Error: ');
 }
 
-class TimeoutException extends AppException {
-  TimeoutException([String message = 'Connection timeout'])
+class RequestTimeoutException extends AppException {
+  RequestTimeoutException([String message = 'Connection timeout'])
       : super(message, 'Timeout: ');
 }
 

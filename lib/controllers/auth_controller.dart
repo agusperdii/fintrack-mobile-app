@@ -33,6 +33,20 @@ class AuthController extends ChangeNotifier {
     });
   }
 
+  /// Attempt to refresh the current session (access token).
+  /// Returns `true` when a new session is available.
+  Future<bool> refreshSession() async {
+    try {
+      final res = await _supabase.auth.refreshSession();
+      _session = res.session ?? _supabase.auth.currentSession;
+      notifyListeners();
+      return _session != null;
+    } catch (e) {
+      debugPrint('Supabase refreshSession error: $e');
+      return false;
+    }
+  }
+
   Future<void> checkAuth() async {
     // Supabase SDK handles persistence automatically
     _session = _supabase.auth.currentSession;

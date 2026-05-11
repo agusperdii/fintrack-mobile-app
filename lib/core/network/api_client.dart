@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' as async;
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -10,8 +10,9 @@ class ApiClient {
   final AuthController _authController;
   final http.Client _client;
 
-  static const Duration _defaultTimeout = Duration(seconds: 15);
-  static const int _maxRetries = 2;
+  // Keep UX responsive: avoid 45s+ hangs on flaky networks.
+  static const Duration _defaultTimeout = Duration(seconds: 10);
+  static const int _maxRetries = 1;
 
   ApiClient({
     required AuthController authController,
@@ -61,14 +62,27 @@ class ApiClient {
 
   Future<dynamic> _requestWithRetry(Future<http.Response> Function() requestFn) async {
     int attempts = 0;
+    bool didRefreshOnce = false;
     while (attempts <= _maxRetries) {
       try {
         final response = await requestFn().timeout(_defaultTimeout);
         return _processResponse(response);
       } on SocketException {
         if (attempts == _maxRetries) throw NetworkException();
-      } on TimeoutException {
-        if (attempts == _maxRetries) throw TimeoutException();
+      } on async.TimeoutException {
+        if (attempts == _maxRetries) throw RequestTimeoutException();
+      } on UnauthorizedException {
+        // Try refreshing Supabase session once, then retry the request with new token.
+        if (!didRefreshOnce && _authController.isAuthenticated) {
+          didRefreshOnce = true;
+          final refreshed = await _authController.refreshSession();
+          if (refreshed) {
+            continue;
+          }
+        }
+        // If refresh fails, proceed with logout to avoid a broken state loop.
+        await _authController.logout();
+        rethrow;
       } on Exception catch (e) {
         if (attempts == _maxRetries) rethrow;
         log('Request failed, retrying ($attempts): $e');
@@ -76,6 +90,9 @@ class ApiClient {
       attempts++;
       await Future.delayed(Duration(milliseconds: 500 * attempts));
     }
+
+    // Should be unreachable, but keep the type system happy.
+    throw ServerException('Request failed after retries');
   }
 
   dynamic _processResponse(http.Response response) {
@@ -90,7 +107,6 @@ class ApiClient {
       case 400:
         throw BadRequestException(responseJson?['detail'] ?? 'Bad Request', response.statusCode);
       case 401:
-        _authController.logout();
         throw UnauthorizedException(responseJson?['detail'] ?? 'Unauthorized');
       case 403:
         throw UnauthorizedException(responseJson?['detail'] ?? 'Forbidden');

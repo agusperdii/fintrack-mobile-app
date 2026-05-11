@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/pages/dashboard_page.dart';
@@ -23,14 +24,20 @@ class _MainLayoutState extends State<MainLayout> {
     // Fetch data only if not already present or loading
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (sl.dashboardController.data == null && !sl.dashboardController.isLoading) {
-        Future.wait([
-          sl.dashboardController.fetchDashboardData(),
-          sl.budgetController.fetchAll(),
-          sl.profileController.fetchProfile(),
-          sl.analyticsController.fetchAll(),
-          sl.notificationController.fetchAll(),
-          sl.transactionController.fetchTransactions(),
-        ]);
+        Future(() async {
+          await Future.wait([
+            sl.dashboardController.fetchDashboardData(),
+            sl.budgetController.fetchAll(),
+            sl.profileController.fetchProfile(),
+            sl.analyticsController.fetchAll(),
+            sl.notificationController.fetchAll(),
+          ]);
+
+          final now = DateTime.now();
+          final currentMonth = sl.dashboardController.data?.targetPeriod ??
+              "${now.year}-${now.month.toString().padLeft(2, '0')}";
+          await sl.transactionController.fetchTransactions(month: currentMonth);
+        });
       }
     });
   }
@@ -69,24 +76,30 @@ class _MainLayoutState extends State<MainLayout> {
             left: horizontalMargin,
             right: horizontalMargin,
             bottom: bottomMargin,
-            child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
-                    _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
-                    _buildFloatingActionButton(),
-                    _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
-                    _buildNavItem(3, Icons.person_rounded, 'Profil'),
-                  ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
+                      _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
+                      _buildFloatingActionButton(),
+                      _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
+                      _buildNavItem(3, Icons.person_rounded, 'Profil'),
+                    ],
+                  ),
                 ),
               ),
             ),
