@@ -4,13 +4,14 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 
-enum AppNotificationVariant { info, warning, success, streak }
+import 'package:savaio/models/notification_data.dart';
 
 class AppNotificationCard extends StatelessWidget {
   final String category;
   final String time;
   final Widget content;
-  final AppNotificationVariant variant;
+  final NotificationSeverity severity;
+  final NotificationPresentation presentation;
   final List<Widget>? actions;
   final Widget? footer;
   final bool isRead;
@@ -20,7 +21,8 @@ class AppNotificationCard extends StatelessWidget {
     required this.category,
     required this.time,
     required this.content,
-    this.variant = AppNotificationVariant.info,
+    this.severity = NotificationSeverity.info,
+    this.presentation = NotificationPresentation.banner,
     this.actions,
     this.footer,
     this.isRead = false,
@@ -31,23 +33,24 @@ class AppNotificationCard extends StatelessWidget {
     Color color;
     IconData icon;
 
-    switch (variant) {
-      case AppNotificationVariant.warning:
+    switch (severity) {
+      case NotificationSeverity.warning:
+        color = Colors.orange;
+        icon = Icons.warning_amber_rounded;
+        break;
+      case NotificationSeverity.danger:
         color = SavaioTheme.error;
-        icon = Icons.warning;
+        icon = Icons.error_outline_rounded;
         break;
-      case AppNotificationVariant.success:
-        color = SavaioTheme.tertiary;
-        icon = Icons.check_circle;
-        break;
-      case AppNotificationVariant.streak:
-        color = SavaioTheme.secondary;
-        icon = Icons.fireplace;
-        break;
-      case AppNotificationVariant.info:
+      case NotificationSeverity.info:
         color = SavaioTheme.primary;
-        icon = Icons.lightbulb;
+        icon = Icons.info_outline_rounded;
         break;
+    }
+
+    // Special icon for badge presentation if needed
+    if (presentation == NotificationPresentation.badge) {
+      icon = Icons.circle;
     }
 
     // Dim color if read
@@ -55,14 +58,14 @@ class AppNotificationCard extends StatelessWidget {
 
     return GlassCard(
       padding: EdgeInsets.zero,
-      borderColor: variant == AppNotificationVariant.warning && !isRead
-          ? color.withValues(alpha: 0.5) 
+      borderColor: !isRead
+          ? color.withValues(alpha: 0.3) 
           : SavaioTheme.onSurfaceVariant.withValues(alpha: 0.1),
       borderWidth: 1,
       child: Opacity(
-        opacity: isRead ? 0.6 : 1.0,
+        opacity: isRead ? 0.7 : 1.0,
         child: Container(
-          decoration: variant == AppNotificationVariant.warning && !isRead ? BoxDecoration(
+          decoration: !isRead ? BoxDecoration(
             border: Border(
               left: BorderSide(
                 color: color.withValues(alpha: 0.5),

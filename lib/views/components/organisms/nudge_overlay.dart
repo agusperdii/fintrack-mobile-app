@@ -1,26 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/models/nudge_data.dart';
+import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
-class NudgeOverlay extends StatelessWidget {
-  final NudgeData nudge;
+class AppNotificationOverlay extends StatelessWidget {
+  final NotificationData notification;
   final VoidCallback onDismiss;
 
-  const NudgeOverlay({
+  const AppNotificationOverlay({
     super.key,
-    required this.nudge,
+    required this.notification,
     required this.onDismiss,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = nudge.type == NudgeType.positive;
-    
+    IconData icon;
+    Color color;
+
+    switch (notification.type) {
+      case NotificationType.budgetExceeded:
+        icon = Icons.error_outline_rounded;
+        color = SavaioTheme.error;
+        break;
+      case NotificationType.budgetReached:
+        icon = Icons.warning_amber_rounded;
+        color = Colors.orange;
+        break;
+      case NotificationType.newTransaction:
+        icon = Icons.receipt_long_rounded;
+        color = SavaioTheme.tertiary;
+        break;
+      case NotificationType.welcome:
+        icon = Icons.sentiment_very_satisfied_rounded;
+        color = SavaioTheme.primary;
+        break;
+      case NotificationType.streak:
+        icon = Icons.local_fire_department_rounded;
+        color = Colors.orange;
+        break;
+      default:
+        icon = Icons.notifications_none_rounded;
+        color = SavaioTheme.primary;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -47,20 +74,21 @@ class NudgeOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           AppIconContainer(
-            icon: nudge.icon,
-            color: isPositive ? SavaioTheme.tertiary : SavaioTheme.primary,
+            icon: icon,
+            color: color,
             size: 80,
             opacity: 0.15,
           ),
           const SizedBox(height: 24),
           AppHeading(
-            isPositive ? 'Selamat!' : 'Perhatian',
+            notification.title,
             size: AppHeadingSize.h2,
-            color: isPositive ? SavaioTheme.tertiary : SavaioTheme.primary,
+            color: color,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
-            nudge.message,
+            notification.message,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -70,17 +98,18 @@ class NudgeOverlay extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           AppButton(
-            label: isPositive ? 'TERIMA KASIH' : 'SAYA MENGERTI',
+            label: 'SAYA MENGERTI',
             onTap: onDismiss,
           ),
-          if (!isPositive && nudge.type == NudgeType.warning) ...[
+          if (notification.type == NotificationType.budgetReached || notification.type == NotificationType.budgetExceeded) ...[
             const SizedBox(height: 12),
             TextButton(
               onPressed: () {
                 onDismiss();
+                final categoryId = notification.metadata?['category_id']?.toString();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SpendingTargetPage(initialCategory: nudge.targetCategory)),
+                  MaterialPageRoute(builder: (context) => SpendingTargetPage(initialCategoryId: categoryId)),
                 );
               },
               child: const Text(
@@ -95,13 +124,13 @@ class NudgeOverlay extends StatelessWidget {
     );
   }
 
-  static void show(BuildContext context, NudgeData nudge, VoidCallback onRead) {
+  static void show(BuildContext context, NotificationData notification, VoidCallback onRead) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => NudgeOverlay(
-        nudge: nudge,
+      builder: (context) => AppNotificationOverlay(
+        notification: notification,
         onDismiss: () {
           onRead();
           Navigator.pop(context);

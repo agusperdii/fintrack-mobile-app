@@ -1,9 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/monthly_summary_model.dart';
 import 'package:savaio/repositories/transaction_repository.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/core/utils/parser_utils.dart';
+import 'package:savaio/core/utils/service_locator.dart';
+
+void _safeNotifyListeners(ChangeNotifier notifier) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    notifier.notifyListeners();
+  });
+}
 
 class TransactionController extends ChangeNotifier {
   final TransactionRepository _repository;
@@ -11,12 +20,16 @@ class TransactionController extends ChangeNotifier {
   TransactionController(this._repository);
 
   List<Transaction>? _transactions;
+  MonthSummary? _monthSummary;
+  String _currency = 'IDR';
   bool _isLoading = false;
   bool _isAddingTransaction = false;
   bool _isDeletingTransaction = false;
   String? _error;
 
   List<Transaction>? get transactions => _transactions;
+  MonthSummary? get monthSummary => _monthSummary;
+  String get currency => _currency;
   bool get isLoading => _isLoading;
   bool get isAddingTransaction => _isAddingTransaction;
   bool get isDeletingTransaction => _isDeletingTransaction;
@@ -25,7 +38,7 @@ class TransactionController extends ChangeNotifier {
   Future<void> fetchTransactions({String? month}) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners(this);
 
     try {
       _transactions = await _repository.getTransactions(month: month);
@@ -34,25 +47,50 @@ class TransactionController extends ChangeNotifier {
       _transactions = [];
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners(this);
+    }
+  }
+
+  /// Drill-down fetch from /summary/{month}/transactions
+  Future<void> fetchMonthTransactions(String month, {int page = 1}) async {
+    _isLoading = true;
+    _error = null;
+    _safeNotifyListeners(this);
+
+    try {
+      final res = await sl.analyticsRepository.getMonthTransactions(month, page: page);
+      if (page == 1) {
+        _transactions = res.transactions;
+      } else {
+        _transactions = [...?_transactions, ...res.transactions];
+      }
+      _monthSummary = res.summary;
+      _currency = res.currency;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      _safeNotifyListeners(this);
     }
   }
 
   /// Adds a transaction optimistically and returns immediately.
   /// Synchronization happens in the background.
-  void addTransactionOptimistic({
+  Future<void> createTransactionOptimistic({
     required DashboardController dashboardController,
     required String title,
     String? description,
     required double amount,
-    required String category,
+    required String categoryId,
     required String type,
     DateTime? date,
-  }) {
+    String? receiptId,
+    String source = 'manual',
+  }) async {
     final stopwatch = Stopwatch()..start();
     _isAddingTransaction = true;
-    notifyListeners();
-    
+    _safeNotifyListeners(this);
+
     // Create optimistic transaction
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final newTransaction = Transaction(
@@ -60,97 +98,107 @@ class TransactionController extends ChangeNotifier {
       title: title,
       description: description ?? '',
       amount: amount,
-      category: category,
-      type: type.toLowerCase() == 'expense' ? TransactionType.expense : TransactionType.income,
-      date: (date ?? DateTime.now()).toIso8601String(),
+      categoryId: categoryId,
+      receiptId: receiptId,
+      source: source,
+      date: date ?? DateTime.now(),
       syncStatus: SyncStatus.pending,
     );
 
     // 1. Optimistic UI update
     _transactions = [newTransaction, ...?_transactions];
     dashboardController.isSyncingTransaction = true; // Start global sync indicator
-    dashboardController.applyTransactionOptimistically(newTransaction);
-    notifyListeners();
-    
+    dashboardController.applyTransactionOptimistically(
+      newTransaction,
+      isExpense: type.toLowerCase() == 'expense',
+    );
+    _safeNotifyListeners(this);
+
     debugPrint('Optimistic update took: ${stopwatch.elapsedMilliseconds}ms');
 
-    // 2. Start background sync
-    _syncInBackground(
-      tempTx: newTransaction,
-      dashboardController: dashboardController,
-      title: title,
-      description: description,
-      amount: amount,
-      category: category,
-      type: type,
-      date: date,
-    );
-
-    // Stop adding state for UI button after a short delay
-    Future.delayed(const Duration(milliseconds: 200), () {
+    // 2. Start sync
+    try {
+      await _syncInBackground(
+        tempId: tempId,
+        dashboardController: dashboardController,
+        title: title,
+        description: description,
+        amount: amount,
+        categoryId: categoryId,
+        date: date ?? DateTime.now(),
+        receiptId: receiptId,
+        source: source,
+      );
+    } finally {
       _isAddingTransaction = false;
-      notifyListeners();
-    });
+      _safeNotifyListeners(this);
+    }
+
+    // Background Sync (Analytics/Notifications)
+    sl.notificationController.fetchAll();
+    sl.analyticsController.fetchAll();
   }
 
   Future<void> _syncInBackground({
-    required Transaction tempTx,
+    required String tempId,
     required DashboardController dashboardController,
     required String title,
     String? description,
     required double amount,
-    required String category,
-    required String type,
-    DateTime? date,
+    required String categoryId,
+    required DateTime date,
+    String? receiptId,
+    required String source,
   }) async {
     try {
       // 3. API call with timeout (5 seconds)
-      final success = await _repository.addTransaction(
+      final result = await _repository.createTransaction(
         title: title,
         description: description,
         amount: amount,
-        category: category,
-        type: type,
+        categoryId: categoryId,
         date: date,
+        receiptId: receiptId,
+        source: source,
       ).timeout(const Duration(seconds: 5));
 
-      if (success) {
-        debugPrint('Background sync SUCCESS for ${tempTx.id}');
+      if (result.id.isNotEmpty) {
+        debugPrint('Background sync SUCCESS for $tempId');
         
         // Update status to synced
-        dashboardController.updateTransactionStatus(tempTx.id!, SyncStatus.synced);
+        dashboardController.updateTransactionStatus(tempId, SyncStatus.synced);
         dashboardController.isSyncingTransaction = false; // Stop global sync indicator early on success
         
         // Update local transaction list status
         if (_transactions != null) {
           _transactions = _transactions!.map((tx) {
-            return tx.id == tempTx.id ? tx.copyWith(syncStatus: SyncStatus.synced) : tx;
+            return tx.id == tempId ? tx.copyWith(syncStatus: SyncStatus.synced) : tx;
           }).toList();
-          notifyListeners();
+          _safeNotifyListeners(this);
         }
       } else {
         throw Exception('Server returned failure');
       }
     } catch (e) {
-      debugPrint('Background sync FAILED for ${tempTx.id}. Error: $e');
-      
+      debugPrint('Background sync FAILED for $tempId. Error: $e');
+
       // 4. Update status to failed
-      dashboardController.updateTransactionStatus(tempTx.id!, SyncStatus.failed);
+      dashboardController.updateTransactionStatus(tempId, SyncStatus.failed);
       if (_transactions != null) {
         _transactions = _transactions!.map((tx) {
-          return tx.id == tempTx.id ? tx.copyWith(syncStatus: SyncStatus.failed) : tx;
+          return tx.id == tempId ? tx.copyWith(syncStatus: SyncStatus.failed) : tx;
         }).toList();
-        notifyListeners();
+        _safeNotifyListeners(this);
       }
 
       // Rollback balance if it's a critical error or per user preference
       // Here we just mark as failed and allow retry or manual rollback
       // For now, let's rollback automatically to ensure consistency
       dashboardController.rollbackTransaction();
-      
+
       // Remove the failed transaction from the list
-      _transactions = _transactions?.where((tx) => tx.id != tempTx.id).toList();
-      notifyListeners();
+      _transactions = _transactions?.where((tx) => tx.id != tempId).toList();
+      _safeNotifyListeners(this);
     } finally {
       dashboardController.isSyncingTransaction = false; // Stop global sync indicator
     }
@@ -164,7 +212,7 @@ class TransactionController extends ChangeNotifier {
     _error = null;
 
     final previousTransactions = _transactions != null ? List<Transaction>.from(_transactions!) : null;
-    
+
     // 1. Find the transaction for incremental balance update
     Transaction? deletedTx;
     try {
@@ -173,40 +221,42 @@ class TransactionController extends ChangeNotifier {
       // Not found in current list
     }
 
+    final isExpense = deletedTx?.type == TransactionType.expense;
+
     // 2. Optimistic Update (List & Balance)
     if (_transactions != null) {
       _transactions = _transactions!.where((t) => t.id != id).toList();
-      notifyListeners();
+      _safeNotifyListeners(this);
     }
-    
+
     if (deletedTx != null && dashboardController != null) {
-      dashboardController.applyTransactionRemovalOptimistically(deletedTx);
+      dashboardController.applyTransactionRemovalOptimistically(deletedTx, isExpense: isExpense);
     }
 
     try {
       final success = await _repository.deleteTransaction(id);
       if (!success) throw Exception('Failed to delete transaction');
-      
+
       // NO FULL REFRESH NEEDED - We updated incrementally!
-      // dashboardController?.fetchDashboardData(); 
-      
+      // dashboardController?.fetchDashboardData();
+
       return true;
     } catch (e) {
       _error = e.toString();
-      
+
       // 3. Rollback (List & Balance)
       _transactions = previousTransactions;
       if (dashboardController != null) {
         dashboardController.rollbackTransaction();
       }
-      notifyListeners();
+      _safeNotifyListeners(this);
       return false;
     } finally {
       _isDeletingTransaction = false;
       if (dashboardController != null) {
         dashboardController.isSyncingTransaction = false;
       }
-      notifyListeners();
+      _safeNotifyListeners(this);
     }
   }
 
@@ -217,8 +267,8 @@ class TransactionController extends ChangeNotifier {
     
     return _transactions!
         .where((t) => t.type == TransactionType.expense)
-        .where((t) => t.date.startsWith(month))
-        .where((t) => normalizedSearch == 'all' || ParserUtils.normalizeCategory(t.category) == normalizedSearch)
+        .where((t) => t.date.toIso8601String().startsWith(month))
+        .where((t) => normalizedSearch == 'all' || t.categoryKey == normalizedSearch)
         .fold(0.0, (sum, t) => sum + t.amount);
   }
 }

@@ -10,25 +10,32 @@ class TransactionRepository {
     return _remoteDataSource.getTransactions(month: month);
   }
 
-  Future<bool> addTransaction({
+  Future<Transaction> createTransaction({
     required String title,
     String? description,
     required double amount,
-    required String category,
-    required String type,
-    DateTime? date,
+    required String categoryId,
+    required DateTime date,
+    String? receiptId,
+    String source = 'manual',
   }) {
-    return _remoteDataSource.addTransaction(
+    return _remoteDataSource.createTransaction(
       title: title,
       description: description,
       amount: amount,
-      category: category,
-      type: type,
+      categoryId: categoryId,
       date: date,
+      receiptId: receiptId,
+      source: source,
     );
   }
 
-  Future<bool> deleteTransaction(String id) {
-    return _remoteDataSource.deleteTransaction(id);
+  Future<bool> deleteTransaction(String id) async {
+    try {
+      await _remoteDataSource.deleteTransaction(id);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

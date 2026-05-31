@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
@@ -10,18 +9,8 @@ import 'package:savaio/controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
-  
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: dotenv.get('SUPABASE_URL'),
-    anonKey: dotenv.get('SUPABASE_ANON_KEY'),
-  );
-
+  await dotenv.load(fileName: "assets/.env");
   sl.setup();
-  await sl.authController.checkAuth();
   runApp(const MyApp());
 }
 

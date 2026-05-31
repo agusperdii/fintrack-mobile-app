@@ -1,42 +1,51 @@
-import 'package:savaio/core/network/api_client.dart';
-import 'package:savaio/core/constants/api_config.dart';
-import 'package:savaio/models/budget_model.dart';
+import '../../../core/constants/api_config.dart';
+import '../../../core/network/api_client.dart';
+import '../../../models/budget_model.dart';
 
-abstract class BudgetRemoteDataSource {
-  Future<List<BudgetModel>> getAllBudgets();
-  Future<bool> saveBudget({
-    required double amount,
-    required String period,
-    String category = 'All',
-    String? month,
-  });
-}
+class BudgetRemoteDataSource {
+  final ApiClient _client;
 
-class BudgetRemoteDataSourceImpl implements BudgetRemoteDataSource {
-  final ApiClient apiClient;
-  final String baseUrl = ApiConfig.baseUrl;
+  BudgetRemoteDataSource(this._client);
 
-  BudgetRemoteDataSourceImpl({required this.apiClient});
-
-  @override
+  /// GET /budgets
   Future<List<BudgetModel>> getAllBudgets() async {
-    final response = await apiClient.get('$baseUrl/budgets/');
-    return (response as List).map((b) => BudgetModel.fromJson(b)).toList();
+    final data = await _client.get('${ApiConfig.baseUrl}/budgets') as List? ?? [];
+    return data.map((b) => BudgetModel.fromJson(b as Map<String, dynamic>)).toList();
   }
 
-  @override
-  Future<bool> saveBudget({
-    required double amount,
-    required String period,
-    String category = 'All',
-    String? month,
-  }) async {
-    String monthStr = month ?? "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}";
-    await apiClient.post('$baseUrl/budgets/', body: {
-      'category': category,
+  /// GET /budgets/status
+  Future<List<BudgetStatusVM>> getBudgetStatus({String? month}) async {
+    final params = month != null ? {'month': month} : <String, String>{};
+    final uri = Uri.parse('${ApiConfig.baseUrl}/budgets/status')
+        .replace(queryParameters: params.isNotEmpty ? params : null);
+
+    final data = await _client.get(uri.toString()) as List? ?? [];
+    return data.map((b) => BudgetStatusVM.fromJson(b as Map<String, dynamic>)).toList();
+  }
+
+  /// POST /budgets (upsert)
+  Future<bool> saveBudget({required double amount, required String category, String? month}) async {
+    final body = {
       'amount': amount,
-      'month': monthStr,
-    });
+      'category_id': category,
+      if (month != null && month.isNotEmpty) 'start_month': month,
+    };
+
+    await _client.post(
+      '${ApiConfig.baseUrl}/budgets',
+      body: body,
+    );
     return true;
+  }
+
+  /// PATCH /budgets/{id}
+  Future<BudgetModel> updateBudget(String id, Map<String, dynamic> data) async {
+    final dataRes = await _client.patch('${ApiConfig.baseUrl}/budgets/$id', body: data) as Map<String, dynamic>;
+    return BudgetModel.fromJson(dataRes);
+  }
+
+  /// DELETE /budgets/{id}
+  Future<void> deleteBudget(String id) async {
+    await _client.delete('${ApiConfig.baseUrl}/budgets/$id');
   }
 }

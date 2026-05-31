@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
@@ -31,7 +33,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   }
 
   Future<void> _handleDelete() async {
-    if (_isDeleting || widget.transaction.id == null) return;
+    if (_isDeleting) return;
 
     final confirm = await _showConfirmDialog();
     if (confirm != true || !mounted) return;
@@ -55,7 +57,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
 
     // 3. Background Processing: Delete and refresh dashboard
     sl.transactionController.deleteTransaction(
-      widget.transaction.id!,
+      widget.transaction.id,
       dashboardController: sl.dashboardController,
     ).then((success) {
       if (success) {
@@ -153,7 +155,7 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                   ),
                   const SizedBox(height: 20),
                   AppHeading(
-                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(widget.transaction.amount)}',
+                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(widget.transaction.amount, currency: context.watch<AuthController>().currency)}',
                     size: AppHeadingSize.h1,
                     color: isIncome ? SavaioTheme.tertiary : SavaioTheme.onSurface,
                   ),
@@ -195,27 +197,26 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
                       value: widget.transaction.description!,
                     ),
                   _buildDetailItem(
-                    icon: Icons.category_rounded, 
-                    label: 'Kategori', 
-                    value: widget.transaction.category,
+                    icon: Icons.category_rounded,
+                    label: 'Kategori',
+                    value: widget.transaction.category?.name ?? widget.transaction.categoryId ?? '-',
                   ),
                   _buildDetailItem(
-                    icon: Icons.calendar_today_rounded, 
-                    label: 'Waktu & Tanggal', 
-                    value: _formatDate(widget.transaction.date),
+                    icon: Icons.calendar_today_rounded,
+                    label: 'Waktu & Tanggal',
+                    value: _formatDate(widget.transaction.date.toIso8601String()),
                   ),
                   _buildDetailItem(
                     icon: Icons.account_balance_wallet_rounded, 
                     label: 'Sumber Dana', 
-                    value: widget.transaction.source ?? 'Dompet Utama',
+                    value: widget.transaction.source,
                   ),
-                  if (widget.transaction.id != null)
-                    _buildDetailItem(
-                      icon: Icons.tag_rounded, 
-                      label: 'ID Transaksi', 
-                      value: widget.transaction.id!.split('-').first.toUpperCase(),
-                      isLast: true,
-                    ),
+                  _buildDetailItem(
+                    icon: Icons.tag_rounded, 
+                    label: 'ID Transaksi', 
+                    value: widget.transaction.id.split('-').first.toUpperCase(),
+                    isLast: true,
+                  ),
                 ],
               ),
             ),
@@ -223,21 +224,20 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
             const SizedBox(height: 48),
 
             // Actions
-            if (widget.transaction.id != null)
-              OutlinedButton.icon(
-                onPressed: _isDeleting ? null : _handleDelete,
-                icon: _isDeleting 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.delete_outline_rounded, size: 20),
-                label: Text(_isDeleting ? 'MENGHAPUS...' : 'HAPUS DATA INI'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: SavaioTheme.error,
-                  side: BorderSide(color: SavaioTheme.error.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                  textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.1),
-                ),
+            OutlinedButton.icon(
+              onPressed: _isDeleting ? null : _handleDelete,
+              icon: _isDeleting 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.delete_outline_rounded, size: 20),
+              label: Text(_isDeleting ? 'MENGHAPUS...' : 'HAPUS DATA INI'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SavaioTheme.error,
+                side: BorderSide(color: SavaioTheme.error.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.1),
               ),
+            ),
             const SizedBox(height: 40),
           ],
         ),

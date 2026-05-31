@@ -12,38 +12,51 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _errorMessage;
 
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
   void _handleRegister() async {
+    if (_fullNameController.text.trim().isEmpty) {
+      setState(() => _errorMessage = 'Full name is required');
+      return;
+    }
+    if (_emailController.text.trim().isEmpty) {
+      setState(() => _errorMessage = 'Email is required');
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      setState(() => _errorMessage = 'Password must be at least 6 characters');
+      return;
+    }
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() {
-        _errorMessage = 'Passwords do not match';
-      });
+      setState(() => _errorMessage = 'Passwords do not match');
       return;
     }
 
     final authController = context.read<AuthController>();
     final success = await authController.register(
+      _fullNameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text,
     );
 
-    if (success) {
-      // Auto-login after register
-      final loginSuccess = await authController.login(
-        _emailController.text.trim(),
-        _passwordController.text,
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
       );
-
-      if (loginSuccess && mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainLayout()),
-          (route) => false,
-        );
-      }
     } else {
       setState(() {
         _errorMessage = 'Registration failed. Email might be taken.';
@@ -96,6 +109,20 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: const TextStyle(color: SavaioTheme.error),
                   ),
                 ),
+              TextField(
+                controller: _fullNameController,
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  filled: true,
+                  fillColor: SavaioTheme.surfaceContainerHigh,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: SavaioTheme.spacingL),
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -161,6 +188,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         'Sign Up',
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
+              ),
+              const SizedBox(height: SavaioTheme.spacingL),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Already have an account? Sign in',
+                  style: TextStyle(color: SavaioTheme.primary),
+                ),
               ),
             ],
           ),

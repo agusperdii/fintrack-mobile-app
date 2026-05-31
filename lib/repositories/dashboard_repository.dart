@@ -8,9 +8,9 @@ class DashboardRepository {
 
   DashboardRepository(this._remoteDataSource);
 
-  Future<AppData> getDashboardData() async {
+  Future<AppData> getDashboard() async {
     try {
-      final data = await _remoteDataSource.getDashboardData();
+      final data = await _remoteDataSource.getDashboard();
       _cachedDashboard = data;
       return data;
     } catch (e) {
@@ -23,7 +23,7 @@ class DashboardRepository {
     return _remoteDataSource.getCheckInStatus();
   }
 
-  Future<bool> performCheckIn() {
-    return _remoteDataSource.performCheckIn();
+  Future<CheckInStatus> checkIn() {
+    return _remoteDataSource.checkIn();
   }
 }

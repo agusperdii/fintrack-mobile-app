@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppWeeklyPulseChart extends StatefulWidget {
@@ -22,6 +24,7 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
 
   @override
   Widget build(BuildContext context) {
+    final currency = context.watch<AuthController>().currency;
     // Find max value for normalization or maxY
     final double maxValue = widget.values.isEmpty ? 1.0 : widget.values.reduce((a, b) => a > b ? a : b);
     final double displayMax = maxValue == 0 ? 1.0 : maxValue * 1.2; // Add some headroom
@@ -108,7 +111,7 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
-                        SavaioTheme.formatCurrency(rod.toY),
+                        SavaioTheme.formatCurrency(rod.toY, currency: currency),
                         const TextStyle(
                           color: SavaioTheme.primary,
                           fontWeight: FontWeight.bold,

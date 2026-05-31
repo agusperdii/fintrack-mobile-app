@@ -62,8 +62,8 @@ class DailyCheckInCard extends StatelessWidget {
           const SizedBox(width: 8),
           AppButton(
             onTap: () async {
-              final success = await controller.performCheckIn();
-              if (success) {
+              final status = await controller.checkIn();
+              if (status.isCheckedInToday) {
                 sl.notificationController.fetchAll();
               }
             },

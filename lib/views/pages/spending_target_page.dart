@@ -4,20 +4,20 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/budget_controller.dart';
-import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_progress_bar.dart';
 import 'package:savaio/views/components/molecules/app_date_time_picker.dart';
 import 'package:savaio/views/components/molecules/selection_card.dart';
 import 'package:savaio/models/budget_model.dart';
-import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/app_data.dart' as model;
 
 class SpendingTargetPage extends StatefulWidget {
-  final String? initialCategory;
-  const SpendingTargetPage({super.key, this.initialCategory});
+  final String? initialCategoryId;
+  const SpendingTargetPage({super.key, this.initialCategoryId});
 
   @override
   State<SpendingTargetPage> createState() => _SpendingTargetPageState();
@@ -25,7 +25,7 @@ class SpendingTargetPage extends StatefulWidget {
 
 class _SpendingTargetPageState extends State<SpendingTargetPage> {
   final TextEditingController _amountController = TextEditingController();
-  late String _selectedCategory = 'All';
+  String? _selectedCategoryId;
   String _selectedMonth = '';
   double _originalAmount = 0.0;
   bool _isSavingLocal = false; 
@@ -36,36 +36,33 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     final now = DateTime.now();
     _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
     
-    String initial = widget.initialCategory ?? 'All';
-    final categories = sl.budgetController.categories;
-    try {
-      final match = categories.firstWhere(
-        (c) => c['name'].toString().toLowerCase() == initial.toLowerCase(),
-      );
-      _selectedCategory = match['name'] as String;
-    } catch (_) {
-      _selectedCategory = 'All';
+    final categories = sl.budgetController.categories.where((c) => c['type'] == 'expense').toList();
+    if (widget.initialCategoryId != null) {
+      _selectedCategoryId = widget.initialCategoryId;
+    } else if (categories.isNotEmpty) {
+      _selectedCategoryId = categories.first['id'] as String;
     }
     
     _loadBudgetData();
-    sl.transactionController.fetchTransactions(month: _selectedMonth);
+    sl.budgetController.fetchAll(month: _selectedMonth);
   }
 
   void _loadBudgetData() {
+    if (_selectedCategoryId == null) return;
+
     final budgets = sl.budgetController.allBudgets;
     
     // Find precise match or fallback
     final budget = budgets.firstWhere(
-      (b) => b.category.toLowerCase() == _selectedCategory.toLowerCase() && b.month == _selectedMonth,
+      (b) => b.categoryId == _selectedCategoryId && b.startMonth == _selectedMonth,
       orElse: () => budgets.firstWhere(
-        (b) => b.category.toLowerCase() == _selectedCategory.toLowerCase(),
+        (b) => b.categoryId == _selectedCategoryId,
         orElse: () => BudgetModel(
-          id: '', 
-          amount: 0.0, 
-          periodType: 'monthly', 
-          month: _selectedMonth, 
-          category: _selectedCategory,
-          syncStatus: SyncStatus.idle,
+          id: '',
+          amount: 0.0,
+          startMonth: _selectedMonth,
+          categoryId: _selectedCategoryId,
+          syncStatus: model.SyncStatus.idle,
         ),
       ),
     );
@@ -93,6 +90,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       return;
     }
 
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tolong pilih kategori')),
+      );
+      return;
+    }
+
     if (amount == _originalAmount) {
       Navigator.pop(context);
       return;
@@ -102,8 +106,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
     sl.budgetController.updateSpendingTargetOptimistic(
       amount,
-      'monthly',
-      category: _selectedCategory,
+      categoryId: _selectedCategoryId!,
       month: _selectedMonth,
     );
 
@@ -121,14 +124,18 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
   @override
   Widget build(BuildContext context) {
     final budgetController = context.watch<BudgetController>();
-    final transactionController = context.watch<TransactionController>();
+    final currency = context.watch<AuthController>().currency;
 
-    final categories = [
-      {'name': 'All', 'icon': Icons.all_inclusive, 'isEmoji': false},
-      ...budgetController.categories
-    ];
+    final categories = budgetController.categories.where((c) => c['type'] == 'expense').toList();
+    
+    // Find current status for selected category
+    SpendingTargetItemVM? currentTarget;
+    try {
+      final targets = budgetController.getSpendingTargetsForMonth(month: _selectedMonth);
+      currentTarget = targets.firstWhere((t) => t.categoryId == _selectedCategoryId);
+    } catch (_) {}
 
-    final currentSpent = transactionController.getSpentAmountFor(_selectedCategory, _selectedMonth);
+    final currentSpent = currentTarget?.spent ?? 0.0;
     final inputAmount = double.tryParse(_amountController.text.replaceAll('.', '')) ?? 0.0;
     final progress = inputAmount > 0 ? (currentSpent / inputAmount).clamp(0.0, 1.0) : 0.0;
     final isOver = currentSpent > inputAmount && inputAmount > 0;
@@ -157,9 +164,9 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                 ),
               ),
             const SizedBox(height: 32),
-            _buildStatusSection(currentSpent, inputAmount, progress, isOver),
+            _buildStatusSection(currentSpent, inputAmount, progress, isOver, currency),
             const SizedBox(height: 24),
-            _buildInsightCard(inputAmount, currentSpent, isOver),
+            _buildInsightCard(inputAmount, currentSpent, isOver, currency),
           ],
         ),
       ),
@@ -175,7 +182,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         icon: const Icon(Icons.close, color: SavaioTheme.primary),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const AppHeading('Atur Alokasi Dana', size: AppHeadingSize.h3),
+      title: const AppHeading('Atur Budget', size: AppHeadingSize.h3),
       centerTitle: true,
     );
   }
@@ -197,9 +204,9 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
           flex: 4,
           child: SelectionCard(
             label: 'KATEGORI',
-            value: _selectedCategory == 'All' ? 'Total' : _selectedCategory,
-            icon: budgetController.getCategoryIcon(_selectedCategory),
-            onTap: () => _showCategoryPicker(categories),
+            value: budgetController.getCategoryName(_selectedCategoryId),
+            icon: budgetController.getCategoryIcon(_selectedCategoryId),
+            onTap: () => _showCategoryPicker(categories, budgetController),
           ),
         ),
       ],
@@ -272,7 +279,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     );
   }
 
-  Widget _buildStatusSection(double currentSpent, double targetAmount, double progress, bool isOver) {
+  Widget _buildStatusSection(double currentSpent, double targetAmount, double progress, bool isOver, String currency) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -295,7 +302,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     children: [
                       const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
                       const SizedBox(height: 4),
-                      AppHeading(SavaioTheme.formatCurrency(currentSpent), size: AppHeadingSize.subtitle),
+                      AppHeading(SavaioTheme.formatCurrency(currentSpent, currency: currency), size: AppHeadingSize.subtitle),
                     ],
                   ),
                   if (targetAmount > 0)
@@ -305,7 +312,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                         const Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
                         const SizedBox(height: 4),
                         AppHeading(
-                          SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent),
+                          SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent, currency: currency),
                           size: AppHeadingSize.subtitle,
                           color: isOver ? SavaioTheme.error : SavaioTheme.tertiary,
                         ),
@@ -332,7 +339,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     ),
                   ),
                   Text(
-                    'Target: ${SavaioTheme.formatCurrency(targetAmount)}',
+                    'Target: ${SavaioTheme.formatCurrency(targetAmount, currency: currency)}',
                     style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
                   ),
                 ],
@@ -344,7 +351,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     );
   }
 
-  Widget _buildInsightCard(double targetAmount, double currentSpent, bool isOver) {
+  Widget _buildInsightCard(double targetAmount, double currentSpent, bool isOver, String currency) {
     if (targetAmount <= 0) return const SizedBox.shrink();
     
     return GlassCard(
@@ -359,7 +366,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
             child: Text(
               isOver 
                 ? 'Waduh! Pengeluaran kamu sudah lewat dari target. Yuk, lebih ketat lagi!'
-                : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30)} untuk sisa bulan ini.',
+                : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30, currency: currency)} untuk sisa bulan ini.',
               style: const TextStyle(fontSize: 12, color: SavaioTheme.onSurface, height: 1.5),
             ),
           ),
@@ -389,7 +396,8 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
   Widget _buildQuickAdd(double amount) {
     return InkWell(
       onTap: () {
-        final current = double.tryParse(_amountController.text) ?? 0.0;
+        final currentText = _amountController.text.replaceAll('.', '');
+        final current = double.tryParse(currentText) ?? 0.0;
         _amountController.text = (current + amount).toStringAsFixed(0);
         setState(() {});
       },
@@ -417,12 +425,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       setState(() {
         _selectedMonth = picked;
         _loadBudgetData();
-        sl.transactionController.fetchTransactions(month: _selectedMonth);
+        sl.budgetController.fetchAll(month: _selectedMonth);
       });
     }
   }
 
-  void _showCategoryPicker(List<Map<String, dynamic>> categories) {
+  void _showCategoryPicker(List<Map<String, dynamic>> categories, BudgetController budgetController) {
     showModalBottomSheet(
       context: context,
       backgroundColor: SavaioTheme.surfaceContainer,
@@ -443,20 +451,21 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                 itemCount: categories.length,
                 itemBuilder: (context, i) {
                   final cat = categories[i];
+                  final id = cat['id'] as String;
                   final name = cat['name'] as String;
                   return ListTile(
                     leading: AppIconContainer(
                       icon: cat['icon'],
                       size: 32,
-                      color: _selectedCategory == name ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+                      color: _selectedCategoryId == id ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                       opacity: 0.1,
                     ),
-                    title: Text(name == 'All' ? 'Total Semua' : name, 
-                      style: TextStyle(color: _selectedCategory == name ? SavaioTheme.primary : SavaioTheme.onSurface)),
-                    trailing: _selectedCategory == name ? const Icon(Icons.check_circle, color: SavaioTheme.primary) : null,
+                    title: Text(name, 
+                      style: TextStyle(color: _selectedCategoryId == id ? SavaioTheme.primary : SavaioTheme.onSurface)),
+                    trailing: _selectedCategoryId == id ? const Icon(Icons.check_circle, color: SavaioTheme.primary) : null,
                     onTap: () {
                       setState(() {
-                        _selectedCategory = name;
+                        _selectedCategoryId = id;
                         _loadBudgetData();
                       });
                       Navigator.pop(context);

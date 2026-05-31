@@ -9,10 +9,8 @@ class MockNotifications {
       type: NotificationType.warning,
       isRead: false,
       createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      extraData: {
-        'time': 'Baru saja',
-        'hasActions': true,
-      },
+      presentation: NotificationPresentation.banner,
+      severity: NotificationSeverity.info,
     ),
     NotificationData(
       id: '2',
@@ -21,9 +19,8 @@ class MockNotifications {
       type: NotificationType.info,
       isRead: true,
       createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
-      extraData: {
-        'time': '45 mnt lalu',
-      },
+      presentation: NotificationPresentation.banner,
+      severity: NotificationSeverity.info,
     ),
     NotificationData(
       id: '3',
@@ -32,11 +29,8 @@ class MockNotifications {
       type: NotificationType.streak,
       isRead: false,
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      extraData: {
-        'time': '2 jam yang lalu',
-        'streakProgress': 0.8,
-        'streakText': '4/5 Days',
-      },
+      presentation: NotificationPresentation.banner,
+      severity: NotificationSeverity.info,
     ),
     NotificationData(
       id: '4',
@@ -45,24 +39,10 @@ class MockNotifications {
       type: NotificationType.success,
       isRead: true,
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      extraData: {
-        'time': 'Kemarin',
-        'recapTitle': 'Efisiensi Belanja',
-        'recapAmount': '+Rp145k',
-      },
+      presentation: NotificationPresentation.banner,
+      severity: NotificationSeverity.info,
     ),
   ];
 
-  static const List<SuggestionData> suggestions = [
-    SuggestionData(
-      label: 'Wallet',
-      title: 'Cek Saldo Gopay Kamu',
-      iconType: 'wallet',
-    ),
-    SuggestionData(
-      label: 'Vault',
-      title: 'Target Konsert: 85%',
-      iconType: 'vault',
-    ),
-  ];
+  static const List<dynamic> suggestions = [];
 }

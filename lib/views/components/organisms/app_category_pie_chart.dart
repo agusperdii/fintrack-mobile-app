@@ -6,12 +6,10 @@ import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppCategoryPieChart extends StatefulWidget {
   final List<PieSegment> segments;
-  final List<CategoryVM> categories;
 
   const AppCategoryPieChart({
-    super.key, 
+    super.key,
     required this.segments,
-    required this.categories,
   });
 
   @override
@@ -30,7 +28,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainer,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -78,8 +76,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
       final idx = entry.key;
       final segment = entry.value;
       final isTouched = idx == touchedIndex;
-      
-      // Convert pure PieSegment to PieChartSectionData
+
       final color = _parseColor(segment.colorHex);
 
       return PieChartSectionData(
@@ -116,7 +113,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
       spacing: 16,
       runSpacing: 8,
       alignment: WrapAlignment.center,
-      children: widget.categories.where((cat) => cat.progress > 0 || cat.amount.contains(' terpakai')).map((cat) {
+      children: widget.segments.map((segment) {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -124,13 +121,13 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: _getLegendColor(cat),
+                color: _parseColor(segment.colorHex),
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 8),
             Text(
-              cat.name,
+              segment.label,
               style: const TextStyle(
                 fontSize: 12,
                 color: SavaioTheme.onSurfaceVariant,
@@ -140,11 +137,5 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
         );
       }).toList(),
     );
-  }
-
-  Color _getLegendColor(CategoryVM cat) {
-    if (cat.isOver) return SavaioTheme.error;
-    if (cat.progress > 0.8) return Colors.orange;
-    return cat.isBudgetExists ? SavaioTheme.tertiary : SavaioTheme.primary;
   }
 }

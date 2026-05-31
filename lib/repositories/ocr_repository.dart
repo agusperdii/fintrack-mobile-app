@@ -7,8 +7,7 @@ class OcrRepository {
 
   OcrRepository(this._dataSource);
 
-  Future<OcrResult> scanReceipt(File imageFile) async {
-    final data = await _dataSource.scanReceipt(imageFile);
-    return OcrResult.fromJson(data);
+  Future<OcrResult> uploadReceipt(File imageFile) async {
+    return _dataSource.uploadReceipt(imageFile);
   }
 }

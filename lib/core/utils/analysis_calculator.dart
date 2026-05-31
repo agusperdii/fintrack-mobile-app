@@ -1,12 +1,10 @@
 class AnalysisCalculator {
   static double averageDailyExpense(double totalExpense) {
-    // Basic monthly average
     return totalExpense / 30;
   }
 
   static double budgetPercentage(double target, double expense) {
     if (target <= 0) return 0;
-    // Percentage used: (expense / target) * 100
     return (expense / target) * 100;
   }
 
@@ -15,11 +13,17 @@ class AnalysisCalculator {
   }
 
   static List<double> buildDailyValues(List<double> dailyExpenses, double dailyBudget) {
-    if (dailyBudget <= 0) return List.filled(7, 0);
+    if (dailyExpenses.isEmpty) return [];
+
+    if (dailyBudget <= 0) {
+      final maxVal = dailyExpenses.reduce((a, b) => a > b ? a : b);
+      if (maxVal <= 0) return List.filled(dailyExpenses.length, 0.05);
+      return dailyExpenses.map((e) => (e / maxVal).clamp(0.05, 1.0)).toList();
+    }
 
     return dailyExpenses.map((expense) {
-      // Return ratio (e.g., 0.5 for 50%, 1.2 for 120%)
-      return expense / dailyBudget;
+      final ratio = expense / dailyBudget;
+      return ratio.clamp(0.05, 5.0);
     }).toList();
   }
 }

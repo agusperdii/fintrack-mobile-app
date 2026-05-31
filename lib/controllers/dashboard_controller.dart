@@ -3,6 +3,14 @@ import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/checkin_data.dart';
 import 'package:savaio/repositories/dashboard_repository.dart';
 
+// Reuse the same safe notification helpers from transaction_controller.
+void _safeNotifyListeners(ChangeNotifier notifier) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    notifier.notifyListeners();
+  });
+}
+
 class DashboardController extends ChangeNotifier {
   final DashboardRepository _repository;
 
@@ -25,17 +33,17 @@ class DashboardController extends ChangeNotifier {
 
   set isSyncingTransaction(bool value) {
     _isSyncingTransaction = value;
-    notifyListeners();
+    _safeNotifyListeners(this);
   }
 
   Future<void> fetchDashboardData() async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners(this);
 
     try {
       final results = await Future.wait([
-        _repository.getDashboardData(),
+        _repository.getDashboard(),
         _repository.getCheckInStatus(),
       ]);
       _data = results[0] as AppData;
@@ -44,44 +52,48 @@ class DashboardController extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners(this);
     }
   }
 
   /// Optimistically applies a transaction to the local dashboard state.
-  void applyTransactionOptimistically(Transaction tx) {
+  void applyTransactionOptimistically(Transaction tx, {bool isExpense = true}) {
     if (_data == null) return;
-    
+
     // Save snapshot for potential rollback
     _previousDataSnapshot = _data;
 
-    final isExpense = tx.type == TransactionType.expense;
-    
+    final newIncome = isExpense ? _data!.totalIncome : _data!.totalIncome + tx.amount;
+    final newExpense = isExpense ? _data!.totalExpense + tx.amount : _data!.totalExpense;
+
     _data = _data!.copyWith(
-      totalIncome: isExpense ? _data!.totalIncome : _data!.totalIncome + tx.amount,
-      totalExpense: isExpense ? _data!.totalExpense + tx.amount : _data!.totalExpense,
+      balance: newIncome - newExpense,
+      totalIncome: newIncome,
+      totalExpense: newExpense,
       recentTransactions: [tx, ..._data!.recentTransactions],
     );
-    
-    notifyListeners();
+
+    _safeNotifyListeners(this);
   }
 
   /// Optimistically removes a transaction from the local dashboard state.
-  void applyTransactionRemovalOptimistically(Transaction tx) {
+  void applyTransactionRemovalOptimistically(Transaction tx, {bool isExpense = true}) {
     if (_data == null) return;
 
     // Save snapshot for potential rollback
     _previousDataSnapshot = _data;
 
-    final isExpense = tx.type == TransactionType.expense;
-    
+    final newIncome = isExpense ? _data!.totalIncome : _data!.totalIncome - tx.amount;
+    final newExpense = isExpense ? _data!.totalExpense - tx.amount : _data!.totalExpense;
+
     _data = _data!.copyWith(
-      totalIncome: isExpense ? _data!.totalIncome : _data!.totalIncome - tx.amount,
-      totalExpense: isExpense ? _data!.totalExpense - tx.amount : _data!.totalExpense,
+      balance: newIncome - newExpense,
+      totalIncome: newIncome,
+      totalExpense: newExpense,
       recentTransactions: _data!.recentTransactions.where((t) => t.id != tx.id).toList(),
     );
-    
-    notifyListeners();
+
+    _safeNotifyListeners(this);
   }
 
   /// Updates a transaction's status and potentially its ID.
@@ -99,7 +111,19 @@ class DashboardController extends ChangeNotifier {
     }).toList();
 
     _data = _data!.copyWith(recentTransactions: updatedTransactions);
-    notifyListeners();
+    _safeNotifyListeners(this);
+  }
+
+  /// Replaces an optimistic (temp-ID) transaction with the real one from the API.
+  void replaceTransaction(String tempId, Transaction realTx) {
+    if (_data == null) return;
+
+    final updated = _data!.recentTransactions.map((t) {
+      return t.id == tempId ? realTx : t;
+    }).toList();
+
+    _data = _data!.copyWith(recentTransactions: updated);
+    _safeNotifyListeners(this);
   }
 
   /// Reverts the dashboard state to the previous snapshot.
@@ -107,20 +131,20 @@ class DashboardController extends ChangeNotifier {
     if (_previousDataSnapshot != null) {
       _data = _previousDataSnapshot;
       _previousDataSnapshot = null;
-      notifyListeners();
+      _safeNotifyListeners(this);
     }
   }
 
-  Future<bool> performCheckIn() async {
+  Future<CheckInStatus> checkIn() async {
     try {
-      final success = await _repository.performCheckIn();
-      if (success) {
+      final status = await _repository.checkIn();
+      if (status.isCheckedInToday) {
         await fetchDashboardData();
       }
-      return success;
+      return status;
     } catch (e) {
       debugPrint('Error performing check-in: $e');
-      return false;
+      rethrow;
     }
   }
 }

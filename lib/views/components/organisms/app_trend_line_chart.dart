@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/view_models/analysis_view_model.dart';
 
@@ -33,9 +34,31 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    // Calculate min/max for chart scaling
+    final values = widget.trendPoints.map((p) => p.y).toList();
+    final maxY = values.isEmpty ? 100000.0 : (values.reduce((a, b) => a > b ? a : b) * 1.2);
+    final minY = values.isEmpty ? 0.0 : (values.reduce((a, b) => a < b ? a : b) * 0.8).clamp(0.0, maxY);
+
+    // Calculate interval based on max value
+    double interval = 100000;
+    if (maxY > 1000000) {
+      interval = 500000;
+    } else if (maxY > 500000) {
+      interval = 200000;
+    } else if (maxY > 100000) {
+      interval = 50000;
+    } else if (maxY > 50000) {
+      interval = 20000;
+    } else if (maxY > 10000) {
+      interval = 5000;
+    }
+
+    return Container(
       padding: const EdgeInsets.all(24),
-      borderRadius: 24,
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -67,13 +90,13 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _CompactToggleButton(
-                      label: 'M', 
-                      isActive: widget.isWeekly, 
+                      label: 'M',
+                      isActive: widget.isWeekly,
                       onTap: () => widget.onPeriodChanged(true)
                     ),
                     _CompactToggleButton(
-                      label: 'B', 
-                      isActive: !widget.isWeekly, 
+                      label: 'B',
+                      isActive: !widget.isWeekly,
                       onTap: () => widget.onPeriodChanged(false)
                     ),
                   ],
@@ -85,87 +108,144 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
           SizedBox(
             height: 200,
             width: double.infinity,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1.5,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index >= 0 && index < widget.days.length) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              widget.days[index],
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: SavaioTheme.onSurfaceVariant,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        return LineTooltipItem(
-                          SavaioTheme.formatCurrency(spot.y * 100000), // Scaled for display
-                          const TextStyle(
-                            color: SavaioTheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: widget.trendPoints.map((p) => FlSpot(p.x, p.y)).toList(),
-                    isCurved: true,
-                    gradient: LinearGradient(colors: gradientColors),
-                    barWidth: 4,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: gradientColors
-                            .map((color) => color.withValues(alpha: 0.15))
-                            .toList(),
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+            child: widget.trendPoints.isEmpty
+                ? Center(
+                    child: Text(
+                      'Belum ada data tren',
+                      style: TextStyle(
+                        color: SavaioTheme.onSurfaceVariant,
+                        fontSize: 14,
                       ),
                     ),
+                  )
+                : LineChart(
+                    LineChartData(
+                      minY: minY,
+                      maxY: maxY,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: interval,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
+                            strokeWidth: 1,
+                          );
+                        },
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 60,
+                            interval: interval,
+                            getTitlesWidget: (value, meta) {
+                              // Format as compact currency (e.g., 100K, 1M)
+                              String text;
+                              if (value >= 1000000) {
+                                text = '${(value / 1000000).toStringAsFixed(1)}jt';
+                              } else if (value >= 1000) {
+                                text = '${(value / 1000).toStringAsFixed(0)}rb';
+                              } else {
+                                text = value.toStringAsFixed(0);
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: Text(
+                                  text,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: SavaioTheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index >= 0 && index < widget.trendPoints.length) {
+                                // Weekly mode: SEN-MIN, Monthly mode: M1-M4
+                                String label;
+                                if (widget.isWeekly) {
+                                  const days = ['SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB', 'MIN'];
+                                  label = (index < days.length) ? days[index] : '${index + 1}';
+                                } else {
+                                  label = 'M${index + 1}';
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    label,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      color: SavaioTheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              return LineTooltipItem(
+                                SavaioTheme.formatCurrency(spot.y, currency: context.watch<AuthController>().currency),
+                                const TextStyle(
+                                  color: SavaioTheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: widget.trendPoints.map((p) => FlSpot(p.x, p.y)).toList(),
+                          isCurved: true,
+                          gradient: LinearGradient(colors: gradientColors),
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) {
+                              return FlDotCirclePainter(
+                                radius: 4,
+                                color: SavaioTheme.primary,
+                                strokeWidth: 2,
+                                strokeColor: Colors.white,
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: gradientColors
+                                  .map((color) => color.withValues(alpha: 0.15))
+                                  .toList(),
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

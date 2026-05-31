@@ -1,33 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppSmartInsightCard extends StatelessWidget {
   final AnalysisInsight vm;
-  final VoidCallback onTap;
 
   const AppSmartInsightCard({
     super.key,
     required this.vm,
-    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    Color accentColor;
+    IconData icon;
+
+    switch (vm.severity) {
+      case 'danger':
+        accentColor = SavaioTheme.error;
+        icon = Icons.error_outline_rounded;
+        break;
+      case 'warning':
+        accentColor = Colors.orange;
+        icon = Icons.warning_amber_rounded;
+        break;
+      case 'info':
+      default:
+        accentColor = SavaioTheme.primary;
+        icon = Icons.lightbulb_outline_rounded;
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppHeading(
-            vm.title,
-            size: AppHeadingSize.h3,
+          Row(
+            children: [
+              Icon(icon, color: accentColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppHeading(
+                  vm.title,
+                  size: AppHeadingSize.h3,
+                  color: accentColor,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           AppHeading(
@@ -36,13 +62,6 @@ class AppSmartInsightCard extends StatelessWidget {
             color: SavaioTheme.onSurfaceVariant,
             isBold: false,
           ),
-          const SizedBox(height: 24),
-          if (vm.buttonLabel != null)
-            AppButton(
-              label: vm.buttonLabel!,
-              onTap: onTap,
-              icon: Icons.arrow_forward,
-            ),
         ],
       ),
     );

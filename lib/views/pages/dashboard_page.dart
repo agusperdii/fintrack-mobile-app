@@ -4,7 +4,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/controllers/profile_controller.dart';
-import 'package:savaio/controllers/analytics_controller.dart';
+import 'package:savaio/models/app_data.dart';
 import 'package:savaio/views/components/organisms/app_balance_card.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/organisms/app_weekly_pulse_chart.dart';
@@ -37,10 +37,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _checkAndShowNudge() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final nudge = sl.notificationController.latestUnreadNudge;
-      if (nudge != null && mounted) {
-        NudgeOverlay.show(context, nudge, () {
-          sl.notificationController.markNudgeAsRead(nudge.id);
+      final notification = sl.notificationController.latestUnreadPopup;
+      if (notification != null && mounted) {
+        AppNotificationOverlay.show(context, notification, () {
+          sl.notificationController.markAsRead(notification.id);
         });
       }
     });
@@ -95,7 +95,7 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AppGreetingHeader(
-                userName: userProfile?.name.split(' ').first ?? 'User',
+                userName: userProfile?.fullName.split(' ').first ?? 'User',
               ),
               const SizedBox(height: 16),
               if (checkInStatus?.isCheckedInToday == false) ...[
@@ -263,14 +263,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildWeeklyPulseSection(BuildContext context) {
-    final weeklyPulse = context.select<AnalyticsController, dynamic>((c) => c.weeklyPulse);
+    final weeklyPulse = context.select<DashboardController, WeeklyPulseVM?>((c) => c.data?.weeklyPulse);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AppSectionHeader(title: 'Wawasan Mingguan'),
         const SizedBox(height: 16),
-        if (weeklyPulse != null)
+        if (weeklyPulse != null && weeklyPulse.weeklySpending.isNotEmpty)
           AppWeeklyPulseChart(
             growth: weeklyPulse.growth,
             values: weeklyPulse.values,

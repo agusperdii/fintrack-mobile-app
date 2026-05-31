@@ -48,7 +48,6 @@ class _ChangeUsernamePageState extends State<ChangeUsernamePage> {
     // We update both because updateProfile expects fullName
     final success = await sl.profileController.updateProfile(
       fullName: widget.currentFullName,
-      username: username,
     );
     
     if (mounted) {

@@ -6,15 +6,15 @@ import 'package:savaio/controllers/analytics_controller.dart';
 import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
-import 'package:savaio/views/components/organisms/app_category_card.dart';
 import 'package:savaio/views/components/organisms/app_hero_analysis_card.dart';
 import 'package:savaio/views/components/organisms/app_smart_insight_card.dart';
 import 'package:savaio/views/components/organisms/app_category_pie_chart.dart';
 import 'package:savaio/views/components/organisms/app_trend_line_chart.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/pages/spending_target_list_page.dart';
-import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -34,28 +34,22 @@ class _AnalisaPageState extends State<AnalisaPage> {
 
   Future<void> _handleRefresh() async {
     final now = DateTime.now();
-    final currentMonth = sl.dashboardController.data?.targetPeriod ?? 
+
+    // Fetch dashboard data first to get the correct period
+    await sl.dashboardController.fetchDashboardData();
+
+    // Get the current month from dashboard data, fallback to current month
+    final currentMonth = sl.dashboardController.data?.targetPeriod ??
         "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
+    debugPrint('[AnalisaPage] Using month: $currentMonth');
+
+    // Now fetch all other data in parallel
     await Future.wait([
-      sl.dashboardController.fetchDashboardData(),
-      sl.budgetController.fetchAll(),
+      sl.budgetController.fetchAll(silent: false, month: currentMonth),
       sl.analyticsController.fetchAll(),
       sl.transactionController.fetchTransactions(month: currentMonth),
     ]);
-  }
-
-  Future<void> _handleNavigateToEdit(String categoryName) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SpendingTargetPage(initialCategory: categoryName),
-      ),
-    );
-
-    if (result == true && mounted) {
-      _handleRefresh(); 
-    }
   }
 
   @override
@@ -108,36 +102,24 @@ class _AnalisaPageState extends State<AnalisaPage> {
                   if (vm.hasData && vm.pieSegments.isNotEmpty) ...[
                     AppCategoryPieChart(
                       segments: vm.pieSegments,
-                      categories: vm.categories,
                     ),
                     const SizedBox(height: 32),
                   ],
 
-                  // 3. Category Breakdown
-                  AppSectionHeader(
-                    title: 'Breakdown Kategori',
-                    actionLabel: 'Lihat Semua',
-                    onActionTap: () => Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const SpendingTargetListPage())
+                  // 3. Spending Breakdown (Replacing old Category Breakdown)
+                  if (vm.spendingBreakdown.isNotEmpty) ...[
+                    AppSectionHeader(
+                      title: 'Proporsi Pengeluaran',
+                      actionLabel: 'Atur Budget',
+                      onActionTap: () => Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => const SpendingTargetListPage())
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  if (vm.categories.isEmpty)
-                    const Center(child: Text('Belum ada target kategori'))
-                  else
-                    ...vm.categories.map((categoryVM) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: AppCategoryCard(
-                          vm: categoryVM,
-                          onTap: () => _handleNavigateToEdit(categoryVM.rawCategoryName),
-                        ),
-                      );
-                    }),
-
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 20),
+                    ...vm.spendingBreakdown.take(5).map((item) => _SpendingBreakdownTile(item: item)),
+                    const SizedBox(height: 16),
+                  ],
 
                   // 4. Trend Analysis
                   AppTrendLineChart(
@@ -156,7 +138,6 @@ class _AnalisaPageState extends State<AnalisaPage> {
                   // 5. Smart Insight
                   AppSmartInsightCard(
                     vm: vm.insight,
-                    onTap: () {}, // No-op placeholder
                   ),
                 ],
                 const SizedBox(height: 100), // Bottom spacing
@@ -165,6 +146,96 @@ class _AnalisaPageState extends State<AnalisaPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SpendingBreakdownTile extends StatelessWidget {
+  final SpendingBreakdownVM item;
+  const _SpendingBreakdownTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    Color accentColor;
+    try {
+      accentColor = Color(int.parse('FF${item.colorHex}', radix: 16));
+    } catch (_) {
+      accentColor = SavaioTheme.primary;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Text(item.emoji, style: const TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: SavaioTheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.transactionCount} Transaksi',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: SavaioTheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                SavaioTheme.formatCurrency(item.amount),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: SavaioTheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${item.percentage.toStringAsFixed(1)}%',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

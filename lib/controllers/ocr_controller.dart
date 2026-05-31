@@ -43,7 +43,7 @@ class OcrController with ChangeNotifier {
     notifyListeners();
 
     try {
-      _scanResult = await _repository.scanReceipt(_selectedImage!);
+      _scanResult = await _repository.uploadReceipt(_selectedImage!);
       _isLoading = false;
       notifyListeners();
       return true;

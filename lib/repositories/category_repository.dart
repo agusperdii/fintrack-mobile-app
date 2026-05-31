@@ -10,7 +10,12 @@ class CategoryRepository {
     return _remoteDataSource.getCategories();
   }
 
-  Future<CategoryModel> addCategory(String name, String icon) {
-    return _remoteDataSource.addCategory(name, icon);
+  Future<CategoryModel> createCategory(String name, String icon) {
+    return _remoteDataSource.createCategory({
+      'name': name,
+      'emoji': icon,
+      'type': 'expense',
+      'color': '#81ECFF',
+    });
   }
 }

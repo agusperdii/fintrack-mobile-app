@@ -23,7 +23,12 @@ class ProfileController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _userProfile = await _repository.getUserProfile();
+      _userProfile = await _repository.getMe().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Request timeout. Silakan coba lagi atau logout.');
+        },
+      );
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -32,18 +37,32 @@ class ProfileController extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile({required String fullName, String? username}) async {
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  Future<bool> updateProfile({
+    String? fullName,
+    String? avatarUrl,
+    String? currency,
+    String? timezone,
+    String? locale,
+  }) async {
     _isUpdatingProfile = true;
     _error = null;
     notifyListeners();
 
     try {
-      final success = await _repository.updateProfile(fullName: fullName, username: username);
-      if (success) {
-        await fetchProfile();
-        return true;
-      }
-      return false;
+      final updated = await _repository.updateProfile(
+        fullName: fullName,
+        avatarUrl: avatarUrl,
+        currency: currency,
+        timezone: timezone,
+        locale: locale,
+      );
+      _userProfile = updated;
+      return true;
     } catch (e) {
       _error = e.toString();
       return false;
@@ -55,7 +74,7 @@ class ProfileController extends ChangeNotifier {
 
   Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
     try {
-      return await _repository.updatePassword(currentPassword: currentPassword, newPassword: newPassword);
+      return await _repository.changePassword(currentPassword: currentPassword, newPassword: newPassword);
     } catch (e) {
       debugPrint('Error updating password: $e');
       return false;

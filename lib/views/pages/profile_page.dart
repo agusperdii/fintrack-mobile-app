@@ -24,17 +24,86 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  void _navigateToPlaceholder(String feature) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
-    );
+  @override
+  void initState() {
+    super.initState();
+    // Load profile immediately when page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileController>().fetchProfile();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ProfileController>();
-    
+
+    // Show error state with logout option
+    if (controller.error != null && controller.userProfile == null) {
+      return Scaffold(
+        backgroundColor: SavaioTheme.background,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 64,
+                  color: SavaioTheme.error,
+                ),
+                const SizedBox(height: 16),
+                AppHeading(
+                  'Gagal Memuat Profil',
+                  size: AppHeadingSize.h2,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                AppHeading(
+                  controller.error!,
+                  size: AppHeadingSize.caption,
+                  color: SavaioTheme.onSurfaceVariant,
+                  isBold: false,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                AppButton(
+                  label: 'Coba Lagi',
+                  variant: AppButtonVariant.primary,
+                  icon: Icons.refresh_rounded,
+                  onTap: () {
+                    controller.clearError();
+                    controller.fetchProfile();
+                  },
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: 'Log Out',
+                  variant: AppButtonVariant.error,
+                  icon: Icons.logout_rounded,
+                  onTap: () async {
+                    await sl.authController.logout();
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show cached profile while loading (instant display, no spinner)
+    if (controller.isLoading && controller.userProfile != null) {
+      return _ProfileContent(profile: controller.userProfile!, controller: controller);
+    }
+
+    // Full loading state when no cached profile exists
     if (controller.isLoading || controller.userProfile == null) {
       return const Scaffold(
         backgroundColor: SavaioTheme.background,
@@ -43,7 +112,25 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     final profile = controller.userProfile!;
+    return _ProfileContent(profile: profile, controller: controller);
+  }
+}
 
+class _ProfileContent extends StatelessWidget {
+  final dynamic profile;
+  final ProfileController controller;
+
+  const _ProfileContent({required this.profile, required this.controller});
+
+  void _navigateToPlaceholder(BuildContext context, String feature) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: SavaioTheme.background,
       appBar: const AppHeader(
@@ -66,21 +153,21 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Center(
                 child: Column(
                   children: [
-                    AppAvatar(imageUrl: profile.avatar),
+                    AppAvatar(imageUrl: profile.avatarUrl ?? ''),
                     const SizedBox(height: 12),
                     AppHeading(
-                      profile.name,
+                      profile.fullName,
                       size: AppHeadingSize.h2,
                     ),
                     const SizedBox(height: 2),
                     AppHeading(
-                      profile.handle,
+                      profile.email,
                       size: AppHeadingSize.subtitle,
                       color: SavaioTheme.primary,
                     ),
                     const SizedBox(height: 4),
                     AppHeading(
-                      profile.email,
+                      profile.id.split('-').first.toUpperCase(),
                       size: AppHeadingSize.caption,
                       color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
                       isBold: false,
@@ -89,13 +176,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 32),
 
             // Spending Targets Section
             const AppSectionHeader(title: 'Keuangan'),
             const SizedBox(height: 12),
-            
+
             Container(
               decoration: BoxDecoration(
                 color: SavaioTheme.surfaceContainerLow,
@@ -120,7 +207,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // Profile Management Section
             const AppSectionHeader(title: 'Profil'),
             const SizedBox(height: 12),
-            
+
             Container(
               decoration: BoxDecoration(
                 color: SavaioTheme.surfaceContainerLow,
@@ -136,7 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       final updated = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => EditProfilePage(currentName: profile.name),
+                          builder: (_) => EditProfilePage(currentName: profile.fullName),
                         ),
                       );
                       if (updated == true) {
@@ -152,8 +239,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => ChangeUsernamePage(
-                            currentUsername: profile.username,
-                            currentFullName: profile.name,
+                            currentUsername: profile.email.split('@').first,
+                            currentFullName: profile.fullName,
                           ),
                         ),
                       );
@@ -175,7 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: 'Hapus akun saya',
                     isDestructive: true,
                     isBottom: true,
-                    onTap: () => _navigateToPlaceholder('Hapus Akun'),
+                    onTap: () => _navigateToPlaceholder(context, 'Hapus Akun'),
                   ),
                 ],
               ),

@@ -21,17 +21,40 @@ class AnalysisInsight {
   final String title;
   final String description;
   final String? buttonLabel;
+  final String severity; // info, warning, danger
 
   AnalysisInsight({
     required this.title,
     required this.description,
     this.buttonLabel,
+    this.severity = 'info',
+  });
+}
+
+class SpendingBreakdownVM {
+  final String categoryId;
+  final String name;
+  final String emoji;
+  final String colorHex;
+  final double amount;
+  final double percentage;
+  final int transactionCount;
+
+  SpendingBreakdownVM({
+    required this.categoryId,
+    required this.name,
+    required this.emoji,
+    required this.colorHex,
+    required this.amount,
+    required this.percentage,
+    required this.transactionCount,
   });
 }
 
 class AnalysisPageVM {
   final HeroVM hero;
   final List<CategoryVM> categories;
+  final List<SpendingBreakdownVM> spendingBreakdown;
   final AnalysisInsight insight;
   final List<TrendPoint> trendPoints;
   final List<PieSegment> pieSegments;
@@ -41,6 +64,7 @@ class AnalysisPageVM {
   AnalysisPageVM({
     required this.hero,
     required this.categories,
+    required this.spendingBreakdown,
     required this.insight,
     required this.trendPoints,
     required this.pieSegments,
@@ -66,6 +90,7 @@ class HeroVM {
 }
 
 class CategoryVM {
+  final String categoryId;
   final String name;
   final String amount;
   final double progress;
@@ -76,8 +101,10 @@ class CategoryVM {
   final bool isBudgetExists;
   final dynamic icon; 
   final String rawCategoryName;
+  final String status; // active, warning, exceeded
 
   CategoryVM({
+    required this.categoryId,
     required this.name,
     required this.amount,
     required this.progress,
@@ -88,5 +115,6 @@ class CategoryVM {
     required this.isBudgetExists,
     required this.icon,
     required this.rawCategoryName,
+    this.status = 'active',
   });
 }

@@ -2,32 +2,36 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/budget_model.dart';
 import 'package:savaio/models/category_model.dart';
-import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/app_data.dart' as model;
 import 'package:savaio/repositories/budget_repository.dart';
 import 'package:savaio/repositories/category_repository.dart';
 import 'package:savaio/core/utils/parser_utils.dart';
 
 class SpendingTargetItemVM {
-  final String category;
+  final String categoryId;
+  final String categoryName;
   final IconData? iconData;
   final String? emoji;
   final double target;
   final double spent;
   final double progress;
   final bool isOver;
-  final SyncStatus syncStatus;
+  final model.SyncStatus syncStatus;
   final bool isBudgetExists;
+  final String status; // active, warning, exceeded
 
   SpendingTargetItemVM({
-    required this.category,
+    required this.categoryId,
+    required this.categoryName,
     this.iconData,
     this.emoji,
     required this.target,
     required this.spent,
     required this.progress,
     required this.isOver,
-    this.syncStatus = SyncStatus.synced,
+    this.syncStatus = model.SyncStatus.synced,
     this.isBudgetExists = true,
+    this.status = 'active',
   });
 
   @override
@@ -35,7 +39,7 @@ class SpendingTargetItemVM {
       identical(this, other) ||
       other is SpendingTargetItemVM &&
           runtimeType == other.runtimeType &&
-          category == other.category &&
+          categoryId == other.categoryId &&
           target == other.target &&
           spent == other.spent &&
           progress == other.progress &&
@@ -44,7 +48,7 @@ class SpendingTargetItemVM {
           isBudgetExists == other.isBudgetExists;
 
   @override
-  int get hashCode => Object.hash(category, target, spent, progress, isOver, syncStatus, isBudgetExists);
+  int get hashCode => Object.hash(categoryId, target, spent, progress, isOver, syncStatus, isBudgetExists);
 }
 
 class BudgetController extends ChangeNotifier {
@@ -53,8 +57,8 @@ class BudgetController extends ChangeNotifier {
 
   BudgetController(this._budgetRepository, this._categoryRepository);
 
-  BudgetModel? _spendingTarget;
   List<BudgetModel> _allBudgets = [];
+  List<BudgetStatusVM> _budgetStatuses = [];
   List<Map<String, dynamic>> _categories = [];
   
   bool _isFetchingData = false;
@@ -65,23 +69,27 @@ class BudgetController extends ChangeNotifier {
   final Map<String, Timer> _debounceTimers = {};
   final Map<String, int> _lastWriteId = {};
 
-  BudgetModel? get spendingTarget => _spendingTarget;
   List<BudgetModel> get allBudgets => _allBudgets;
+  List<BudgetStatusVM> get budgetStatuses => _budgetStatuses;
   List<Map<String, dynamic>> get categories => _categories;
   bool get isLoading => _isFetchingData && !_isInitialLoaded;
-  bool get isSyncingAny => _allBudgets.any((b) => b.syncStatus == SyncStatus.syncing);
+  bool get isSyncingAny => _allBudgets.any((b) => b.syncStatus == model.SyncStatus.syncing);
   String? get error => _error;
 
-  // Helper Key Generator - Uses standard normalization
-  String _budgetKey(String category, String? month) =>
-      '${ParserUtils.normalizeCategory(category)}|${month?.toLowerCase() ?? 'all'}';
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
 
-  BudgetModel? _findBudget(String category, String? month) {
+  // Helper Key Generator - Uses standard normalization
+  String _budgetKey(String categoryId, String? month) =>
+      '${categoryId.toLowerCase()}|${month?.toLowerCase() ?? 'all'}';
+
+  BudgetModel? _findBudget(String categoryId, String? month) {
     final searchMonth = month ?? '';
-    final searchKey = ParserUtils.normalizeCategory(category);
     try {
       return _allBudgets.firstWhere(
-        (b) => b.categoryKey == searchKey && b.month == searchMonth
+        (b) => b.categoryId == categoryId && b.startMonth == searchMonth
       );
     } catch (_) {
       return null;
@@ -89,8 +97,9 @@ class BudgetController extends ChangeNotifier {
   }
 
   void _upsertBudget(BudgetModel item) {
+    if (item.categoryId == null) return;
     final index = _allBudgets.indexWhere(
-      (b) => b.categoryKey == item.categoryKey && b.month == item.month
+      (b) => b.categoryId == item.categoryId && b.startMonth == item.startMonth
     );
     
     if (index != -1) {
@@ -101,7 +110,7 @@ class BudgetController extends ChangeNotifier {
     _allBudgets = [..._allBudgets]; // Ensure immutability
   }
 
-  Future<void> fetchAll({bool silent = false}) async {
+  Future<void> fetchAll({bool silent = false, String? month}) async {
     if (!silent) {
       _isFetchingData = true;
       _error = null;
@@ -110,27 +119,23 @@ class BudgetController extends ChangeNotifier {
 
     try {
       final results = await Future.wait([
-        _budgetRepository.getSpendingTarget(),
         _budgetRepository.getAllBudgets(),
         _categoryRepository.getCategories(),
+        _budgetRepository.getBudgetStatus(month: month),
       ], eagerError: false);
       
-      final serverTarget = results[0] as BudgetModel;
-      final serverBudgets = results[1] as List<BudgetModel>;
+      final serverBudgets = results[0] as List<BudgetModel>;
+      final fetchedCategories = results[1] as List<CategoryModel>;
+      _budgetStatuses = results[2] as List<BudgetStatusVM>;
       
       // Merge logic: Preserve local pending/syncing/failed items
       _mergeBudgets(serverBudgets);
       
-      // Special handling for main spending target if it matches local pending
-      if (_spendingTarget?.syncStatus == SyncStatus.idle || _spendingTarget?.syncStatus == SyncStatus.synced) {
-        _spendingTarget = serverTarget;
-      }
-
-      final fetchedCategories = results[2] as List<CategoryModel>;
       _categories = fetchedCategories.map((cat) => <String, dynamic>{
         'id': cat.id,
         'name': cat.name,
         'icon': cat.icon,
+        'type': cat.type,
         'isEmoji': true,
       }).toList();
 
@@ -147,19 +152,23 @@ class BudgetController extends ChangeNotifier {
   void _mergeBudgets(List<BudgetModel> serverBudgets) {
     // Keep local items that are in non-idle/synced states
     final localPending = _allBudgets.where(
-      (b) => b.syncStatus != SyncStatus.idle && b.syncStatus != SyncStatus.synced
+      (b) => b.syncStatus != model.SyncStatus.idle && b.syncStatus != model.SyncStatus.synced
     ).toList();
 
     final Map<String, BudgetModel> mergedMap = {};
     
     // 1. Add server data
     for (var b in serverBudgets) {
-      mergedMap[_budgetKey(b.category, b.month)] = b;
+      if (b.categoryId != null) {
+        mergedMap[_budgetKey(b.categoryId!, b.startMonth)] = b;
+      }
     }
     
     // 2. Overwrite with local pending (Last local write wins)
     for (var b in localPending) {
-      mergedMap[_budgetKey(b.category, b.month)] = b;
+       if (b.categoryId != null) {
+        mergedMap[_budgetKey(b.categoryId!, b.startMonth)] = b;
+      }
     }
 
     _allBudgets = mergedMap.values.toList();
@@ -167,67 +176,70 @@ class BudgetController extends ChangeNotifier {
 
   List<SpendingTargetItemVM> getSpendingTargetsForMonth({
     required String month, 
-    required double Function(String category, String month) getSpentAmount,
   }) {
     final List<SpendingTargetItemVM> items = [];
     
-    final allCategories = [
-      {'name': 'All', 'icon': Icons.all_inclusive},
-      ..._categories,
-    ];
+    // Only show expense categories for budgeting
+    final expenseCategories = _categories.where((c) => c['type'] == 'expense').toList();
 
-    for (var cat in allCategories) {
+    for (var cat in expenseCategories) {
+      final id = cat['id'] as String;
       final name = cat['name'] as String;
-      final budget = _findBudget(name, month) ?? _findBudget(name, null);
       
-      final budgetModel = budget ?? BudgetModel(
-        id: '', 
-        amount: 0.0, 
-        periodType: 'monthly', 
-        month: month, 
-        category: name,
-        syncStatus: SyncStatus.idle,
-      );
+      // Check if we have status from API for this category
+      BudgetStatusVM? status;
+      try {
+        status = _budgetStatuses.firstWhere((s) => s.categoryId == id && s.startMonth == month);
+      } catch (_) {}
 
-      final targetAmount = budgetModel.amount;
-      final spent = getSpentAmount(name, month);
-      final progress = targetAmount > 0 ? (spent / targetAmount).clamp(0.0, 1.0) : 0.0;
-      
-      final icon = cat['icon'];
-      items.add(SpendingTargetItemVM(
-        category: name,
-        iconData: icon is IconData ? icon : null,
-        emoji: icon is String ? icon : null,
-        target: targetAmount,
-        spent: spent,
-        progress: progress,
-        isOver: spent > targetAmount && targetAmount > 0,
-        syncStatus: budgetModel.syncStatus,
-        isBudgetExists: budgetModel.isBudgetExists,
-      ));
+      if (status != null) {
+        items.add(SpendingTargetItemVM(
+          categoryId: id,
+          categoryName: name,
+          emoji: cat['icon'] as String,
+          target: status.amount,
+          spent: status.spent,
+          progress: status.percentageUsed / 100.0,
+          isOver: status.status == 'exceeded',
+          syncStatus: model.SyncStatus.synced,
+          isBudgetExists: true,
+          status: status.status,
+        ));
+      } else {
+        // Fallback for categories without a budget yet or not in status list
+        final budget = _findBudget(id, month);
+        final targetAmount = budget?.amount ?? 0.0;
+        
+        items.add(SpendingTargetItemVM(
+          categoryId: id,
+          categoryName: name,
+          emoji: cat['icon'] as String,
+          target: targetAmount,
+          spent: 0.0, // We don't know spent if not in status list (handled by backend usually)
+          progress: 0.0,
+          isOver: false,
+          syncStatus: budget?.syncStatus ?? model.SyncStatus.idle,
+          isBudgetExists: targetAmount > 0,
+        ));
+      }
     }
 
     return items;
   }
 
-  void updateSpendingTargetOptimistic(double amount, String periodType, {String category = 'All', String? month}) {
+  void updateSpendingTargetOptimistic(double amount, {required String categoryId, String? month}) {
     final writeId = DateTime.now().microsecondsSinceEpoch;
-    final key = _budgetKey(category, month);
+    final key = _budgetKey(categoryId, month);
     _lastWriteId[key] = writeId;
 
-    final existing = _findBudget(category, month);
+    final existing = _findBudget(categoryId, month);
     final updatedBudget = BudgetModel(
       id: existing?.id ?? 'temp_$writeId',
       amount: amount,
-      periodType: periodType,
-      month: month ?? '',
-      category: category,
-      syncStatus: SyncStatus.pending,
+      startMonth: month ?? '',
+      categoryId: categoryId,
+      syncStatus: model.SyncStatus.pending,
     );
-
-    if (ParserUtils.normalizeCategory(category) == 'all') {
-      _spendingTarget = updatedBudget;
-    }
 
     _upsertBudget(updatedBudget);
     notifyListeners();
@@ -237,9 +249,8 @@ class BudgetController extends ChangeNotifier {
     _debounceTimers[key] = Timer(const Duration(milliseconds: 500), () {
       _syncSpendingTargetInBackground(
         amount: amount,
-        periodType: periodType,
-        category: category,
-        month: month,
+        categoryId: categoryId,
+        startMonth: month ?? '',
         writeId: writeId,
       );
     });
@@ -247,66 +258,87 @@ class BudgetController extends ChangeNotifier {
 
   Future<void> _syncSpendingTargetInBackground({
     required double amount,
-    required String periodType,
-    required String category,
+    required String categoryId,
+    required String startMonth,
     required int writeId,
-    String? month,
   }) async {
-    final key = _budgetKey(category, month);
+    final key = _budgetKey(categoryId, startMonth);
     if ((_lastWriteId[key] ?? 0) > writeId) return;
 
-    _updateSyncStatus(category, month, SyncStatus.syncing);
+    _updateSyncStatus(categoryId, startMonth, model.SyncStatus.syncing);
 
     try {
       final success = await _budgetRepository.saveBudget(
         amount: amount,
-        periodType: periodType,
-        category: category,
-        month: month,
-      ).timeout(const Duration(seconds: 4)); // Reduced timeout
+        categoryId: categoryId,
+        startMonth: startMonth,
+      ).timeout(const Duration(seconds: 4));
 
       if ((_lastWriteId[key] ?? 0) > writeId) return;
 
       if (success) {
-        _updateSyncStatus(category, month, SyncStatus.synced);
-      } else {
-        throw Exception('Server failed');
+        _updateSyncStatus(categoryId, startMonth, model.SyncStatus.synced);
+        _error = null;
+        // Refresh status after successful save to get updated spent/remaining
+        _budgetRepository.getBudgetStatus(month: startMonth).then((statusList) {
+          _budgetStatuses = statusList;
+          notifyListeners();
+        });
       }
     } catch (e) {
       _logDebug('Sync failed for $key: $e');
       if ((_lastWriteId[key] ?? 0) <= writeId) {
-        _updateSyncStatus(category, month, SyncStatus.failed);
+        _error = 'Gagal menyimpan budget: ${e.toString()}';
+        _updateSyncStatus(categoryId, startMonth, model.SyncStatus.failed);
       }
     }
   }
 
-  void _updateSyncStatus(String category, String? month, SyncStatus status) {
-    bool changed = false;
-    final normalizedCategory = ParserUtils.normalizeCategory(category);
-    
-    if (normalizedCategory == 'all' && _spendingTarget != null) {
-      _spendingTarget = _spendingTarget!.copyWith(syncStatus: status);
-      changed = true;
-    }
-
-    final item = _findBudget(category, month);
+  void _updateSyncStatus(String categoryId, String? month, model.SyncStatus status) {
+    final item = _findBudget(categoryId, month);
     if (item != null) {
       _upsertBudget(item.copyWith(syncStatus: status));
-      changed = true;
+      notifyListeners();
     }
-
-    if (changed) notifyListeners();
   }
 
   Future<void> retryFailedSyncs() async {
-    final failedItems = _allBudgets.where((b) => b.syncStatus == SyncStatus.failed).toList();
+    final failedItems = _allBudgets.where((b) => b.syncStatus == model.SyncStatus.failed).toList();
     for (var item in failedItems) {
-      updateSpendingTargetOptimistic(
-        item.amount, 
-        item.periodType, 
-        category: item.category, 
-        month: item.month
-      );
+      if (item.categoryId != null) {
+        updateSpendingTargetOptimistic(
+          item.amount, 
+          categoryId: item.categoryId!, 
+          month: item.startMonth
+        );
+      }
+    }
+  }
+
+  Future<String?> addCustomCategory(String name, String icon) async {
+    if (name.isEmpty || icon.isEmpty) return null;
+    
+    final searchKey = ParserUtils.normalizeCategory(name);
+    try {
+      final existing = _categories.firstWhere((c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey);
+      return existing['id']?.toString();
+    } catch (_) {}
+
+    try {
+      final newCat = await _categoryRepository.createCategory(name, icon);
+      final catMap = <String, dynamic>{
+        'id': newCat.id,
+        'name': newCat.name,
+        'icon': newCat.icon,
+        'type': newCat.type,
+        'isEmoji': true,
+      };
+      _categories = [..._categories, catMap];
+      notifyListeners();
+      return newCat.id;
+    } catch (e) {
+      _logDebug('Error adding categoryId: $e');
+      return null;
     }
   }
 
@@ -314,33 +346,24 @@ class BudgetController extends ChangeNotifier {
     debugPrint('[BudgetSync] $message');
   }
 
-  Future<void> addCustomCategory(String name, String icon) async {
-    if (name.isEmpty || icon.isEmpty) return;
-    
-    final searchKey = ParserUtils.normalizeCategory(name);
-    if (_categories.any((c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey)) return;
-
+  dynamic getCategoryIcon(String? categoryId) {
+    if (categoryId == null) return Icons.category;
     try {
-      final newCat = await _categoryRepository.addCategory(name, icon);
-      _categories = [..._categories, <String, dynamic>{
-        'id': newCat.id,
-        'name': newCat.name,
-        'icon': newCat.icon,
-        'isEmoji': true,
-      }];
-      notifyListeners();
-    } catch (e) {
-      _logDebug('Error adding category: $e');
+      final cat = _categories.firstWhere((c) => c['id'] == categoryId);
+      return cat['icon'];
+    } catch (_) {
+      return Icons.category;
     }
   }
 
-  dynamic getCategoryIcon(String categoryName) {
-    final searchKey = ParserUtils.normalizeCategory(categoryName);
-    final cat = _categories.firstWhere(
-      (c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey,
-      orElse: () => <String, dynamic>{'icon': Icons.category},
-    );
-    return cat['icon'];
+  String getCategoryName(String? categoryId) {
+    if (categoryId == null) return 'Kategori';
+    try {
+      final cat = _categories.firstWhere((c) => c['id'] == categoryId);
+      return cat['name'] as String;
+    } catch (_) {
+      return 'Kategori';
+    }
   }
 
   @override

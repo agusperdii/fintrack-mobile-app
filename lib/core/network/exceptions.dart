@@ -40,3 +40,8 @@ class NotFoundException extends AppException {
   NotFoundException([String message = 'Resource not found', int? statusCode])
       : super(message, 'Not Found: ', statusCode);
 }
+
+/// Thrown when API returns {success: false, message: ...}
+class ApiErrorException extends AppException {
+  ApiErrorException(String message) : super(message, '', 400);
+}

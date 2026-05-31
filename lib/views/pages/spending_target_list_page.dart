@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/budget_controller.dart';
-import 'package:savaio/controllers/transaction_controller.dart';
-import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_progress_bar.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
@@ -54,7 +53,7 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
     
     try {
       await Future.wait([
-        sl.budgetController.fetchAll(silent: !showGlobalLoading),
+        sl.budgetController.fetchAll(silent: !showGlobalLoading, month: _selectedMonth),
         sl.transactionController.fetchTransactions(month: _selectedMonth),
       ]);
     } catch (e) {
@@ -70,16 +69,16 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
     await _fetchMonthData(showGlobalLoading: false);
   }
 
-  Future<void> _handleNavigateToEdit(String categoryName) async {
+  Future<void> _handleNavigateToEdit(String categoryId) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SpendingTargetPage(initialCategory: categoryName),
+        builder: (context) => SpendingTargetPage(initialCategoryId: categoryId),
       ),
     );
 
     if (result == true && mounted) {
-      // Data updated optimistically in the page, sync already triggered in controller.
+       _fetchMonthData(showGlobalLoading: false);
     }
   }
 
@@ -102,6 +101,9 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final budgetController = context.watch<BudgetController>();
+    final vms = budgetController.getSpendingTargetsForMonth(month: _selectedMonth);
+
     return Scaffold(
       backgroundColor: SavaioTheme.background,
       appBar: _buildAppBar(),
@@ -109,31 +111,21 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
         onRefresh: _handleRefresh,
         color: SavaioTheme.primary,
         backgroundColor: SavaioTheme.surfaceContainerHigh,
-        child: Selector2<BudgetController, TransactionController, List<SpendingTargetItemVM>>(
-          selector: (context, budgetCtrl, txCtrl) => budgetCtrl.getSpendingTargetsForMonth(
-            month: _selectedMonth,
-            getSpentAmount: txCtrl.getSpentAmountFor,
-          ),
-          builder: (context, vms, _) {
-            if (vms.isEmpty && !_isMonthLoading) {
-              return _buildEmptyState();
-            }
-            
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-              itemCount: vms.length,
-              itemBuilder: (context, index) {
-                final vm = vms[index];
-                
-                return SpendingTargetCard(
-                  key: ValueKey('${vm.category}_${vm.syncStatus}_$_selectedMonth'),
-                  vm: vm,
-                  onTap: () => _handleNavigateToEdit(vm.category),
-                );
-              },
-            );
-          },
-        ),
+        child: vms.isEmpty && !_isMonthLoading
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                  itemCount: vms.length,
+                  itemBuilder: (context, index) {
+                    final vm = vms[index];
+                    
+                    return SpendingTargetCard(
+                      key: ValueKey('${vm.categoryId}_${vm.syncStatus}_$_selectedMonth'),
+                      vm: vm,
+                      onTap: () => _handleNavigateToEdit(vm.categoryId),
+                    );
+                  },
+                ),
       ),
     );
   }
@@ -228,7 +220,6 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = widget.vm.category == 'All' ? 'Total Pengeluaran' : widget.vm.category;
     final isSyncing = widget.vm.syncStatus == SyncStatus.syncing;
     
     return Padding(
@@ -239,9 +230,13 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
         child: InkWell(
           onTap: isSyncing ? null : widget.onTap,
           borderRadius: BorderRadius.circular(20),
-          child: GlassCard(
+          child: Container(
             padding: const EdgeInsets.all(20),
-            borderRadius: 20,
+            decoration: BoxDecoration(
+              color: SavaioTheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+            ),
             child: Column(
               children: [
                 Row(
@@ -257,11 +252,11 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppHeading(displayName, size: AppHeadingSize.subtitle),
+                          AppHeading(widget.vm.categoryName, size: AppHeadingSize.subtitle),
                           const SizedBox(height: 4),
                           Text(
                             widget.vm.target > 0 
-                                ? 'Target: ${SavaioTheme.formatCurrency(widget.vm.target)}'
+                                ? 'Target: ${SavaioTheme.formatCurrency(widget.vm.target, currency: context.watch<AuthController>().currency)}'
                                 : 'Target belum diatur',
                             style: TextStyle(
                               fontSize: 12, 
@@ -280,14 +275,14 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${SavaioTheme.formatCurrency(widget.vm.spent)} terpakai',
+                        '${SavaioTheme.formatCurrency(widget.vm.spent, currency: context.watch<AuthController>().currency)} terpakai',
                         style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
                       ),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: Text(
                           widget.vm.isOver ? 'Over Budget!' : '${(widget.vm.progress * 100).toStringAsFixed(0)}%',
-                          key: ValueKey('${widget.vm.category}_${widget.vm.progress}_${widget.vm.syncStatus}'),
+                          key: ValueKey('${widget.vm.categoryId}_${widget.vm.progress}_${widget.vm.syncStatus}'),
                           style: TextStyle(
                             fontSize: 11, 
                             fontWeight: FontWeight.bold,

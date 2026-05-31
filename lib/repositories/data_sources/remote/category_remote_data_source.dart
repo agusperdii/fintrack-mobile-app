@@ -1,30 +1,38 @@
-import 'package:savaio/core/network/api_client.dart';
-import 'package:savaio/core/constants/api_config.dart';
-import 'package:savaio/models/category_model.dart';
+import '../../../core/constants/api_config.dart';
+import '../../../core/network/api_client.dart';
+import '../../../models/category_model.dart';
 
-abstract class CategoryRemoteDataSource {
-  Future<List<CategoryModel>> getCategories();
-  Future<CategoryModel> addCategory(String name, String icon);
-}
+class CategoryRemoteDataSource {
+  final ApiClient _client;
 
-class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
-  final ApiClient apiClient;
-  final String baseUrl = ApiConfig.baseUrl;
+  CategoryRemoteDataSource(this._client);
 
-  CategoryRemoteDataSourceImpl({required this.apiClient});
-
-  @override
+  /// GET /categories
   Future<List<CategoryModel>> getCategories() async {
-    final response = await apiClient.get('$baseUrl/categories/');
-    return (response as List).map((c) => CategoryModel.fromJson(c)).toList();
+    final data = await _client.get('${ApiConfig.baseUrl}/categories') as List? ?? [];
+    return data.map((c) => CategoryModel.fromJson(c as Map<String, dynamic>)).toList();
   }
 
-  @override
-  Future<CategoryModel> addCategory(String name, String icon) async {
-    final response = await apiClient.post('$baseUrl/categories/', body: {
-      'name': name,
-      'icon': icon,
-    });
-    return CategoryModel.fromJson(response);
+  /// POST /categories
+  Future<CategoryModel> createCategory(Map<String, dynamic> data) async {
+    final resData = await _client.post(
+      '${ApiConfig.baseUrl}/categories',
+      body: data,
+    ) as Map<String, dynamic>;
+    return CategoryModel.fromJson(resData);
+  }
+
+  /// PATCH /categories/{id}
+  Future<CategoryModel> updateCategory(String id, Map<String, dynamic> data) async {
+    final resData = await _client.patch(
+      '${ApiConfig.baseUrl}/categories/$id',
+      body: data,
+    ) as Map<String, dynamic>;
+    return CategoryModel.fromJson(resData);
+  }
+
+  /// DELETE /categories/{id}
+  Future<void> deleteCategory(String id) async {
+    await _client.delete('${ApiConfig.baseUrl}/categories/$id');
   }
 }

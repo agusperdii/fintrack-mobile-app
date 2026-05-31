@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/models/app_data.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
@@ -21,7 +22,11 @@ class AppTransactionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.type == TransactionType.expense;
     final budgetController = context.watch<BudgetController>();
-    final categoryIcon = budgetController.getCategoryIcon(transaction.category);
+    
+    // Use emoji from category object if available, otherwise fallback to budgetController lookup by name
+    final categoryIcon = transaction.category?.emoji ?? 
+                        budgetController.getCategoryIcon(transaction.category?.name ?? "");
+    
     final accentColor = isExpense ? SavaioTheme.error : SavaioTheme.tertiary;
 
     // Handle background sync status feedback
@@ -29,9 +34,9 @@ class AppTransactionItem extends StatelessWidget {
     final isFailed = transaction.syncStatus == SyncStatus.failed;
     final contentOpacity = (isPending || isFailed) ? 0.6 : 1.0;
 
-    String formattedSubtitle = transaction.date;
+    String formattedSubtitle = transaction.date.toIso8601String();
     try {
-      final dateTime = DateTime.parse(transaction.date);
+      final dateTime = transaction.date;
       formattedSubtitle = '${DateFormat('d MMM yyyy').format(dateTime)} @${DateFormat('HH:mm').format(dateTime)}';
     } catch (e) {
       // Fallback if parsing fails
@@ -101,7 +106,7 @@ class AppTransactionItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   AppHeading(
-                    '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense)}',
+                    '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense, currency: context.watch<AuthController>().currency)}',
                     size: AppHeadingSize.subtitle,
                     color: isFailed ? SavaioTheme.error : (isExpense ? SavaioTheme.onSurface : SavaioTheme.primary),
                     isBold: true,

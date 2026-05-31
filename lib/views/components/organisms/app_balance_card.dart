@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/molecules/app_balance_mini_item.dart';
@@ -24,6 +26,10 @@ class AppBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currency = context.watch<AuthController>().currency;
+    final placeholder = currency == 'USD' ? r'$ --.--' : (currency == 'IDR' ? 'Rp --.---.---' : '$currency --.--');
+    final placeholderSmall = currency == 'USD' ? r'$ --.--' : (currency == 'IDR' ? 'Rp --.---' : '$currency --.--');
+
     return GlassCard(
       padding: const EdgeInsets.all(SavaioTheme.spacingXl),
       borderRadius: SavaioTheme.radius2xl,
@@ -44,7 +50,7 @@ class AppBalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: SavaioTheme.spacingS),
           AppHeading(
-            isLoading ? 'Rp --.---.---' : SavaioTheme.formatCurrency(balance),
+            isLoading ? placeholder : SavaioTheme.formatCurrency(balance, currency: currency),
             size: AppHeadingSize.h1,
           ),
           const SizedBox(height: SavaioTheme.spacingXl),
@@ -53,14 +59,14 @@ class AppBalanceCard extends StatelessWidget {
             children: [
               AppBalanceMiniItem(
                 label: 'Pemasukan',
-                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(income),
+                amount: isLoading ? placeholderSmall : SavaioTheme.formatCurrency(income, currency: currency),
                 icon: Icons.south_west_rounded,
                 color: SavaioTheme.tertiary,
                 onTap: onIncomeTap,
               ),
               AppBalanceMiniItem(
                 label: 'Pengeluaran',
-                amount: isLoading ? 'Rp --.---' : SavaioTheme.formatCurrency(expense),
+                amount: isLoading ? placeholderSmall : SavaioTheme.formatCurrency(expense, currency: currency),
                 icon: Icons.north_east_rounded,
                 color: SavaioTheme.error,
                 onTap: onExpenseTap,

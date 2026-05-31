@@ -83,24 +83,11 @@ class _OcrScanPageState extends State<OcrScanPage> {
           children: [
             const AppHeading('Hasil Scan AI', size: AppHeadingSize.h3),
             const SizedBox(height: 24),
-            _buildResultRow('Merchant', result.merchantName),
-            _buildResultRow('Tanggal', result.transactionDate),
-            _buildResultRow('Total', 'Rp ${result.totalAmount.toStringAsFixed(0)}'),
+            _buildResultRow('Merchant', result.parsedData?.merchantName ?? result.parsedData?.title ?? '-'),
+            _buildResultRow('Kategori', result.parsedData?.categorySuggestion ?? '-'),
+            _buildResultRow('Tanggal', result.parsedData?.date ?? '-'),
+            _buildResultRow('Total', SavaioTheme.formatCurrency(result.parsedData?.amount ?? 0, currency: 'IDR')),
             const SizedBox(height: 24),
-            const AppHeading('Line Items', size: AppHeadingSize.subtitle, isBold: true),
-            const SizedBox(height: 12),
-            ...result.lineItems.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(child: Text(item.itemName, style: const TextStyle(color: Colors.white70, fontSize: 12))),
-                  Text('x${item.itemQuantity}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(width: 12),
-                  Text('Rp ${item.itemPrice.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            )),
             const SizedBox(height: 32),
             AppButton(
               label: 'KONFIRMASI & LANJUT',
@@ -110,9 +97,12 @@ class _OcrScanPageState extends State<OcrScanPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => AddTransactionPage(
-                      initialTitle: result.merchantName,
-                      initialAmount: result.totalAmount,
+                      initialTitle: result.parsedData?.merchantName ?? result.parsedData?.title ?? '-',
+                      initialAmount: result.parsedData?.amount ?? 0.0,
+                      initialCategory: result.parsedData?.categorySuggestion,
                       initialType: 'Expense',
+                      initialReceiptId: result.id,
+                      source: 'ocr',
                     ),
                   ),
                 );

@@ -6,14 +6,14 @@ import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
 class TransactionCategoryGrid extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
-  final String selectedCategory;
-  final Function(String) onCategorySelected;
+  final String? selectedCategoryId;
+  final Function(Map<String, dynamic>) onCategorySelected;
   final VoidCallback onAddCategoryTap;
 
   const TransactionCategoryGrid({
     super.key,
     required this.categories,
-    required this.selectedCategory,
+    this.selectedCategoryId,
     required this.onCategorySelected,
     required this.onAddCategoryTap,
   });
@@ -53,9 +53,9 @@ class TransactionCategoryGrid extends StatelessWidget {
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final cat = categories[index];
-            final isSelected = selectedCategory == cat['name'];
+            final isSelected = selectedCategoryId == cat['id']?.toString();
             return GestureDetector(
-              onTap: () => onCategorySelected(cat['name']),
+              onTap: () => onCategorySelected(cat),
               child: Container(
                 decoration: BoxDecoration(
                   color: SavaioTheme.surfaceContainer,
@@ -69,7 +69,7 @@ class TransactionCategoryGrid extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     AppIconContainer(
-                      icon: cat['icon'],
+                      icon: cat['icon'] ?? cat['emoji'] ?? '📦',
                       color: isSelected ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
                       size: 40,
                       opacity: isSelected ? 0.2 : 0.1,
@@ -78,7 +78,7 @@ class TransactionCategoryGrid extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
-                        cat['name'].toUpperCase(),
+                        cat['name'].toString().toUpperCase(),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 9,

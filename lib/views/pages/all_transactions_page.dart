@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/monthly_summary_model.dart';
+import 'package:savaio/controllers/analytics_controller.dart';
 import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
@@ -22,16 +24,44 @@ class AllTransactionsPage extends StatefulWidget {
 class _AllTransactionsPageState extends State<AllTransactionsPage> {
   String? _selectedMonth;
   String _selectedType = 'all';
+  AnalyticsController? _analyticsController;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialMonth != null) {
       _selectedMonth = widget.initialMonth;
+      sl.transactionController.fetchMonthTransactions(_selectedMonth!);
+    } else {
+      sl.transactionController.fetchTransactions();
     }
     
-    // Fetch specifically for the selected month if we have one, otherwise all
-    sl.transactionController.fetchTransactions(month: _selectedMonth);
+    // Add error listener for export
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _analyticsController = context.read<AnalyticsController>();
+      _analyticsController?.addListener(_onAnalyticsChange);
+    });
+  }
+
+  @override
+  void dispose() {
+    _analyticsController?.removeListener(_onAnalyticsChange);
+    super.dispose();
+  }
+
+  void _onAnalyticsChange() {
+    if (!mounted) return;
+    final error = _analyticsController?.error;
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: SavaioTheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _analyticsController?.clearError();
+    }
   }
 
   String _formatMonth(String month) {
@@ -52,8 +82,7 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
     return all.where((t) {
       if (_selectedType == 'income' && t.type != TransactionType.income) return false;
       if (_selectedType == 'expense' && t.type != TransactionType.expense) return false;
-      // If we are filtering by month via dropdown, apply it
-      if (_selectedMonth != null && !t.date.startsWith(_selectedMonth!)) return false;
+      if (_selectedMonth != null && !t.date.toIso8601String().startsWith(_selectedMonth!)) return false;
       return true;
     }).toList();
   }
@@ -61,8 +90,8 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
   Map<String, List<Transaction>> _groupByDate(List<Transaction> txs) {
     final map = <String, List<Transaction>>{};
     for (final t in txs) {
-      // Use date part only (YYYY-MM-DD)
-      final dateOnly = t.date.length >= 10 ? t.date.substring(0, 10) : t.date;
+      final dateStr = t.date.toIso8601String();
+      final dateOnly = dateStr.length >= 10 ? dateStr.substring(0, 10) : dateStr;
       map.putIfAbsent(dateOnly, () => []).add(t);
     }
     return map;
@@ -72,16 +101,17 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
   Widget build(BuildContext context) {
     final controller = context.watch<TransactionController>();
     final allTxs = controller.transactions ?? [];
+    final currency = controller.currency;
+    final summary = controller.monthSummary;
     
     // Build unique months for filter from data
     final months = allTxs
-        .where((t) => t.date.length >= 7)
-        .map((t) => t.date.substring(0, 7))
+        .where((t) => t.date.toIso8601String().length >= 7)
+        .map((t) => t.date.toIso8601String().substring(0, 7))
         .toSet()
         .toList()
       ..sort((a, b) => b.compareTo(a));
 
-    // Safety check
     final dropdownMonths = List<String>.from(months);
     if (_selectedMonth != null && !dropdownMonths.contains(_selectedMonth)) {
         dropdownMonths.add(_selectedMonth!);
@@ -97,20 +127,22 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
       appBar: const AppHeader(title: 'Semua Transaksi', showBackButton: true, showNotification: false),
       body: Column(
         children: [
+          // Summary Header (from drill-down API)
+          if (summary != null && _selectedMonth != null)
+            _buildSummaryHeader(summary, currency),
+
           // Filter bar
           Container(
             height: 44,
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Row(
               children: [
-                // Type filter
                 _TypeChip(label: 'Semua', value: 'all', selected: _selectedType == 'all', onTap: () => setState(() { _selectedType = 'all'; })),
                 const SizedBox(width: 4),
                 _TypeChip(label: 'Masuk', value: 'income', selected: _selectedType == 'income', onTap: () => setState(() { _selectedType = 'income'; })),
                 const SizedBox(width: 4),
                 _TypeChip(label: 'Keluar', value: 'expense', selected: _selectedType == 'expense', onTap: () => setState(() { _selectedType = 'expense'; })),
                 const Spacer(),
-                // Month dropdown
                 if (dropdownMonths.isNotEmpty)
                   DropdownButton<String?>(
                     value: _selectedMonth,
@@ -130,7 +162,11 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                     ],
                     onChanged: (v) {
                       setState(() => _selectedMonth = v);
-                      controller.fetchTransactions(month: v);
+                      if (v != null) {
+                        controller.fetchMonthTransactions(v);
+                      } else {
+                        controller.fetchTransactions();
+                      }
                     },
                   ),
               ],
@@ -161,7 +197,9 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
           else
             Expanded(
               child: RefreshIndicator(
-                onRefresh: () => controller.fetchTransactions(month: _selectedMonth),
+                onRefresh: () => _selectedMonth != null 
+                    ? controller.fetchMonthTransactions(_selectedMonth!) 
+                    : controller.fetchTransactions(),
                 color: SavaioTheme.primary,
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -193,13 +231,18 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                         ),
                         ...txs.map((tx) => _TransactionListItem(
                           transaction: tx,
+                          currency: currency,
                           onTap: () async {
                             final deleted = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
                             );
                             if (deleted == true) {
-                              controller.fetchTransactions(month: _selectedMonth);
+                              if (_selectedMonth != null) {
+                                controller.fetchMonthTransactions(_selectedMonth!);
+                              } else {
+                                controller.fetchTransactions();
+                              }
                             }
                           },
                         )),
@@ -209,6 +252,40 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader(MonthSummary summary, String currency) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(child: _SummaryItem(label: 'Masuk', value: summary.totalIncome, color: SavaioTheme.tertiary, currency: currency)),
+                Flexible(child: _SummaryItem(label: 'Keluar', value: summary.totalExpense, color: SavaioTheme.error, currency: currency)),
+                Flexible(child: _SummaryItem(label: 'Kas', value: summary.netCashflow, color: summary.netCashflow >= 0 ? SavaioTheme.primary : SavaioTheme.error, currency: currency)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(width: 1, height: 24, color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+          const SizedBox(width: 8),
+          _ExportButton(
+            onXlsx: () => context.read<AnalyticsController>().exportReport(_selectedMonth!, 'xlsx'),
+            onPdf: () => context.read<AnalyticsController>().exportReport(_selectedMonth!, 'pdf'),
+          ),
         ],
       ),
     );
@@ -241,8 +318,9 @@ class _TypeChip extends StatelessWidget {
 
 class _TransactionListItem extends StatelessWidget {
   final Transaction transaction;
+  final String currency;
   final VoidCallback onTap;
-  const _TransactionListItem({required this.transaction, required this.onTap});
+  const _TransactionListItem({required this.transaction, required this.onTap, required this.currency});
 
   @override
   Widget build(BuildContext context) {
@@ -276,20 +354,121 @@ class _TransactionListItem extends StatelessWidget {
                   children: [
                     Text(transaction.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: SavaioTheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
                     Text(
-                      '${transaction.category} @${DateFormat('HH:mm').format(DateTime.parse(transaction.date))}',
+                      '${transaction.category?.name ?? "Tanpa Kategori"} @${DateFormat('HH:mm').format(transaction.date)}',
                       style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
               Text(
-                '${isIncome ? '+' : '-'}Rp${transaction.amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                '${isIncome ? '+' : '-'}${SavaioTheme.formatCurrency(transaction.amount, currency: currency)}',
                 style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: isIncome ? SavaioTheme.tertiary : SavaioTheme.error),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SummaryItem extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  final String currency;
+  const _SummaryItem({required this.label, required this.value, required this.color, required this.currency});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label, 
+          style: GoogleFonts.inter(fontSize: 9, color: SavaioTheme.onSurfaceVariant),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          SavaioTheme.formatCurrencyShorthand(value, currency: currency),
+          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+class _ExportButton extends StatelessWidget {
+  final VoidCallback onXlsx;
+  final VoidCallback onPdf;
+
+  const _ExportButton({required this.onXlsx, required this.onPdf});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Download Laporan',
+      offset: const Offset(0, 45),
+      color: SavaioTheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onSelected: (value) {
+        if (value == 'xlsx') onXlsx();
+        if (value == 'pdf') onPdf();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: SavaioTheme.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.file_download_outlined,
+              size: 14,
+              color: SavaioTheme.primary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'LAPORAN',
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: SavaioTheme.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'xlsx',
+          child: Row(
+            children: [
+              const Icon(Icons.table_chart_rounded, size: 18, color: Colors.green),
+              const SizedBox(width: 12),
+              Text('Excel (.xlsx)', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'pdf',
+          child: Row(
+            children: [
+              const Icon(Icons.picture_as_pdf_rounded, size: 18, color: Colors.red),
+              const SizedBox(width: 12),
+              Text('PDF (.pdf)', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SavaioTheme {
-  // --- Design Tokens (Tailwind-like) ---
-  
-  // Spacing (8px grid)
+
   static const double spacingXs = 4.0;
   static const double spacingS = 8.0;
   static const double spacingM = 12.0;
@@ -14,7 +12,7 @@ class SavaioTheme {
   static const double spacing3xl = 48.0;
   static const double spacing4xl = 64.0;
 
-  // Border Radius
+
   static const double radiusXs = 4.0;
   static const double radiusS = 8.0;
   static const double radiusM = 12.0;
@@ -23,13 +21,11 @@ class SavaioTheme {
   static const double radius2xl = 32.0;
   static const double radiusFull = 9999.0;
 
-  // Animations
   static const Duration durationFast = Duration(milliseconds: 200);
   static const Duration durationNormal = Duration(milliseconds: 300);
   static const Duration durationSlow = Duration(milliseconds: 500);
   static const Curve curveDefault = Curves.easeInOutCubic;
 
-  // Brand Colors from Tailwind Config
   static const Color background = Color(0xFF0C0E12);
   static const Color surface = Color(0xFF0C0E12);
   static const Color surfaceContainer = Color(0xFF171A1F);
@@ -52,8 +48,8 @@ class SavaioTheme {
   static const Color outline = Color(0xFF74757A);
   static const Color outlineVariant = Color(0xFF46484D);
 
-  static String formatCurrency(double amount) {
-    // Basic formatting for IDR
+  static String formatCurrency(double amount, {String currency = 'IDR'}) {
+    final String symbol = currency == 'USD' ? r'$' : (currency == 'IDR' ? 'Rp' : '$currency ');
     final String sign = amount < 0 ? '-' : '';
     final String absoluteValue = amount.abs().toStringAsFixed(0);
     final buffer = StringBuffer();
@@ -65,10 +61,11 @@ class SavaioTheme {
       buffer.write(absoluteValue[i]);
       count++;
     }
-    return 'Rp$sign${buffer.toString().split('').reversed.join('')}';
+    return '$symbol$sign${buffer.toString().split('').reversed.join('')}';
   }
 
-  static String formatCurrencyShorthand(double amount, {bool isExpense = false}) {
+  static String formatCurrencyShorthand(double amount, {bool isExpense = false, String currency = 'IDR'}) {
+    final String symbol = currency == 'USD' ? r'$' : (currency == 'IDR' ? 'Rp' : '$currency ');
     final double absAmount = amount.abs();
     
     if (absAmount >= 1000000) {
@@ -83,12 +80,12 @@ class SavaioTheme {
       String valueStr = rounded == rounded.toInt() 
           ? rounded.toStringAsFixed(0) 
           : rounded.toStringAsFixed(1).replaceAll('.', ',');
-      return 'Rp${valueStr}juta';
+      return '$symbol${valueStr}juta';
     } else if (absAmount >= 1000) {
       int rounded = isExpense ? (absAmount / 1000).ceil() : (absAmount / 1000).floor();
-      return 'Rp${rounded}ribu';
+      return '$symbol${rounded}ribu';
     } else {
-      return formatCurrency(absAmount);
+      return formatCurrency(absAmount, currency: currency);
     }
   }
 

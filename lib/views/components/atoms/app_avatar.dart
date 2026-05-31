@@ -36,8 +36,9 @@ class AppAvatar extends StatelessWidget {
         ),
         child: CircleAvatar(
           radius: (size / 2) - 2,
-          backgroundImage: NetworkImage(imageUrl),
+          backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
           backgroundColor: SavaioTheme.surfaceContainer,
+          child: imageUrl.isEmpty ? Icon(Icons.person_rounded, size: size * 0.6, color: SavaioTheme.onSurfaceVariant) : null,
         ),
       ),
     );

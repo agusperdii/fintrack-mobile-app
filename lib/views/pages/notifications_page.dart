@@ -79,11 +79,6 @@ class NotificationsPage extends StatelessWidget {
   }
 
   Widget _buildNotificationCard(BuildContext context, NotificationController controller, model.NotificationData notif) {
-    AppNotificationVariant variant = AppNotificationVariant.info;
-    if (notif.type == model.NotificationType.warning) variant = AppNotificationVariant.warning;
-    if (notif.type == model.NotificationType.success) variant = AppNotificationVariant.success;
-    if (notif.type == model.NotificationType.streak) variant = AppNotificationVariant.success;
-
     List<Widget>? actions;
     if (!notif.isRead) {
       actions = [
@@ -114,7 +109,8 @@ class NotificationsPage extends StatelessWidget {
       child: AppNotificationCard(
         category: notif.type.name.toUpperCase(),
         time: _formatTime(notif.createdAt),
-        variant: variant,
+        severity: notif.severity,
+        presentation: notif.presentation,
         actions: actions,
         isRead: notif.isRead,
         content: Column(

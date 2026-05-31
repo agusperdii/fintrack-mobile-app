@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/budget_controller.dart';
+import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
@@ -22,6 +23,8 @@ class AddTransactionPage extends StatefulWidget {
   final double? initialAmount;
   final String? initialCategory;
   final String? initialType;
+  final String? initialReceiptId;
+  final String? source;
 
   const AddTransactionPage({
     super.key,
@@ -29,6 +32,8 @@ class AddTransactionPage extends StatefulWidget {
     this.initialAmount,
     this.initialCategory,
     this.initialType,
+    this.initialReceiptId,
+    this.source,
   });
 
   @override
@@ -40,7 +45,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late final TextEditingController _titleController; 
   late final TextEditingController _descriptionController;
   late final TextEditingController _amountController;
-  String _selectedCategory = 'Food';
+  String? _selectedCategoryId;
+  String _selectedCategoryName = 'Food';
   DateTime _selectedDate = DateTime.now();
 
   @override
@@ -52,7 +58,20 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _amountController = TextEditingController(
       text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
     );
-    _selectedCategory = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
+    
+    // Initial category logic
+    final categories = sl.budgetController.categories;
+    final initialName = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
+    
+    try {
+      final cat = categories.firstWhere(
+        (c) => c['name'].toString().toLowerCase() == initialName.toLowerCase()
+      );
+      _selectedCategoryId = cat['id']?.toString();
+      _selectedCategoryName = cat['name'].toString();
+    } catch (_) {
+      _selectedCategoryName = initialName;
+    }
   }
 
   @override
@@ -116,27 +135,38 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       return;
     }
 
-    // 2. Create Optimistic Transaction & Update State
-    // We don't await this because it returns immediately after local update
-    sl.transactionController.addTransactionOptimistic(
-      dashboardController: sl.dashboardController,
-      title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategory' : _titleController.text,
-      description: _descriptionController.text,
-      amount: double.parse(_amountController.text),
-      category: _selectedCategory,
-      type: _type.toLowerCase() == 'expense' ? 'expense' : 'income',
-      date: _selectedDate,
-    );
-
-    // 3. Instant Navigation back to Dashboard
-    if (mounted) {
-      Navigator.pop(context, true);
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tolong pilih kategori')));
+      return;
     }
 
-    // 4. Background Sync (Analytics/Notifications)
-    // These run in the background without blocking the UI
-    sl.notificationController.fetchAll();
-    sl.analyticsController.fetchAll();
+    // 2. Create Transaction
+    final transactionController = context.read<TransactionController>();
+    
+    try {
+      await transactionController.createTransactionOptimistic(
+        dashboardController: sl.dashboardController,
+        title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategoryName' : _titleController.text,
+        description: _descriptionController.text,
+        amount: double.parse(_amountController.text),
+        categoryId: _selectedCategoryId!,
+        type: _type.toLowerCase() == 'expense' ? 'expense' : 'income',
+        date: _selectedDate,
+        receiptId: widget.initialReceiptId,
+        source: widget.source ?? 'manual',
+      );
+
+      // 3. Navigation back to Dashboard on success
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan transaksi: $e'), backgroundColor: SavaioTheme.error),
+        );
+      }
+    }
   }
 
   void _showAddCategorySheet() {
@@ -145,11 +175,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddCategorySheet(
-        onAdd: (name, icon) {
-          sl.budgetController.addCustomCategory(name, icon);
-          setState(() {
-            _selectedCategory = name;
-          });
+        onAdd: (name, icon) async {
+          final id = await sl.budgetController.addCustomCategory(name, icon);
+          if (mounted) {
+            setState(() {
+              _selectedCategoryId = id;
+              _selectedCategoryName = name;
+            });
+          }
         },
       ),
     );
@@ -185,8 +218,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 const SizedBox(height: 32),
                 TransactionCategoryGrid(
                   categories: budgetController.categories,
-                  selectedCategory: _selectedCategory,
-                  onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                  selectedCategoryId: _selectedCategoryId,
+                  onCategorySelected: (cat) {
+                    setState(() {
+                      _selectedCategoryId = cat['id']?.toString();
+                      _selectedCategoryName = cat['name'].toString();
+                    });
+                  },
                   onAddCategoryTap: _showAddCategorySheet,
                 ),
                 const SizedBox(height: 32),
@@ -431,9 +469,12 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: AppButton(
-          label: 'SIMPAN TRANSAKSI',
-          onTap: _submitData,
+        child: Consumer<TransactionController>(
+          builder: (context, controller, child) => AppButton(
+            label: 'SIMPAN TRANSAKSI',
+            isLoading: controller.isAddingTransaction,
+            onTap: controller.isAddingTransaction ? null : _submitData,
+          ),
         ),
       ),
     );

@@ -71,12 +71,12 @@ class ServiceLocator {
     
     apiClient = ApiClient(authController: authController);
 
-    authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient: apiClient);
-    transactionRemoteDataSource = TransactionRemoteDataSourceImpl(apiClient: apiClient);
-    budgetRemoteDataSource = BudgetRemoteDataSourceImpl(apiClient: apiClient);
-    analyticsRemoteDataSource = AnalyticsRemoteDataSourceImpl(apiClient: apiClient);
-    dashboardRemoteDataSource = DashboardRemoteDataSourceImpl(apiClient: apiClient);
-    categoryRemoteDataSource = CategoryRemoteDataSourceImpl(apiClient: apiClient);
+    authRemoteDataSource = AuthRemoteDataSource(apiClient);
+    transactionRemoteDataSource = TransactionRemoteDataSource(apiClient);
+    budgetRemoteDataSource = BudgetRemoteDataSource(apiClient);
+    analyticsRemoteDataSource = AnalyticsRemoteDataSource(apiClient);
+    dashboardRemoteDataSource = DashboardRemoteDataSource(apiClient);
+    categoryRemoteDataSource = CategoryRemoteDataSource(apiClient);
 
     // Initialize Domain Repositories
     transactionRepository = TransactionRepository(transactionRemoteDataSource);
@@ -96,11 +96,8 @@ class ServiceLocator {
     analyticsService = AnalyticsService();
     analyticsController = AnalyticsController(analyticsRepository, analyticsService);
 
-    // Inject repository into AuthController for sync
-    authController.setProfileRepository(profileRepository);
-
     // OCR
-    ocrDataSource = OcrDataSource();
+    ocrDataSource = OcrDataSource(apiClient);
     ocrRepository = OcrRepository(ocrDataSource);
     ocrController = OcrController(ocrRepository);
   }
