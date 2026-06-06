@@ -30,7 +30,7 @@ class AppHeroAnalysisCard extends StatelessWidget {
                 AppHeading(
                   'DAILY AVERAGE'.toUpperCase(),
                   size: AppHeadingSize.caption,
-                  color: SavaioTheme.onSurfaceVariant,
+                  color: SavaioTheme.onSurfaceVariantOf(context),
                   isBold: true,
                 ),
                 const SizedBox(height: SavaioTheme.spacingS),

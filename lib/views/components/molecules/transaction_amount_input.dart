@@ -15,12 +15,13 @@ class TransactionAmountInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = SavaioTheme.onSurfaceOf(context);
     return Column(
       children: [
-        const AppHeading(
+        AppHeading(
           'JUMLAH NOMINAL',
           size: AppHeadingSize.caption,
-          color: SavaioTheme.onSurfaceVariant,
+          color: SavaioTheme.onSurfaceVariantOf(context),
           isBold: true,
         ),
         const SizedBox(height: 16),
@@ -44,12 +45,12 @@ class TransactionAmountInput extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 48,
                   fontWeight: FontWeight.w900,
-                  color: SavaioTheme.onSurface,
+                  color: onSurface,
                   letterSpacing: -1,
                 ),
                 decoration: InputDecoration(
                   hintText: '0',
-                  hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
+                  hintStyle: TextStyle(color: onSurface.withValues(alpha: 0.2)),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.zero,
                 ),

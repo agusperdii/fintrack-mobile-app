@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppBalanceMiniItem extends StatelessWidget {
@@ -33,7 +32,7 @@ class AppBalanceMiniItem extends StatelessWidget {
               AppHeading(
                 label,
                 size: AppHeadingSize.caption,
-                color: SavaioTheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 isBold: false,
               ),
             ],

@@ -28,15 +28,15 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
-          const AppHeading(
+          AppHeading(
             'DISTRIBUSI PENGELUARAN',
             size: AppHeadingSize.caption,
-            color: SavaioTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: true,
           ),
           const SizedBox(height: 32),
@@ -98,7 +98,7 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     try {
       return Color(int.parse('FF$hex', radix: 16));
     } catch (_) {
-      return SavaioTheme.primary;
+      return Theme.of(context).colorScheme.primary;
     }
   }
 
@@ -128,9 +128,9 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
             const SizedBox(width: 8),
             Text(
               segment.label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: SavaioTheme.onSurfaceVariant,
+                color: SavaioTheme.onSurfaceVariantOf(context),
               ),
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/profile_controller.dart';
+import 'package:savaio/controllers/theme_controller.dart';
 import 'package:savaio/views/components/atoms/app_avatar.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
@@ -40,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // Show error state with logout option
     if (controller.error != null && controller.userProfile == null) {
       return Scaffold(
-        backgroundColor: SavaioTheme.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -62,7 +63,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 AppHeading(
                   controller.error!,
                   size: AppHeadingSize.caption,
-                  color: SavaioTheme.onSurfaceVariant,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   isBold: false,
                   textAlign: TextAlign.center,
                 ),
@@ -105,9 +106,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
     // Full loading state when no cached profile exists
     if (controller.isLoading || controller.userProfile == null) {
-      return const Scaffold(
-        backgroundColor: SavaioTheme.background,
-        body: Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
       );
     }
 
@@ -129,10 +130,66 @@ class _ProfileContent extends StatelessWidget {
     );
   }
 
+  void _showThemeSelection(BuildContext context, ThemeController themeController) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppHeading('Mode Tampilan', size: AppHeadingSize.h3),
+            const SizedBox(height: 24),
+            _buildThemeOption(context, 'Otomatis (Sistem)', ThemeMode.system, themeController),
+            _buildThemeOption(context, 'Mode Terang', ThemeMode.light, themeController),
+            _buildThemeOption(context, 'Mode Gelap', ThemeMode.dark, themeController),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(BuildContext context, String label, ThemeMode mode, ThemeController themeController) {
+    final isSelected = themeController.themeMode == mode;
+    return InkWell(
+      onTap: () {
+        themeController.setThemeMode(mode);
+        Navigator.pop(context);
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeController = context.watch<ThemeController>();
+
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const AppHeader(
         title: 'Profil',
         showNotification: false,
@@ -147,7 +204,7 @@ class _ProfileContent extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: SavaioTheme.surfaceContainerLow,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -163,17 +220,53 @@ class _ProfileContent extends StatelessWidget {
                     AppHeading(
                       profile.email,
                       size: AppHeadingSize.subtitle,
-                      color: SavaioTheme.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(height: 4),
                     AppHeading(
                       profile.id.split('-').first.toUpperCase(),
                       size: AppHeadingSize.caption,
-                      color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                       isBold: false,
                     ),
                   ],
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Preference Section
+            const AppSectionHeader(title: 'Preferensi'),
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  AppProfileMenuItem(
+                    icon: themeController.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    title: 'Mode Tampilan',
+                    trailing: Text(
+                      themeController.themeMode == ThemeMode.system 
+                          ? 'Otomatis' 
+                          : (themeController.isDarkMode ? 'Gelap' : 'Terang'),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    isTop: true,
+                    isBottom: true,
+                    onTap: () {
+                      _showThemeSelection(context, themeController);
+                    },
+                  ),
+                ],
               ),
             ),
 
@@ -185,7 +278,7 @@ class _ProfileContent extends StatelessWidget {
 
             Container(
               decoration: BoxDecoration(
-                color: SavaioTheme.surfaceContainerLow,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: AppProfileMenuItem(
@@ -210,7 +303,7 @@ class _ProfileContent extends StatelessWidget {
 
             Container(
               decoration: BoxDecoration(
-                color: SavaioTheme.surfaceContainerLow,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(

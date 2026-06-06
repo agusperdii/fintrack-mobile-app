@@ -27,13 +27,13 @@ class AppTrendLineChart extends StatefulWidget {
 }
 
 class _AppTrendLineChartState extends State<AppTrendLineChart> {
-  List<Color> gradientColors = [
-    SavaioTheme.primary,
-    SavaioTheme.secondary,
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final gradientColors = [
+      colorScheme.primary,
+      colorScheme.secondary,
+    ];
     // Calculate min/max for chart scaling
     final values = widget.trendPoints.map((p) => p.y).toList();
     final maxY = values.isEmpty ? 100000.0 : (values.reduce((a, b) => a > b ? a : b) * 1.2);
@@ -56,7 +56,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -72,8 +72,8 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                   const SizedBox(height: 4),
                   Text(
                     widget.isWeekly ? 'Pengeluaran 7 hari terakhir' : 'Pengeluaran bulan ini',
-                    style: const TextStyle(
-                      color: SavaioTheme.onSurfaceVariant,
+                    style: TextStyle(
+                      color: SavaioTheme.onSurfaceVariantOf(context),
                       fontSize: 12,
                     ),
                   ),
@@ -82,9 +82,11 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: SavaioTheme.surfaceContainer,
+                  color: SavaioTheme.surfaceContainerOf(context),
                   borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -113,7 +115,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                     child: Text(
                       'Belum ada data tren',
                       style: TextStyle(
-                        color: SavaioTheme.onSurfaceVariant,
+                        color: SavaioTheme.onSurfaceVariantOf(context),
                         fontSize: 14,
                       ),
                     ),
@@ -128,7 +130,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                         horizontalInterval: interval,
                         getDrawingHorizontalLine: (value) {
                           return FlLine(
-                            color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
+                            color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.2),
                             strokeWidth: 1,
                           );
                         },
@@ -156,9 +158,9 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: Text(
                                   text,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
-                                    color: SavaioTheme.onSurfaceVariant,
+                                    color: SavaioTheme.onSurfaceVariantOf(context),
                                   ),
                                 ),
                               );
@@ -185,9 +187,9 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
                                     label,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
-                                      color: SavaioTheme.onSurfaceVariant,
+                                      color: SavaioTheme.onSurfaceVariantOf(context),
                                     ),
                                   ),
                                 );
@@ -200,13 +202,13 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                       borderData: FlBorderData(show: false),
                       lineTouchData: LineTouchData(
                         touchTooltipData: LineTouchTooltipData(
-                          getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
+                          getTooltipColor: (_) => SavaioTheme.surfaceContainerHighestOf(context),
                           getTooltipItems: (touchedSpots) {
                             return touchedSpots.map((spot) {
                               return LineTooltipItem(
                                 SavaioTheme.formatCurrency(spot.y, currency: context.watch<AuthController>().currency),
-                                const TextStyle(
-                                  color: SavaioTheme.primary,
+                                TextStyle(
+                                  color: colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               );
@@ -226,9 +228,9 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                             getDotPainter: (spot, percent, barData, index) {
                               return FlDotCirclePainter(
                                 radius: 4,
-                                color: SavaioTheme.primary,
+                                color: colorScheme.primary,
                                 strokeWidth: 2,
-                                strokeColor: Colors.white,
+                                strokeColor: Theme.of(context).scaffoldBackgroundColor,
                               );
                             },
                           ),
@@ -266,17 +268,18 @@ class _CompactToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: SavaioTheme.durationFast,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? SavaioTheme.surfaceContainerHigh : Colors.transparent,
+          color: isActive ? SavaioTheme.surfaceContainerHighOf(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
           boxShadow: isActive ? [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
               blurRadius: 4,
               offset: const Offset(0, 2),
             )
@@ -285,7 +288,9 @@ class _CompactToggleButton extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+            color: isActive
+                ? Theme.of(context).colorScheme.primary
+                : SavaioTheme.onSurfaceVariantOf(context),
             fontSize: 12,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),

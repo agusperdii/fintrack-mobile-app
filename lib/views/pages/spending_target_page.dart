@@ -17,7 +17,8 @@ import 'package:savaio/models/app_data.dart' as model;
 
 class SpendingTargetPage extends StatefulWidget {
   final String? initialCategoryId;
-  const SpendingTargetPage({super.key, this.initialCategoryId});
+  final String? initialMonth;
+  const SpendingTargetPage({super.key, this.initialCategoryId, this.initialMonth});
 
   @override
   State<SpendingTargetPage> createState() => _SpendingTargetPageState();
@@ -33,8 +34,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+    if (widget.initialMonth != null) {
+      _selectedMonth = widget.initialMonth!;
+    } else {
+      final now = DateTime.now();
+      _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+    }
     
     final categories = sl.budgetController.categories.where((c) => c['type'] == 'expense').toList();
     if (widget.initialCategoryId != null) {
@@ -52,18 +57,15 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
     final budgets = sl.budgetController.allBudgets;
     
-    // Find precise match or fallback
+    // Find precise match for this month
     final budget = budgets.firstWhere(
       (b) => b.categoryId == _selectedCategoryId && b.startMonth == _selectedMonth,
-      orElse: () => budgets.firstWhere(
-        (b) => b.categoryId == _selectedCategoryId,
-        orElse: () => BudgetModel(
-          id: '',
-          amount: 0.0,
-          startMonth: _selectedMonth,
-          categoryId: _selectedCategoryId,
-          syncStatus: model.SyncStatus.idle,
-        ),
+      orElse: () => BudgetModel(
+        id: '',
+        amount: 0.0,
+        startMonth: _selectedMonth,
+        categoryId: _selectedCategoryId,
+        syncStatus: model.SyncStatus.idle,
       ),
     );
     
@@ -143,7 +145,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     final isUnchanged = inputAmount == _originalAmount || inputAmount <= 0;
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       appBar: _buildAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
@@ -151,7 +153,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeaderSelection(budgetController, categories),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             _buildAmountInputCard(),
             if (budgetController.error != null)
               Padding(
@@ -159,13 +161,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                 child: Center(
                   child: Text(
                     budgetController.error!,
-                    style: const TextStyle(color: SavaioTheme.error, fontSize: 12),
+                    style: TextStyle(color: SavaioTheme.errorOf(context), fontSize: 12),
                   ),
                 ),
               ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             _buildStatusSection(currentSpent, inputAmount, progress, isOver, currency),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             _buildInsightCard(inputAmount, currentSpent, isOver, currency),
           ],
         ),
@@ -176,13 +178,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.close, color: SavaioTheme.primary),
+        icon: Icon(Icons.close, color: SavaioTheme.primaryOf(context)),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const AppHeading('Atur Budget', size: AppHeadingSize.h3),
+      title: AppHeading('Atur Budget', size: AppHeadingSize.h3),
       centerTitle: true,
     );
   }
@@ -199,7 +201,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
             onTap: _showMonthPicker,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           flex: 4,
           child: SelectionCard(
@@ -219,13 +221,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       borderRadius: 24,
       child: Column(
         children: [
-          const AppHeading(
+          AppHeading(
             'LIMIT PENGELUARAN',
             size: AppHeadingSize.caption,
-            color: SavaioTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: true,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -236,10 +238,10 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: SavaioTheme.primary,
+                  color: SavaioTheme.primaryOf(context),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               IntrinsicWidth(
                 child: TextField(
                   controller: _amountController,
@@ -249,13 +251,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                   style: GoogleFonts.inter(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
-                    color: SavaioTheme.onSurface,
+                    color: SavaioTheme.onSurfaceOf(context),
                     letterSpacing: -1,
                   ),
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: '0',
-                    hintStyle: TextStyle(color: SavaioTheme.onSurface.withValues(alpha: 0.2)),
+                    hintStyle: TextStyle(color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.2)),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -263,14 +265,14 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildQuickAdd(100000),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               _buildQuickAdd(500000),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               _buildQuickAdd(1000000),
             ],
           ),
@@ -283,14 +285,14 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
-        const SizedBox(height: 16),
+        AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primaryOf(context), isBold: true),
+        SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: SavaioTheme.surfaceContainerLow,
+            color: SavaioTheme.surfaceContainerLowOf(context),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+            border: Border.all(color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.1)),
           ),
           child: Column(
             children: [
@@ -300,8 +302,8 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
-                      const SizedBox(height: 4),
+                      Text('Terpakai saat ini', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariantOf(context))),
+                      SizedBox(height: 4),
                       AppHeading(SavaioTheme.formatCurrency(currentSpent, currency: currency), size: AppHeadingSize.subtitle),
                     ],
                   ),
@@ -309,24 +311,24 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariant)),
-                        const SizedBox(height: 4),
+                        Text('Sisa', style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceVariantOf(context))),
+                        SizedBox(height: 4),
                         AppHeading(
                           SavaioTheme.formatCurrency(isOver ? 0 : targetAmount - currentSpent, currency: currency),
                           size: AppHeadingSize.subtitle,
-                          color: isOver ? SavaioTheme.error : SavaioTheme.tertiary,
+                          color: isOver ? SavaioTheme.errorOf(context) : SavaioTheme.tertiaryOf(context),
                         ),
                       ],
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               AppProgressBar(
                 value: progress,
-                color: isOver ? SavaioTheme.error : (progress > 0.8 ? Colors.orange : SavaioTheme.tertiary),
+                color: isOver ? SavaioTheme.errorOf(context) : (progress > 0.8 ? SavaioTheme.errorOf(context).withValues(alpha: 0.7) : SavaioTheme.tertiaryOf(context)),
                 height: 8,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -335,12 +337,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     style: TextStyle(
                       fontSize: 11, 
                       fontWeight: FontWeight.bold,
-                      color: isOver ? SavaioTheme.error : SavaioTheme.onSurfaceVariant
+                      color: isOver ? SavaioTheme.errorOf(context) : SavaioTheme.onSurfaceVariantOf(context)
                     ),
                   ),
                   Text(
                     'Target: ${SavaioTheme.formatCurrency(targetAmount, currency: currency)}',
-                    style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
+                    style: TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariantOf(context)),
                   ),
                 ],
               ),
@@ -357,17 +359,17 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     return GlassCard(
       padding: const EdgeInsets.all(20),
       borderRadius: 16,
-      color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      color: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.3),
       child: Row(
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: SavaioTheme.secondary, size: 20),
-          const SizedBox(width: 16),
+          Icon(Icons.auto_awesome_rounded, color: SavaioTheme.secondaryOf(context), size: 20),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               isOver 
                 ? 'Waduh! Pengeluaran kamu sudah lewat dari target. Yuk, lebih ketat lagi!'
                 : 'Batas harian kamu: ${SavaioTheme.formatCurrency((targetAmount - currentSpent) / 30, currency: currency)} untuk sisa bulan ini.',
-              style: const TextStyle(fontSize: 12, color: SavaioTheme.onSurface, height: 1.5),
+              style: TextStyle(fontSize: 12, color: SavaioTheme.onSurfaceOf(context), height: 1.5),
             ),
           ),
         ],
@@ -380,7 +382,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
+          colors: [SavaioTheme.backgroundOf(context).withValues(alpha: 0), SavaioTheme.backgroundOf(context)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -404,13 +406,13 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: SavaioTheme.primary.withValues(alpha: 0.1),
+          color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: SavaioTheme.primaryOf(context).withValues(alpha: 0.2)),
         ),
         child: Text(
           '+${(amount/1000).toStringAsFixed(0)}rb',
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SavaioTheme.primary),
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SavaioTheme.primaryOf(context)),
         ),
       ),
     );
@@ -433,7 +435,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
   void _showCategoryPicker(List<Map<String, dynamic>> categories, BudgetController budgetController) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: SavaioTheme.surfaceContainer,
+      backgroundColor: SavaioTheme.surfaceContainerOf(context),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -444,8 +446,8 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppHeading('Pilih Kategori', size: AppHeadingSize.h3),
-            const SizedBox(height: 20),
+            AppHeading('Pilih Kategori', size: AppHeadingSize.h3),
+            SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
                 itemCount: categories.length,
@@ -457,12 +459,12 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
                     leading: AppIconContainer(
                       icon: cat['icon'],
                       size: 32,
-                      color: _selectedCategoryId == id ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+                      color: _selectedCategoryId == id ? SavaioTheme.primaryOf(context) : SavaioTheme.onSurfaceVariantOf(context),
                       opacity: 0.1,
                     ),
                     title: Text(name, 
-                      style: TextStyle(color: _selectedCategoryId == id ? SavaioTheme.primary : SavaioTheme.onSurface)),
-                    trailing: _selectedCategoryId == id ? const Icon(Icons.check_circle, color: SavaioTheme.primary) : null,
+                      style: TextStyle(color: _selectedCategoryId == id ? SavaioTheme.primaryOf(context) : SavaioTheme.onSurfaceOf(context))),
+                    trailing: _selectedCategoryId == id ? Icon(Icons.check_circle, color: SavaioTheme.primaryOf(context)) : null,
                     onTap: () {
                       setState(() {
                         _selectedCategoryId = id;

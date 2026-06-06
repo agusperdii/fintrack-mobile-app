@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 class AppAvatar extends StatelessWidget {
   final String imageUrl;
@@ -15,14 +14,16 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: size,
       height: size,
       padding: const EdgeInsets.all(1),
-      decoration: showBorder ? const BoxDecoration(
+      decoration: showBorder ? BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [SavaioTheme.primary, SavaioTheme.secondary],
+          colors: [colorScheme.primary, colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -31,14 +32,14 @@ class AppAvatar extends StatelessWidget {
         padding: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: SavaioTheme.surface,
-          border: showBorder ? null : Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
+          color: colorScheme.surface,
+          border: showBorder ? null : Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.2)),
         ),
         child: CircleAvatar(
           radius: (size / 2) - 2,
           backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-          backgroundColor: SavaioTheme.surfaceContainer,
-          child: imageUrl.isEmpty ? Icon(Icons.person_rounded, size: size * 0.6, color: SavaioTheme.onSurfaceVariant) : null,
+          backgroundColor: colorScheme.surfaceContainer,
+          child: imageUrl.isEmpty ? Icon(Icons.person_rounded, size: size * 0.6, color: colorScheme.onSurfaceVariant) : null,
         ),
       ),
     );

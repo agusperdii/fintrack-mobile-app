@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 class AppEditorialHeader extends StatelessWidget {
   final String category;
@@ -17,7 +16,7 @@ class AppEditorialHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppHeading(category.toUpperCase(), size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
+        AppHeading(category.toUpperCase(), size: AppHeadingSize.caption, color: Theme.of(context).colorScheme.primary, isBold: true),
         const SizedBox(height: 4),
         AppHeading(title, size: AppHeadingSize.h2),
       ],

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
@@ -39,11 +38,11 @@ class AppNotificationCard extends StatelessWidget {
         icon = Icons.warning_amber_rounded;
         break;
       case NotificationSeverity.danger:
-        color = SavaioTheme.error;
+        color = Theme.of(context).colorScheme.error;
         icon = Icons.error_outline_rounded;
         break;
       case NotificationSeverity.info:
-        color = SavaioTheme.primary;
+        color = Theme.of(context).colorScheme.primary;
         icon = Icons.info_outline_rounded;
         break;
     }
@@ -60,7 +59,7 @@ class AppNotificationCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       borderColor: !isRead
           ? color.withValues(alpha: 0.3) 
-          : SavaioTheme.onSurfaceVariant.withValues(alpha: 0.1),
+          : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
       borderWidth: 1,
       child: Opacity(
         opacity: isRead ? 0.7 : 1.0,
@@ -100,7 +99,7 @@ class AppNotificationCard extends StatelessWidget {
                         AppHeading(
                           time,
                           size: AppHeadingSize.caption,
-                          color: SavaioTheme.onSurface.withValues(alpha: 0.4),
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                           isBold: false,
                         ),
                       ],

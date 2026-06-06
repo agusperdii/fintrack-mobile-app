@@ -10,12 +10,16 @@ class CategoryRepository {
     return _remoteDataSource.getCategories();
   }
 
-  Future<CategoryModel> createCategory(String name, String icon) {
+  Future<CategoryModel> createCategory(String name, String icon, {String type = 'expense'}) {
     return _remoteDataSource.createCategory({
       'name': name,
       'emoji': icon,
-      'type': 'expense',
+      'type': type,
       'color': '#81ECFF',
     });
+  }
+
+  Future<void> deleteCategory(String id) {
+    return _remoteDataSource.deleteCategory(id);
   }
 }

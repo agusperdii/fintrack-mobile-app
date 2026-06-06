@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/controllers/notification_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/views/components/molecules/app_notification_card.dart';
+import 'package:savaio/views/components/organisms/notifications/notification_badge_organism.dart';
+import 'package:savaio/views/components/organisms/notifications/notification_banner_organism.dart';
+import 'package:savaio/views/components/organisms/notifications/notification_popup_organism.dart';
+import 'package:savaio/views/components/organisms/notifications/notification_toast_organism.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
-import 'package:intl/intl.dart';
 
 import 'package:savaio/models/notification_data.dart' as model;
 
@@ -18,7 +19,7 @@ class NotificationsPage extends StatelessWidget {
     final notifications = controller.notifications;
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: const AppHeader(
         title: 'Notifikasi',
         showBackButton: true,
@@ -26,7 +27,7 @@ class NotificationsPage extends StatelessWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => controller.fetchAll(),
-        color: SavaioTheme.primary,
+        color: Theme.of(context).colorScheme.primary,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           physics: const AlwaysScrollableScrollPhysics(),
@@ -44,9 +45,9 @@ class NotificationsPage extends StatelessWidget {
                           if (!n.isRead) controller.markAsRead(n.id);
                         }
                       },
-                      child: const Text(
+                      child: Text(
                         'Baca semua',
-                        style: TextStyle(color: SavaioTheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
                 ],
@@ -58,16 +59,16 @@ class NotificationsPage extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 100),
-                      Icon(Icons.notifications_none_rounded, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                      Icon(Icons.notifications_none_rounded, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
                       const SizedBox(height: 16),
-                      const AppHeading('Belum ada notifikasi', size: AppHeadingSize.subtitle, color: SavaioTheme.onSurfaceVariant),
+                      AppHeading('Belum ada notifikasi', size: AppHeadingSize.subtitle, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ],
                   ),
                 )
               else
                 ...notifications.map((notif) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildNotificationCard(context, controller, notif),
+                  child: _buildNotificationItem(context, controller, notif),
                 )),
 
               const SizedBox(height: 32),
@@ -78,72 +79,58 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard(BuildContext context, NotificationController controller, model.NotificationData notif) {
-    List<Widget>? actions;
+  Widget _buildNotificationItem(BuildContext context, NotificationController controller, model.NotificationData notif) {
+    List<Widget> actions = [];
     if (!notif.isRead) {
-      actions = [
+      actions.add(
         GestureDetector(
           onTap: () => controller.markAsRead(notif.id),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: SavaioTheme.primary.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
             ),
-            child: const Text(
-              'TANDAI DIBACA',
-              style: TextStyle(color: SavaioTheme.primary, fontSize: 10, fontWeight: FontWeight.bold),
+            child: Text(
+              'BACA',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 9, fontWeight: FontWeight.bold),
             ),
           ),
         ),
-      ];
+      );
     }
 
-    return GestureDetector(
-      onTap: () {
-        if (!notif.isRead) {
-          controller.markAsRead(notif.id);
-        }
-      },
-      child: AppNotificationCard(
-        category: notif.type.name.toUpperCase(),
-        time: _formatTime(notif.createdAt),
-        severity: notif.severity,
-        presentation: notif.presentation,
-        actions: actions,
-        isRead: notif.isRead,
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              notif.title,
-              style: TextStyle(
-                color: notif.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              notif.message,
-              style: TextStyle(
-                color: notif.isRead ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurface.withValues(alpha: 0.8),
-                fontSize: 13,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    void onTap() {
+      if (!notif.isRead) {
+        controller.markAsRead(notif.id);
+      }
+      
+      if (notif.presentation == model.NotificationPresentation.popup) {
+        NotificationPopupOrganism.show(context, notif, onRead: () => controller.markAsRead(notif.id));
+      } else if (notif.presentation == model.NotificationPresentation.toast) {
+        NotificationToastOrganism.show(context, notif);
+      }
+    }
 
-  String _formatTime(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return DateFormat('dd MMM').format(date);
+    switch (notif.presentation) {
+      case model.NotificationPresentation.badge:
+        return NotificationBadgeOrganism(
+          notification: notif,
+          onTap: onTap,
+        );
+      case model.NotificationPresentation.toast:
+        return NotificationToastOrganism(
+          notification: notif,
+          onTap: onTap,
+        );
+      case model.NotificationPresentation.banner:
+      case model.NotificationPresentation.popup:
+        return NotificationBannerOrganism(
+          notification: notif,
+          onTap: onTap,
+          actions: actions,
+        );
+    }
   }
 }

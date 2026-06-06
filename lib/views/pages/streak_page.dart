@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
-import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
 
 class StreakPage extends StatelessWidget {
   const StreakPage({super.key});
@@ -13,34 +13,38 @@ class StreakPage extends StatelessWidget {
     final controller = context.watch<DashboardController>();
     final status = controller.checkInStatus;
     final streakCount = status?.streakCount ?? 0;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       appBar: const AppHeader(
         title: 'My Streak',
         showBackButton: true,
         showNotification: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(SavaioTheme.spacingXl),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            // Hero Streak Card
+            const SizedBox(height: SavaioTheme.spacingXl),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(SavaioTheme.spacing2xl),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.orange.withValues(alpha: 0.2),
-                    Colors.orange.withValues(alpha: 0.05),
+                    SavaioTheme.secondaryOf(context).withValues(alpha: 0.22),
+                    SavaioTheme.primaryOf(context).withValues(alpha: 0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(SavaioTheme.radius2xl),
+                border: Border.all(
+                  color: SavaioTheme.secondaryOf(context).withValues(
+                    alpha: 0.24,
+                  ),
+                ),
               ),
               child: Column(
                 children: [
@@ -48,92 +52,114 @@ class StreakPage extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.2),
+                      gradient: SavaioTheme.secondaryGradientOf(context),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.local_fire_department_rounded,
-                      color: Colors.orange,
+                      color: SavaioTheme.onPrimaryFixedOf(context),
                       size: 48,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SavaioTheme.spacingL),
                   Text(
                     '$streakCount',
-                    style: const TextStyle(
+                    style: textTheme.displayLarge?.copyWith(
+                      color: SavaioTheme.onSurfaceOf(context),
+                      fontWeight: FontWeight.w800,
                       fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Day Streak!',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w600,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: SavaioTheme.secondaryOf(context),
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: SavaioTheme.spacing2xl),
             const AppSectionHeader(title: 'Apa itu Streak?'),
-            const SizedBox(height: 16),
-            _buildInfoCard(
+            const SizedBox(height: SavaioTheme.spacingL),
+            _InfoCard(
               icon: Icons.check_circle_outline_rounded,
               title: 'Check-in Harian',
-              description: 'Buka aplikasi setiap hari dan lakukan check-in untuk menambah streak kamu.',
+              description:
+                  'Buka aplikasi setiap hari dan lakukan check-in untuk menambah streak kamu.',
             ),
-            const SizedBox(height: 12),
-            _buildInfoCard(
+            const SizedBox(height: SavaioTheme.spacingM),
+            _InfoCard(
               icon: Icons.auto_graph_rounded,
               title: 'Konsistensi',
-              description: 'Semakin panjang streak kamu, semakin baik kebiasaan finansialmu terbentuk.',
+              description:
+                  'Semakin panjang streak kamu, semakin baik kebiasaan finansialmu terbentuk.',
             ),
-            const SizedBox(height: 12),
-            _buildInfoCard(
+            const SizedBox(height: SavaioTheme.spacingM),
+            _InfoCard(
               icon: Icons.emoji_events_rounded,
               title: 'Pencapaian',
-              description: 'Dapatkan lencana spesial setiap kali kamu mencapai milestone streak tertentu.',
+              description:
+                  'Dapatkan lencana spesial setiap kali kamu mencapai milestone streak tertentu.',
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoCard({required IconData icon, required String title, required String description}) {
+class _InfoCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+
+  const _InfoCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(SavaioTheme.spacingXl),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.5)),
+        color: SavaioTheme.surfaceContainerLowOf(context),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
+        border: Border.all(
+          color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: SavaioTheme.primary, size: 24),
-          const SizedBox(width: 16),
+          Icon(
+            icon,
+            color: SavaioTheme.primaryOf(context),
+            size: 24,
+          ),
+          const SizedBox(width: SavaioTheme.spacingL),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                  style: textTheme.titleSmall?.copyWith(
+                    color: SavaioTheme.onSurfaceOf(context),
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SavaioTheme.spacingXs),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: SavaioTheme.onSurfaceVariant,
-                    fontSize: 14,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: SavaioTheme.onSurfaceVariantOf(context),
+                    height: 1.45,
                   ),
                 ),
               ],

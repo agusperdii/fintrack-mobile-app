@@ -64,19 +64,22 @@ class _AnalisaPageState extends State<AnalisaPage> {
         );
 
         return Scaffold(
-          backgroundColor: SavaioTheme.background,
+          backgroundColor: SavaioTheme.backgroundOf(context),
           appBar: AppHeader(
             title: 'Analisa Keuangan',
             showNotification: false,
             actions: [
               if (dashboard.isSyncingTransaction)
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.only(right: 12.0),
+                    padding: const EdgeInsets.only(right: 12.0),
                     child: SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),
@@ -84,7 +87,7 @@ class _AnalisaPageState extends State<AnalisaPage> {
           ),
           body: RefreshIndicator(
             onRefresh: _handleRefresh,
-            color: SavaioTheme.primary,
+            color: Theme.of(context).colorScheme.primary,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               children: [
@@ -111,10 +114,14 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     AppSectionHeader(
                       title: 'Proporsi Pengeluaran',
                       actionLabel: 'Atur Budget',
-                      onActionTap: () => Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => const SpendingTargetListPage())
-                      ),
+                      onActionTap: () {
+                        final currentMonth = sl.dashboardController.data?.targetPeriod ??
+                            "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}";
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => SpendingTargetListPage(initialMonth: currentMonth))
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
                     ...vm.spendingBreakdown.take(5).map((item) => _SpendingBreakdownTile(item: item)),
@@ -156,20 +163,23 @@ class _SpendingBreakdownTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color accentColor;
     try {
       accentColor = Color(int.parse('FF${item.colorHex}', radix: 16));
     } catch (_) {
-      accentColor = SavaioTheme.primary;
+      accentColor = Theme.of(context).colorScheme.primary;
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: SavaioTheme.outlineVariantOf(context).withValues(alpha: isDark ? 0.1 : 0.3),
+        ),
       ),
       child: Row(
         children: [
@@ -191,7 +201,7 @@ class _SpendingBreakdownTile extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: SavaioTheme.onSurface,
+                    color: SavaioTheme.onSurfaceOf(context),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -199,7 +209,7 @@ class _SpendingBreakdownTile extends StatelessWidget {
                   '${item.transactionCount} Transaksi',
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: SavaioTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariantOf(context),
                   ),
                 ),
               ],
@@ -213,7 +223,7 @@ class _SpendingBreakdownTile extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
-                  color: SavaioTheme.onSurface,
+                  color: SavaioTheme.onSurfaceOf(context),
                 ),
               ),
               const SizedBox(height: 4),

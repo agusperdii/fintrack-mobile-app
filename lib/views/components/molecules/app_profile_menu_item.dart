@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppProfileMenuItem extends StatelessWidget {
@@ -9,6 +8,7 @@ class AppProfileMenuItem extends StatelessWidget {
   final bool isDestructive;
   final bool isTop;
   final bool isBottom;
+  final Widget? trailing;
 
   const AppProfileMenuItem({
     super.key,
@@ -18,6 +18,7 @@ class AppProfileMenuItem extends StatelessWidget {
     this.isDestructive = false,
     this.isTop = false,
     this.isBottom = false,
+    this.trailing,
   });
 
   @override
@@ -34,7 +35,7 @@ class AppProfileMenuItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
             border: isTop ? null : Border(
-              top: BorderSide(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+              top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
             ),
           ),
           child: Row(
@@ -44,21 +45,21 @@ class AppProfileMenuItem extends StatelessWidget {
                 children: [
                   Icon(
                     icon, 
-                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.6) : SavaioTheme.onSurfaceVariant, 
+                    color: isDestructive ? Theme.of(context).colorScheme.error.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurfaceVariant, 
                     size: 18
                   ),
                   const SizedBox(width: 16),
                   AppHeading(
                     title,
                     size: AppHeadingSize.subtitle,
-                    color: isDestructive ? SavaioTheme.error.withValues(alpha: 0.8) : SavaioTheme.onSurface,
+                    color: isDestructive ? Theme.of(context).colorScheme.error.withValues(alpha: 0.8) : Theme.of(context).colorScheme.onSurface,
                     isBold: false,
                   ),
                 ],
               ),
-              Icon(
+              trailing ?? Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: SavaioTheme.outline.withValues(alpha: 0.4),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
                 size: 12,
               ),
             ],

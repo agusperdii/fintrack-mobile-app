@@ -32,10 +32,13 @@ class DashboardRecentTransactions extends StatelessWidget {
         if (isLoading)
           _buildSkeleton()
         else if (transactions.isEmpty)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Text('Belum ada transaksi', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'Belum ada transaksi',
+                style: TextStyle(color: SavaioTheme.onSurfaceVariantOf(context)),
+              ),
             ),
           )
         else

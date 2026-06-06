@@ -147,6 +147,7 @@ class ApiClient {
         throw BadRequestException(isJson ? _errorMessage(raw) : 'Request error', response.statusCode);
       case 401:
       case 403:
+        log('Unauthorized access detected for: ${response.request?.url}');
         throw UnauthorizedException(isJson ? _errorMessage(raw) : 'Unauthorized');
       case 404:
         throw NotFoundException(isJson ? _errorMessage(raw) : 'Resource not found', response.statusCode);

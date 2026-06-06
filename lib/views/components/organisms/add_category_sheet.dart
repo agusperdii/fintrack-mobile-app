@@ -4,9 +4,10 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 
 class AddCategorySheet extends StatefulWidget {
+  final String type;
   final Function(String name, String icon) onAdd;
 
-  const AddCategorySheet({super.key, required this.onAdd});
+  const AddCategorySheet({super.key, required this.onAdd, this.type = 'expense'});
 
   @override
   State<AddCategorySheet> createState() => _AddCategorySheetState();
@@ -25,6 +26,8 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isIncome = widget.type.toLowerCase() == 'income';
+
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -32,17 +35,21 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
         left: 24,
         right: 24,
       ),
-      decoration: const BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainerOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppHeading('Tambah Kategori Baru', size: AppHeadingSize.h3),
+          AppHeading('Tambah Kategori ${isIncome ? 'Pemasukan' : 'Pengeluaran'}', size: AppHeadingSize.h3),
           const SizedBox(height: 8),
-          const AppHeading('Sesuaikan dengan kebutuhan mahasiswa kamu!', size: AppHeadingSize.caption, color: SavaioTheme.onSurfaceVariant),
+          AppHeading(
+            isIncome ? 'Catat sumber cuan kamu di sini!' : 'Sesuaikan dengan kebutuhan mahasiswa kamu!',
+            size: AppHeadingSize.caption,
+            color: SavaioTheme.onSurfaceVariantOf(context),
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -54,7 +61,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
                     labelText: 'Emoji',
                     hintText: '🚀',
                     filled: true,
-                    fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    fillColor: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                   textAlign: TextAlign.center,
@@ -70,7 +77,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
                     labelText: 'Nama Kategori',
                     hintText: 'Misal: Fotocopy',
                     filled: true,
-                    fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    fillColor: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                 ),

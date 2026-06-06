@@ -89,7 +89,11 @@ class AuthController extends ChangeNotifier {
     await _clearSession();
   }
 
-  Future<void> forceLogout() => _clearSession();
+  Future<void> forceLogout() async {
+    debugPrint('[AuthController] Force logout triggered due to invalid session');
+    // await sl.notificationSupabaseService.dispose(); // Optional: or just let it be handled by clear session
+    await _clearSession();
+  }
 
   /// POST /auth/refresh — called by ApiClient on 401
   Future<bool> refreshAccessToken() async {
@@ -98,13 +102,15 @@ class AuthController extends ChangeNotifier {
       final data = await _unauthClient().post(
         '${ApiConfig.baseUrl}/auth/refresh',
         body: {'refresh_token': _refreshToken},
-      );
+      ).timeout(const Duration(seconds: 5));
       _applyTokens(data);
       await _saveSession();
       notifyListeners();
       return _token != null;
     } catch (e) {
       debugPrint('Token refresh failed: $e');
+      // If refresh fails, it's safer to clear everything to prevent loading loops
+      await forceLogout();
       return false;
     }
   }

@@ -60,7 +60,7 @@ class _SummaryPageState extends State<SummaryPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
-          backgroundColor: SavaioTheme.error,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -88,19 +88,22 @@ class _SummaryPageState extends State<SummaryPage> {
     final activeMonths = summary?.where((m) => m.hasTransactions).toList() ?? [];
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       appBar: AppHeader(
         title: 'Laporan Tahunan',
         showNotification: false,
         actions: [
           if (isSyncing || isLoading)
-            const Center(
+            Center(
               child: Padding(
-                padding: EdgeInsets.only(right: 12.0),
+                padding: const EdgeInsets.only(right: 12.0),
                 child: SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
             ),
@@ -108,9 +111,9 @@ class _SummaryPageState extends State<SummaryPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () => controller.fetchMonthlySummary(year: selectedYear),
-        color: SavaioTheme.primary,
+        color: Theme.of(context).colorScheme.primary,
         child: summary == null
-            ? const Center(child: CircularProgressIndicator(color: SavaioTheme.primary))
+            ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
             : CustomScrollView(
                 slivers: [
                   // Year Selector & Total Summary
@@ -142,10 +145,14 @@ class _SummaryPageState extends State<SummaryPage> {
 
                   // Active Months Header
                   if (activeMonths.isNotEmpty)
-                    const SliverToBoxAdapter(
+                    SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: AppHeading('AKTIVITAS BULANAN', size: AppHeadingSize.caption, color: SavaioTheme.onSurfaceVariant, isBold: true),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        child: AppHeading(
+                          'AKTIVITAS BULANAN',
+                          size: AppHeadingSize.caption,
+                          isBold: true,
+                        ),
                       ),
                     ),
 
@@ -178,11 +185,15 @@ class _SummaryPageState extends State<SummaryPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.folder_off_outlined, size: 48, color: SavaioTheme.onSurfaceVariant),
+                            Icon(
+                              Icons.folder_off_outlined,
+                              size: 48,
+                              color: SavaioTheme.onSurfaceVariantOf(context),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'Belum ada aktivitas transaksi ditahun ini',
-                              style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariant),
+                              style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariantOf(context)),
                             ),
                           ],
                         ),
@@ -209,10 +220,10 @@ class _YearNavButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: SavaioTheme.surfaceContainerHigh,
+          color: SavaioTheme.surfaceContainerHighOf(context),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: SavaioTheme.primary, size: 20),
+        child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
       ),
     );
   }
@@ -233,9 +244,9 @@ class _YearlyTotalCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,10 +254,14 @@ class _YearlyTotalCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const AppHeading('CASHFLOW BERSIH', size: AppHeadingSize.caption, color: SavaioTheme.onSurfaceVariant, isBold: true),
+              AppHeading(
+                'CASHFLOW BERSIH',
+                size: AppHeadingSize.caption,
+                isBold: true,
+              ),
               Icon(
                 net >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                color: net >= 0 ? SavaioTheme.tertiary : SavaioTheme.error,
+                color: net >= 0 ? SavaioTheme.tertiaryOf(context) : Theme.of(context).colorScheme.error,
               ),
             ],
           ),
@@ -256,15 +271,15 @@ class _YearlyTotalCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: SavaioTheme.background.withValues(alpha: 0.3),
+              color: SavaioTheme.backgroundOf(context).withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _YearStat(label: 'Pemasukan', value: totalIn, color: SavaioTheme.tertiary, currency: currency),
-                Container(width: 1, height: 30, color: SavaioTheme.outlineVariant.withValues(alpha: 0.2)),
-                _YearStat(label: 'Pengeluaran', value: totalOut, color: SavaioTheme.error, currency: currency),
+                _YearStat(label: 'Pemasukan', value: totalIn, color: SavaioTheme.tertiaryOf(context), currency: currency),
+                Container(width: 1, height: 30, color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2)),
+                _YearStat(label: 'Pengeluaran', value: totalOut, color: Theme.of(context).colorScheme.error, currency: currency),
               ],
             ),
           ),
@@ -286,7 +301,15 @@ class _YearStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(label.toUpperCase(), style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: SavaioTheme.onSurfaceVariant, letterSpacing: 0.5)),
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: SavaioTheme.onSurfaceVariantOf(context),
+            letterSpacing: 0.5,
+          ),
+        ),
         const SizedBox(height: 6),
         Text(
           SavaioTheme.formatCurrencyShorthand(value, currency: currency),
@@ -309,9 +332,9 @@ class _MonthlySummaryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
       ),
       child: InkWell(
         onTap: () {
@@ -335,10 +358,10 @@ class _MonthlySummaryCard extends StatelessWidget {
                     child: Text(
                       model.label.split(' ').first.toUpperCase(),
                       style: GoogleFonts.inter(
-                        fontSize: 11, 
-                        fontWeight: FontWeight.w900, 
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
-                        color: SavaioTheme.primary.withValues(alpha: 0.6)
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
                       ),
                     ),
                   ),
@@ -346,7 +369,7 @@ class _MonthlySummaryCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: SavaioTheme.background.withValues(alpha: 0.3),
+                        color: SavaioTheme.backgroundOf(context).withValues(alpha: 0.3),
                         shape: BoxShape.circle,
                       ),
                       child: Text(model.topCategory!.emoji, style: GoogleFonts.inter(fontSize: 14)),
@@ -358,7 +381,15 @@ class _MonthlySummaryCard extends StatelessWidget {
                 SavaioTheme.formatCurrencyShorthand(model.totalExpense, isExpense: true, currency: currency),
                 size: AppHeadingSize.h2,
               ),
-              Text('PENGELUARAN', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: SavaioTheme.onSurfaceVariant, letterSpacing: 0.5)),
+              Text(
+                'PENGELUARAN',
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: SavaioTheme.onSurfaceVariantOf(context),
+                  letterSpacing: 0.5,
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -385,10 +416,13 @@ class _TrendBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = isPositive
+        ? SavaioTheme.tertiaryOf(context)
+        : Theme.of(context).colorScheme.error;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: (isPositive ? SavaioTheme.tertiary : SavaioTheme.error).withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
@@ -397,7 +431,7 @@ class _TrendBadge extends StatelessWidget {
           Icon(
             isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
             size: 10,
-            color: isPositive ? SavaioTheme.tertiary : SavaioTheme.error,
+            color: color,
           ),
           const SizedBox(width: 4),
           Text(
@@ -405,7 +439,7 @@ class _TrendBadge extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: isPositive ? SavaioTheme.tertiary : SavaioTheme.error,
+              color: color,
             ),
           ),
         ],
@@ -425,7 +459,7 @@ class _ExportButton extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: 'Download Laporan',
       offset: const Offset(0, 45),
-      color: SavaioTheme.surfaceContainerHighest,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       onSelected: (value) {
         if (value == 'xlsx') onXlsx();
@@ -434,14 +468,14 @@ class _ExportButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: SavaioTheme.primary.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)),
+          border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.file_download_outlined,
           size: 18,
-          color: SavaioTheme.primary,
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
       itemBuilder: (context) => [

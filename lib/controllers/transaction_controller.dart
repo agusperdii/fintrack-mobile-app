@@ -91,6 +91,28 @@ class TransactionController extends ChangeNotifier {
     _isAddingTransaction = true;
     _safeNotifyListeners(this);
 
+    // Find category metadata for optimistic UI
+    Category? optimisticCategory;
+    try {
+      final catData = sl.budgetController.categories.firstWhere((c) => c['id'] == categoryId);
+      optimisticCategory = Category(
+        id: categoryId,
+        name: catData['name'].toString(),
+        type: catData['type']?.toString() ?? type.toLowerCase(),
+        emoji: catData['icon']?.toString() ?? '📦',
+        color: catData['color']?.toString() ?? '#81ECFF',
+      );
+    } catch (_) {
+      // Fallback if category not found locally
+      optimisticCategory = Category(
+        id: categoryId,
+        name: 'Transaksi',
+        type: type.toLowerCase(),
+        emoji: '📦',
+        color: '#81ECFF',
+      );
+    }
+
     // Create optimistic transaction
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final newTransaction = Transaction(
@@ -103,6 +125,7 @@ class TransactionController extends ChangeNotifier {
       source: source,
       date: date ?? DateTime.now(),
       syncStatus: SyncStatus.pending,
+      category: optimisticCategory,
     );
 
     // 1. Optimistic UI update

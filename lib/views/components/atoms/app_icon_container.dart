@@ -25,25 +25,28 @@ class AppIconContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final effectiveColor = color ?? colorScheme.primary;
+
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: gradient == null ? (color ?? SavaioTheme.primary).withValues(alpha: opacity) : null,
+        color: gradient == null ? effectiveColor.withValues(alpha: opacity) : null,
         gradient: gradient,
         shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(SavaioTheme.radiusM) : null,
       ),
-      child: _buildIcon(),
+      child: _buildIcon(effectiveColor),
     );
   }
 
-  Widget _buildIcon() {
+  Widget _buildIcon(Color effectiveColor) {
     if (icon is IconData) {
       return Icon(
         icon as IconData,
-        color: iconColor ?? color ?? SavaioTheme.primary,
+        color: iconColor ?? effectiveColor,
         size: size * 0.5,
       );
     } else if (icon is String) {

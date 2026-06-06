@@ -13,12 +13,13 @@ class AppSmartInsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color accentColor;
     IconData icon;
 
     switch (vm.severity) {
       case 'danger':
-        accentColor = SavaioTheme.error;
+        accentColor = isDark ? SavaioTheme.error : SavaioTheme.lightError;
         icon = Icons.error_outline_rounded;
         break;
       case 'warning':
@@ -27,7 +28,7 @@ class AppSmartInsightCard extends StatelessWidget {
         break;
       case 'info':
       default:
-        accentColor = SavaioTheme.primary;
+        accentColor = Theme.of(context).colorScheme.primary;
         icon = Icons.lightbulb_outline_rounded;
         break;
     }
@@ -35,7 +36,7 @@ class AppSmartInsightCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accentColor.withValues(alpha: 0.2)),
       ),
@@ -59,7 +60,7 @@ class AppSmartInsightCard extends StatelessWidget {
           AppHeading(
             vm.description,
             size: AppHeadingSize.subtitle,
-            color: SavaioTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: false,
           ),
         ],

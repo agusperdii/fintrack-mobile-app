@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppBadgeVariant { success, error, warning, neutral }
 
@@ -18,12 +17,13 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     Color color;
     switch (variant) {
-      case AppBadgeVariant.success: color = SavaioTheme.tertiary; break;
-      case AppBadgeVariant.error: color = SavaioTheme.error; break;
+      case AppBadgeVariant.success: color = colorScheme.tertiary; break;
+      case AppBadgeVariant.error: color = colorScheme.error; break;
       case AppBadgeVariant.warning: color = Colors.orange; break;
-      case AppBadgeVariant.neutral: color = SavaioTheme.onSurfaceVariant; break;
+      case AppBadgeVariant.neutral: color = colorScheme.onSurfaceVariant; break;
     }
 
     return Container(

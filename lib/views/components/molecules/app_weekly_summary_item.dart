@@ -24,9 +24,9 @@ class AppWeeklySummaryItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: SavaioTheme.surfaceContainerLow,
+          color: SavaioTheme.surfaceContainerLowOf(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+          border: Border.all(color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,7 +44,6 @@ class AppWeeklySummaryItem extends StatelessWidget {
                 AppHeading(
                   amount,
                   size: AppHeadingSize.subtitle,
-                  color: SavaioTheme.onSurface,
                   isBold: true,
                 ),
               ],

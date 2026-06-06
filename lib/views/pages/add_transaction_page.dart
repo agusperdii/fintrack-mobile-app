@@ -16,6 +16,7 @@ import 'package:savaio/views/components/molecules/transaction_amount_input.dart'
 import 'package:savaio/views/components/molecules/transaction_type_toggle.dart';
 import 'package:savaio/views/components/organisms/transaction_category_grid.dart';
 import 'package:savaio/views/components/organisms/add_category_sheet.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
 
 class AddTransactionPage extends StatefulWidget {
@@ -60,17 +61,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     );
     
     // Initial category logic
-    final categories = sl.budgetController.categories;
+    final categories = sl.budgetController.categories.where(
+      (c) => c['type'].toString().toLowerCase() == _type.toLowerCase()
+    ).toList();
     final initialName = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
     
     try {
       final cat = categories.firstWhere(
-        (c) => c['name'].toString().toLowerCase() == initialName.toLowerCase()
+        (c) => c['name'].toString().toLowerCase() == initialName.toLowerCase(),
+        orElse: () => categories.first,
       );
       _selectedCategoryId = cat['id']?.toString();
       _selectedCategoryName = cat['name'].toString();
     } catch (_) {
-      _selectedCategoryName = initialName;
+      if (categories.isNotEmpty) {
+        _selectedCategoryId = categories.first['id']?.toString();
+        _selectedCategoryName = categories.first['name'].toString();
+      } else {
+        _selectedCategoryName = initialName;
+      }
     }
   }
 
@@ -163,7 +172,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menyimpan transaksi: $e'), backgroundColor: SavaioTheme.error),
+          SnackBar(content: Text('Gagal menyimpan transaksi: $e'), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     }
@@ -175,8 +184,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddCategorySheet(
+        type: _type,
         onAdd: (name, icon) async {
-          final id = await sl.budgetController.addCustomCategory(name, icon);
+          final id = await sl.budgetController.addCustomCategory(name, icon, type: _type.toLowerCase());
           if (mounted) {
             setState(() {
               _selectedCategoryId = id;
@@ -191,9 +201,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   @override
   Widget build(BuildContext context) {
     final budgetController = context.watch<BudgetController>();
-    
+
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       appBar: _buildAppBar(),
       body: Stack(
         children: [
@@ -209,7 +219,27 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 const SizedBox(height: 32),
                 TransactionTypeToggle(
                   currentType: _type,
-                  onTypeChanged: (type) => setState(() => _type = type),
+                  onTypeChanged: (type) {
+                    setState(() {
+                      _type = type;
+                      // Update categories based on new type
+                      final filtered = budgetController.categories.where(
+                        (c) => c['type'].toString().toLowerCase() == type.toLowerCase()
+                      ).toList();
+                      
+                      // If current selected category is not in the filtered list, pick first one
+                      if (_selectedCategoryId != null) {
+                        final isStillValid = filtered.any((c) => c['id'] == _selectedCategoryId);
+                        if (!isStillValid && filtered.isNotEmpty) {
+                          _selectedCategoryId = filtered.first['id']?.toString();
+                          _selectedCategoryName = filtered.first['name'].toString();
+                        }
+                      } else if (filtered.isNotEmpty) {
+                        _selectedCategoryId = filtered.first['id']?.toString();
+                        _selectedCategoryName = filtered.first['name'].toString();
+                      }
+                    });
+                  },
                 ),
                 const SizedBox(height: 40),
                 _buildTitleSection(),
@@ -217,13 +247,46 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 _buildDateTimeSection(),
                 const SizedBox(height: 32),
                 TransactionCategoryGrid(
-                  categories: budgetController.categories,
+                  categories: budgetController.categories.where(
+                    (c) => c['type'].toString().toLowerCase() == _type.toLowerCase()
+                  ).toList(),
                   selectedCategoryId: _selectedCategoryId,
                   onCategorySelected: (cat) {
                     setState(() {
                       _selectedCategoryId = cat['id']?.toString();
                       _selectedCategoryName = cat['name'].toString();
                     });
+                  },
+                  onDeleteCategory: (id) async {
+                    final success = await sl.budgetController.deleteCategory(id);
+                    if (!context.mounted) return;
+                    if (success) {
+                      AppSnackBar.show(
+                        context, 
+                        'Kategori berhasil dihapus',
+                        type: AppSnackBarType.success,
+                        minimal: true,
+                        duration: const Duration(milliseconds: 500),
+                      );
+                      // Reset selection if deleted category was selected
+                      if (_selectedCategoryId == id) {
+                        final remaining = budgetController.categories.where(
+                          (c) => c['type'].toString().toLowerCase() == _type.toLowerCase()
+                        ).toList();
+                        if (remaining.isNotEmpty) {
+                          setState(() {
+                            _selectedCategoryId = remaining.first['id']?.toString();
+                            _selectedCategoryName = remaining.first['name'].toString();
+                          });
+                        }
+                      }
+                    } else {
+                      AppSnackBar.show(
+                        context, 
+                        sl.budgetController.error ?? 'Gagal menghapus kategori',
+                        type: AppSnackBarType.error,
+                      );
+                    }
                   },
                   onAddCategoryTap: _showAddCategorySheet,
                 ),
@@ -243,17 +306,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.close, color: SavaioTheme.primary),
-        onPressed: () => Navigator.pop(context), 
+        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
+        onPressed: () => Navigator.pop(context),
       ),
-      title: const AppHeading(
+      title: AppHeading(
         'Tambah Transaksi',
         size: AppHeadingSize.h3,
-        color: SavaioTheme.onSurface,
       ),
       actions: [
         IconButton(
@@ -263,7 +325,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               MaterialPageRoute(builder: (context) => const OcrScanPage()),
             );
           },
-          icon: const Icon(Icons.document_scanner_outlined, color: SavaioTheme.primary),
+          icon: Icon(Icons.document_scanner_outlined, color: Theme.of(context).colorScheme.primary),
           tooltip: 'Scan Struk (OCR)',
         ),
         const SizedBox(width: 8),
@@ -274,16 +336,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   Widget _buildTitleSection() {
     return _buildBentoContainer(
       icon: Icons.title_rounded,
-      iconColor: SavaioTheme.primary,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: 'Judul Transaksi',
       child: TextField(
         controller: _titleController,
-        style: GoogleFonts.inter(fontSize: 13, color: SavaioTheme.onSurface),
+        style: GoogleFonts.inter(fontSize: 13, color: SavaioTheme.onSurfaceOf(context)),
         decoration: InputDecoration(
           hintText: 'Misal: Makan Siang di Kantin',
-          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.5)),
           border: InputBorder.none,
-          fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          fillColor: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
           filled: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           enabledBorder: OutlineInputBorder(
@@ -292,7 +354,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
           ),
         ),
       ),
@@ -302,7 +364,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   Widget _buildDateTimeSection() {
     return _buildBentoContainer(
       icon: Icons.calendar_today,
-      iconColor: SavaioTheme.secondary,
+      iconColor: Theme.of(context).colorScheme.secondary,
       title: 'Waktu & Tanggal',
       child: Column(
         children: [
@@ -323,19 +385,20 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildNotesSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return _buildBentoContainer(
       icon: Icons.description,
-      iconColor: SavaioTheme.tertiary,
+      iconColor: isDark ? SavaioTheme.tertiary : SavaioTheme.lightTertiary,
       title: 'Catatan Tambahan',
       child: TextField(
         controller: _descriptionController,
         maxLines: 3,
-        style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurface),
+        style: GoogleFonts.inter(fontSize: 12, color: SavaioTheme.onSurfaceOf(context)),
         decoration: InputDecoration(
           hintText: 'Makan siang bareng temen...',
-          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          hintStyle: TextStyle(color: SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.5)),
           border: InputBorder.none,
-          fillColor: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          fillColor: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
           filled: true,
           contentPadding: const EdgeInsets.all(12),
           enabledBorder: OutlineInputBorder(
@@ -344,7 +407,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: SavaioTheme.primary.withValues(alpha: 0.3)),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
           ),
         ),
       ),
@@ -361,7 +424,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainer,
+        color: SavaioTheme.surfaceContainerOf(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -391,9 +454,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
-          border: onTap != null ? Border.all(color: SavaioTheme.primary.withValues(alpha: 0.2)) : null,
+          border: onTap != null
+              ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2))
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -401,11 +466,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurface),
+                style: GoogleFonts.inter(fontSize: 11, color: SavaioTheme.onSurfaceOf(context)),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(icon, color: SavaioTheme.onSurfaceVariant, size: 14),
+            Icon(icon, color: SavaioTheme.onSurfaceVariantOf(context), size: 14),
           ],
         ),
       ),
@@ -413,8 +478,10 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildProgressCard() {
-    return const GlassCard(
-      padding: EdgeInsets.all(24),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tertiaryColor = isDark ? SavaioTheme.tertiary : SavaioTheme.lightTertiary;
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
       borderRadius: 16,
       child: Column(
         children: [
@@ -427,27 +494,26 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                   AppHeading(
                     'Progress Tabungan',
                     size: AppHeadingSize.subtitle,
-                    color: SavaioTheme.tertiary,
+                    color: tertiaryColor,
                     isBold: true,
                   ),
                   AppHeading(
                     'Sisa budget makan kamu masih aman!',
                     size: AppHeadingSize.caption,
-                    color: SavaioTheme.onSurfaceVariant,
                     isBold: false,
                   ),
                 ],
               ),
-              AppHeading(
+              const AppHeading(
                 '82%',
                 size: AppHeadingSize.h3,
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           AppProgressBar(
             value: 0.82,
-            color: SavaioTheme.tertiary,
+            color: tertiaryColor,
             height: 6,
           ),
         ],
@@ -456,6 +522,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Widget _buildSubmitButton() {
+    final bgColor = SavaioTheme.backgroundOf(context);
     return Positioned(
       bottom: 0,
       left: 0,
@@ -464,7 +531,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [SavaioTheme.background.withValues(alpha: 0), SavaioTheme.background],
+            colors: [bgColor.withValues(alpha: 0), bgColor],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

@@ -5,6 +5,7 @@ import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/controllers/profile_controller.dart';
 import 'package:savaio/models/app_data.dart';
+import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/components/organisms/app_balance_card.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/organisms/app_weekly_pulse_chart.dart';
@@ -17,7 +18,8 @@ import 'package:savaio/views/pages/transaction_detail_page.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
 import 'package:savaio/views/pages/add_transaction_page.dart';
 import 'package:savaio/views/pages/streak_page.dart';
-import 'package:savaio/views/components/organisms/nudge_overlay.dart';
+import 'package:savaio/views/pages/spending_target_page.dart';
+import 'package:savaio/views/components/organisms/notifications/notification_popup_organism.dart';
 import 'package:savaio/views/components/molecules/daily_checkin_card.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
 
@@ -39,9 +41,29 @@ class _DashboardPageState extends State<DashboardPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notification = sl.notificationController.latestUnreadPopup;
       if (notification != null && mounted) {
-        AppNotificationOverlay.show(context, notification, () {
-          sl.notificationController.markAsRead(notification.id);
-        });
+        final isBudgetNotif = notification.type == NotificationType.budgetReached || 
+                             notification.type == NotificationType.budgetExceeded;
+        
+        NotificationPopupOrganism.show(
+          context, 
+          notification, 
+          onRead: () => sl.notificationController.markAsRead(notification.id),
+          actionLabel: isBudgetNotif ? 'LIHAT BUDGET' : null,
+          onAction: isBudgetNotif ? () {
+            sl.notificationController.markAsRead(notification.id);
+            final categoryId = notification.metadata?['category_id']?.toString();
+            final month = notification.metadata?['month']?.toString();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SpendingTargetPage(
+                  initialCategoryId: categoryId,
+                  initialMonth: month,
+                ),
+              ),
+            );
+          } : null,
+        );
       }
     });
   }
@@ -74,16 +96,16 @@ class _DashboardPageState extends State<DashboardPage> {
     final checkInStatus = context.select<DashboardController, dynamic>((c) => c.checkInStatus);
 
     if (isLoading && !hasData) {
-      return const Scaffold(
-        backgroundColor: SavaioTheme.background,
-        body: Center(
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
           child: CircularProgressIndicator(color: SavaioTheme.primary),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,

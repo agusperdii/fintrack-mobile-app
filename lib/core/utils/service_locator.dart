@@ -6,6 +6,8 @@ import 'package:savaio/repositories/data_sources/remote/analytics_remote_data_so
 import 'package:savaio/repositories/data_sources/remote/dashboard_remote_data_source.dart';
 import 'package:savaio/repositories/data_sources/remote/category_remote_data_source.dart';
 
+import 'package:savaio/services/notification_supabase_service.dart';
+
 // Domain Repositories
 import 'package:savaio/repositories/transaction_repository.dart';
 import 'package:savaio/repositories/notification_repository.dart';
@@ -26,8 +28,10 @@ import 'package:savaio/services/analytics_service.dart';
 
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/controllers/ocr_controller.dart';
+import 'package:savaio/controllers/theme_controller.dart';
 import 'package:savaio/repositories/data_sources/ocr_data_source.dart';
 import 'package:savaio/repositories/ocr_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceLocator {
   static final ServiceLocator _instance = ServiceLocator._internal();
@@ -55,6 +59,7 @@ class ServiceLocator {
   // Domain Controllers
   late final TransactionController transactionController;
   late final NotificationController notificationController;
+  late final NotificationSupabaseService notificationSupabaseService;
   late final DashboardController dashboardController;
   late final BudgetController budgetController;
   late final ProfileController profileController;
@@ -63,11 +68,13 @@ class ServiceLocator {
   
   late final AuthController authController;
   late final OcrController ocrController;
+  late final ThemeController themeController;
   late final OcrRepository ocrRepository;
   late final OcrDataSource ocrDataSource;
 
-  void setup() {
+  void setup(SharedPreferences prefs) {
     authController = AuthController();
+    themeController = ThemeController(prefs);
     
     apiClient = ApiClient(authController: authController);
 
@@ -89,7 +96,8 @@ class ServiceLocator {
 
     // Initialize Domain Controllers
     transactionController = TransactionController(transactionRepository);
-    notificationController = NotificationController(notificationRepository);
+    notificationSupabaseService = NotificationSupabaseService();
+    notificationController = NotificationController(notificationRepository, notificationSupabaseService);
     dashboardController = DashboardController(dashboardRepository);
     budgetController = BudgetController(budgetRepository, categoryRepository);
     profileController = ProfileController(profileRepository);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppHeadingSize { h1, h2, h3, subtitle, caption }
 
@@ -52,7 +51,7 @@ class AppHeading extends StatelessWidget {
       style: GoogleFonts.inter(
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color ?? SavaioTheme.onSurface,
+        color: color ?? Theme.of(context).colorScheme.onSurface,
         letterSpacing: letterSpacing,
       ),
     );

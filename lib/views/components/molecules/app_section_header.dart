@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 class AppSectionHeader extends StatelessWidget {
   final String title;
@@ -30,7 +29,7 @@ class AppSectionHeader extends StatelessWidget {
             child: AppHeading(
               actionLabel!,
               size: AppHeadingSize.subtitle,
-              color: SavaioTheme.primary,
+              color: Theme.of(context).colorScheme.primary,
               isBold: true,
             ),
           ),

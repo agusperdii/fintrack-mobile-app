@@ -28,14 +28,15 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
     // Find max value for normalization or maxY
     final double maxValue = widget.values.isEmpty ? 1.0 : widget.values.reduce((a, b) => a > b ? a : b);
     final double displayMax = maxValue == 0 ? 1.0 : maxValue * 1.2; // Add some headroom
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainerLowOf(context),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
+          color: SavaioTheme.outlineVariantOf(context).withValues(alpha: isDark ? 0.1 : 0.3),
         ),
       ),
       child: Column(
@@ -47,10 +48,10 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppHeading(
+                  AppHeading(
                     'WEEKLY PULSE',
                     size: AppHeadingSize.caption,
-                    color: SavaioTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariantOf(context),
                     isBold: true,
                   ),
                   const SizedBox(height: 4),
@@ -59,12 +60,16 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                       AppHeading(
                         'Growth ${widget.growth >= 0 ? "+" : ""}${widget.growth.toStringAsFixed(1)}%',
                         size: AppHeadingSize.h3,
-                        color: widget.growth >= 0 ? SavaioTheme.tertiary : SavaioTheme.error,
+                        color: widget.growth >= 0
+                            ? SavaioTheme.tertiaryOf(context)
+                            : SavaioTheme.errorOf(context),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         widget.growth >= 0 ? Icons.trending_up : Icons.trending_down,
-                        color: widget.growth >= 0 ? SavaioTheme.tertiary : SavaioTheme.error,
+                        color: widget.growth >= 0
+                            ? SavaioTheme.tertiaryOf(context)
+                            : SavaioTheme.errorOf(context),
                         size: 20,
                       ),
                     ],
@@ -74,12 +79,12 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: SavaioTheme.surfaceContainerHigh,
+                  color: SavaioTheme.surfaceContainerHighOf(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.bar_chart_rounded,
-                  color: SavaioTheme.primary.withValues(alpha: 0.8),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                   size: 20,
                 ),
               ),
@@ -106,14 +111,14 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                     });
                   },
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => SavaioTheme.surfaceContainerHighest,
+                    getTooltipColor: (_) => SavaioTheme.surfaceContainerHighestOf(context),
                     tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
                         SavaioTheme.formatCurrency(rod.toY, currency: currency),
-                        const TextStyle(
-                          color: SavaioTheme.primary,
+                        TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -137,7 +142,9 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                           child: Text(
                             days[value.toInt() % 7],
                             style: TextStyle(
-                              color: isTouched ? SavaioTheme.primary : SavaioTheme.onSurfaceVariant,
+                              color: isTouched
+                                  ? Theme.of(context).colorScheme.primary
+                                  : SavaioTheme.onSurfaceVariantOf(context),
                               fontSize: 10,
                               fontWeight: isTouched ? FontWeight.bold : FontWeight.normal,
                             ),
@@ -153,18 +160,21 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                 barGroups: widget.values.asMap().entries.map((entry) {
                   final isMax = entry.value == maxValue && maxValue > 0;
                   final isTouched = entry.key == touchedIndex;
-                  
+                  final tertiary = SavaioTheme.tertiaryOf(context);
+                  final primary = Theme.of(context).colorScheme.primary;
+                  final secondary = Theme.of(context).colorScheme.secondary;
+
                   return BarChartGroupData(
                     x: entry.key,
                     barRods: [
                       BarChartRodData(
                         toY: entry.value == 0 ? 0.1 : entry.value,
                         gradient: LinearGradient(
-                          colors: isMax 
-                              ? [SavaioTheme.tertiary, SavaioTheme.tertiary.withValues(alpha: 0.7)]
+                          colors: isMax
+                              ? [tertiary, tertiary.withValues(alpha: 0.7)]
                               : isTouched
-                                ? [SavaioTheme.primary, SavaioTheme.primary.withValues(alpha: 0.7)]
-                                : [SavaioTheme.secondary, SavaioTheme.secondary.withValues(alpha: 0.7)],
+                                ? [primary, primary.withValues(alpha: 0.7)]
+                                : [secondary, secondary.withValues(alpha: 0.7)],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                         ),
@@ -173,7 +183,7 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: displayMax,
-                          color: SavaioTheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          color: SavaioTheme.surfaceContainerHighestOf(context).withValues(alpha: 0.5),
                         ),
                       ),
                     ],
@@ -187,9 +197,12 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegendItem('Tertinggi', SavaioTheme.tertiary),
+              _buildLegendItem(
+                'Tertinggi',
+                SavaioTheme.tertiaryOf(context),
+              ),
               const SizedBox(width: 24),
-              _buildLegendItem('Harian', SavaioTheme.secondary),
+              _buildLegendItem('Harian', Theme.of(context).colorScheme.secondary),
             ],
           ),
         ],
@@ -211,8 +224,8 @@ class _AppWeeklyPulseChartState extends State<AppWeeklyPulseChart> {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
-            color: SavaioTheme.onSurfaceVariant,
+          style: TextStyle(
+            color: SavaioTheme.onSurfaceVariantOf(context),
             fontSize: 10,
           ),
         ),

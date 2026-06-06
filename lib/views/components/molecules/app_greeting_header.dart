@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 
 class AppGreetingHeader extends StatelessWidget {
   final String userName;
@@ -16,10 +15,10 @@ class AppGreetingHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppHeading('Hi, $userName!', size: AppHeadingSize.h2),
-        const AppHeading(
+        AppHeading(
           'Selamat Datang!', 
           size: AppHeadingSize.subtitle, 
-          color: SavaioTheme.onSurfaceVariant,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           isBold: false,
         ),
       ],

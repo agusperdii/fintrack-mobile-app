@@ -56,7 +56,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      backgroundColor: transparent ? Colors.transparent : SavaioTheme.background,
+      backgroundColor: transparent ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       scrolledUnderElevation: 0,
       toolbarHeight: kToolbarHeight + SavaioTheme.spacingM,
@@ -87,11 +87,11 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.notifications_none_rounded, color: SavaioTheme.primary, size: 20),
+                        icon: Icon(Icons.notifications_none_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
                         onPressed: onNotificationTap,
                         padding: EdgeInsets.zero,
                       ),
@@ -103,9 +103,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: SavaioTheme.error,
+                            color: Theme.of(context).colorScheme.error,
                             shape: BoxShape.circle,
-                            border: Border.all(color: SavaioTheme.background, width: 2),
+                            border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
                           ),
                           constraints: const BoxConstraints(
                             minWidth: 18,

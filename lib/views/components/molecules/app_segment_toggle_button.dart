@@ -21,13 +21,13 @@ class AppSegmentToggleButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive ? SavaioTheme.primary : Colors.transparent,
+          color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(100),
         ),
         child: AppHeading(
           label.toUpperCase(),
           size: AppHeadingSize.caption,
-          color: isActive ? SavaioTheme.onPrimaryFixed : SavaioTheme.onSurfaceVariant,
+          color: isActive ? SavaioTheme.onPrimaryFixed : Theme.of(context).colorScheme.onSurfaceVariant,
           isBold: true,
         ),
       ),

@@ -26,25 +26,26 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     Color bgColor;
     Color textColor;
     
     switch (variant) {
       case AppButtonVariant.primary:
-        bgColor = SavaioTheme.primary;
-        textColor = SavaioTheme.onPrimaryFixed;
+        bgColor = colorScheme.primary;
+        textColor = colorScheme.onPrimary;
         break;
       case AppButtonVariant.secondary:
-        bgColor = SavaioTheme.surfaceContainerHighest;
-        textColor = SavaioTheme.onSurface;
+        bgColor = colorScheme.surfaceContainerHighest;
+        textColor = colorScheme.onSurface;
         break;
       case AppButtonVariant.error:
-        bgColor = SavaioTheme.error;
+        bgColor = colorScheme.error;
         textColor = Colors.white;
         break;
       case AppButtonVariant.ghost:
         bgColor = Colors.transparent;
-        textColor = SavaioTheme.primary;
+        textColor = colorScheme.primary;
         break;
     }
 
@@ -60,7 +61,7 @@ class AppButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: small ? 8 : 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusFull)),
           side: variant == AppButtonVariant.ghost 
-            ? const BorderSide(color: SavaioTheme.primary, width: 1.5)
+            ? BorderSide(color: colorScheme.primary, width: 1.5)
             : BorderSide.none,
         ),
         child: isLoading

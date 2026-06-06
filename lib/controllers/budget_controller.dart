@@ -137,6 +137,7 @@ class BudgetController extends ChangeNotifier {
         'icon': cat.icon,
         'type': cat.type,
         'isEmoji': true,
+        'isDefault': cat.isDefault,
       }).toList();
 
       _isInitialLoaded = true;
@@ -315,23 +316,27 @@ class BudgetController extends ChangeNotifier {
     }
   }
 
-  Future<String?> addCustomCategory(String name, String icon) async {
+  Future<String?> addCustomCategory(String name, String icon, {String type = 'expense'}) async {
     if (name.isEmpty || icon.isEmpty) return null;
     
     final searchKey = ParserUtils.normalizeCategory(name);
     try {
-      final existing = _categories.firstWhere((c) => ParserUtils.normalizeCategory(c['name'] as String) == searchKey);
+      final existing = _categories.firstWhere((c) => 
+        ParserUtils.normalizeCategory(c['name'] as String) == searchKey &&
+        c['type'].toString().toLowerCase() == type.toLowerCase()
+      );
       return existing['id']?.toString();
     } catch (_) {}
 
     try {
-      final newCat = await _categoryRepository.createCategory(name, icon);
+      final newCat = await _categoryRepository.createCategory(name, icon, type: type);
       final catMap = <String, dynamic>{
         'id': newCat.id,
         'name': newCat.name,
         'icon': newCat.icon,
         'type': newCat.type,
         'isEmoji': true,
+        'isDefault': newCat.isDefault,
       };
       _categories = [..._categories, catMap];
       notifyListeners();
@@ -339,6 +344,27 @@ class BudgetController extends ChangeNotifier {
     } catch (e) {
       _logDebug('Error adding categoryId: $e');
       return null;
+    }
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    try {
+      // Find category to check if it's default
+      final cat = _categories.firstWhere((c) => c['id'] == id);
+      if (cat['isDefault'] == true) {
+        _error = 'Kategori default tidak bisa dihapus';
+        notifyListeners();
+        return false;
+      }
+
+      await _categoryRepository.deleteCategory(id);
+      _categories = _categories.where((c) => c['id'] != id).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Gagal menghapus kategori: ${e.toString()}';
+      notifyListeners();
+      return false;
     }
   }
 

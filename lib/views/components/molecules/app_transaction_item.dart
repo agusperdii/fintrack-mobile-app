@@ -20,19 +20,23 @@ class AppTransactionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isExpense = transaction.type == TransactionType.expense;
     final budgetController = context.watch<BudgetController>();
     
-    // Use emoji from category object if available, otherwise fallback to budgetController lookup by name
+    // Use emoji from category object if available, otherwise fallback to budgetController lookup by id
     final categoryIcon = transaction.category?.emoji ?? 
-                        budgetController.getCategoryIcon(transaction.category?.name ?? "");
+                        budgetController.getCategoryIcon(transaction.categoryId);
     
-    final accentColor = isExpense ? SavaioTheme.error : SavaioTheme.tertiary;
+    final accentColor = isExpense ? colorScheme.error : colorScheme.tertiary;
 
     // Handle background sync status feedback
     final isPending = transaction.syncStatus == SyncStatus.pending;
+    final isSyncing = transaction.syncStatus == SyncStatus.syncing;
     final isFailed = transaction.syncStatus == SyncStatus.failed;
-    final contentOpacity = (isPending || isFailed) ? 0.6 : 1.0;
+    final isSynced = transaction.syncStatus == SyncStatus.synced;
+    
+    final contentOpacity = (!isSynced) ? 0.6 : 1.0;
 
     String formattedSubtitle = transaction.date.toIso8601String();
     try {
@@ -45,7 +49,7 @@ class AppTransactionItem extends StatelessWidget {
     return Opacity(
       opacity: contentOpacity,
       child: InkWell(
-        onTap: isPending ? null : onTap, // Disable interaction while pending
+        onTap: !isSynced ? null : onTap, // Disable interaction unless fully synced
         borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
         child: Container(
           padding: const EdgeInsets.symmetric(
@@ -53,19 +57,19 @@ class AppTransactionItem extends StatelessWidget {
             vertical: SavaioTheme.spacingM,
           ),
           decoration: BoxDecoration(
-            color: SavaioTheme.surfaceContainerLow,
+            color: colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
-            border: isFailed ? Border.all(color: SavaioTheme.error.withValues(alpha: 0.3)) : null,
+            border: isFailed ? Border.all(color: colorScheme.error.withValues(alpha: 0.3)) : null,
           ),
           child: Row(
             children: [
               AppIconContainer(
                 icon: isFailed ? Icons.sync_problem_rounded : categoryIcon,
-                color: isFailed ? SavaioTheme.error : accentColor,
+                color: isFailed ? colorScheme.error : accentColor,
                 shape: AppIconShape.rounded,
                 size: 48,
                 opacity: 0.15,
-                iconColor: isFailed ? SavaioTheme.error : accentColor,
+                iconColor: isFailed ? colorScheme.error : accentColor,
               ),
               const SizedBox(width: SavaioTheme.spacingM),
               Expanded(
@@ -81,13 +85,13 @@ class AppTransactionItem extends StatelessWidget {
                             isBold: true,
                           ),
                         ),
-                        if (isPending)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8.0),
+                        if (isPending || isSyncing)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
                             child: SizedBox(
                               width: 12,
                               height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary),
                             ),
                           ),
                       ],
@@ -96,7 +100,7 @@ class AppTransactionItem extends StatelessWidget {
                     AppHeading(
                       isFailed ? 'Gagal sinkronisasi' : formattedSubtitle,
                       size: AppHeadingSize.caption,
-                      color: isFailed ? SavaioTheme.error : SavaioTheme.onSurfaceVariant,
+                      color: isFailed ? colorScheme.error : colorScheme.onSurfaceVariant,
                       isBold: false,
                     ),
                   ],
@@ -108,14 +112,14 @@ class AppTransactionItem extends StatelessWidget {
                   AppHeading(
                     '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense, currency: context.watch<AuthController>().currency)}',
                     size: AppHeadingSize.subtitle,
-                    color: isFailed ? SavaioTheme.error : (isExpense ? SavaioTheme.onSurface : SavaioTheme.primary),
+                    color: isFailed ? colorScheme.error : (isExpense ? colorScheme.onSurface : colorScheme.primary),
                     isBold: true,
                   ),
                   const SizedBox(height: SavaioTheme.spacingXs),
                   AppHeading(
                     isExpense ? 'Expense' : 'Income',
                     size: AppHeadingSize.caption,
-                    color: isFailed ? SavaioTheme.error.withValues(alpha: 0.7) : accentColor.withValues(alpha: 0.7),
+                    color: isFailed ? colorScheme.error.withValues(alpha: 0.7) : accentColor.withValues(alpha: 0.7),
                     isBold: false,
                   ),
                 ],
