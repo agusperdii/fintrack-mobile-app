@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/core/constants/api_config.dart';
 import 'package:savaio/core/network/api_client.dart';
 import 'package:savaio/core/network/exceptions.dart';
@@ -16,12 +17,16 @@ class AuthController extends ChangeNotifier {
   String? _refreshToken;
   Map<String, dynamic>? _user;
   bool _isLoading = false;
+  bool _isInitialized = false;
+  bool _hasSeenLanding = false;
   String? _error;
 
   String? get token         => _token;
   String?  get refreshToken   => _refreshToken;
   Map<String, dynamic>? get user => _user;
   bool     get isLoading     => _isLoading;
+  bool     get isInitialized => _isInitialized;
+  bool     get hasSeenLanding => _hasSeenLanding;
   String?  get error         => _error;
   bool     get isAuthenticated => _token != null;
   String?  get userId        => _user?['id']?.toString();
@@ -39,6 +44,17 @@ class AuthController extends ChangeNotifier {
     if (raw != null) {
       try { _user = jsonDecode(raw) as Map<String, dynamic>; } catch (_) {}
     }
+    
+    // Load landing page preference
+    _hasSeenLanding = sl.prefs.getBool('has_seen_landing') ?? false;
+    
+    _isInitialized = true;
+    notifyListeners();
+  }
+
+  Future<void> setHasSeenLanding(bool value) async {
+    _hasSeenLanding = value;
+    await sl.prefs.setBool('has_seen_landing', value);
     notifyListeners();
   }
 
@@ -81,17 +97,18 @@ class AuthController extends ChangeNotifier {
   }
 
   /// POST /auth/logout
-  Future<void> logout() async {
+  Future<void> logout({bool resetLanding = false}) async {
     try {
       await ApiClient(authController: this)
           .post('${ApiConfig.baseUrl}/auth/logout', body: {});
     } catch (_) {}
-    await _clearSession();
+    await _clearSession(resetLanding: resetLanding);
   }
 
   Future<void> forceLogout() async {
+    if (!isAuthenticated) return;
+    
     debugPrint('[AuthController] Force logout triggered due to invalid session');
-    // await sl.notificationSupabaseService.dispose(); // Optional: or just let it be handled by clear session
     await _clearSession();
   }
 
@@ -127,11 +144,17 @@ class AuthController extends ChangeNotifier {
     if (_user        != null) await _secure.write(key: _userKey, value: jsonEncode(_user));
   }
 
-  Future<void> _clearSession() async {
+  Future<void> _clearSession({bool resetLanding = false}) async {
     _token = null; _refreshToken = null; _user = null;
     await _secure.delete(key: _accessKey);
     await _secure.delete(key: _refreshKey);
     await _secure.delete(key: _userKey);
+    
+    if (resetLanding) {
+      _hasSeenLanding = false;
+      await sl.prefs.setBool('has_seen_landing', false);
+    }
+    
     notifyListeners();
   }
 

@@ -25,15 +25,17 @@ class AppIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(SavaioTheme.radiusXl),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIconContainer(
               icon: icon,
-              size: 56,
+              size: 72,
+              shape: AppIconShape.rounded,
+              customRadius: SavaioTheme.radiusXl,
               color: variant == AppIconButtonVariant.normal 
                 ? Theme.of(context).colorScheme.surfaceContainerHighest 
                 : null,
@@ -45,7 +47,7 @@ class AppIconButton extends StatelessWidget {
                 : (color ?? Theme.of(context).colorScheme.primary),
               opacity: 1.0,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             AppHeading(
               label,
               size: AppHeadingSize.caption,

@@ -17,23 +17,23 @@ class DashboardQuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         AppIconButton(
-          icon: Icons.add_rounded,
-          label: 'Pemasukan',
+          icon: Icons.south_west_rounded,
+          label: 'Income',
           color: SavaioTheme.tertiary,
           onTap: onIncomeTap,
         ),
         AppIconButton(
-          icon: Icons.receipt_long,
-          label: 'Scan Struk',
+          icon: Icons.qr_code_scanner_rounded,
+          label: 'Scan',
           variant: AppIconButtonVariant.gradient,
           onTap: onScanTap,
         ),
         AppIconButton(
-          icon: Icons.remove_rounded,
-          label: 'Pengeluaran',
+          icon: Icons.north_east_rounded,
+          label: 'Expense',
           color: SavaioTheme.error,
           onTap: onExpenseTap,
         ),

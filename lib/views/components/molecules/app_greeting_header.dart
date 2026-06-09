@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppGreetingHeader extends StatelessWidget {
   final String userName;
+  final String budgetStatus; // 'active' (Aman), 'warning' (Hati-hati), 'exceeded' (Over Budget)
 
   const AppGreetingHeader({
     super.key, 
     required this.userName,
+    this.budgetStatus = 'active',
   });
 
   @override
@@ -15,13 +19,61 @@ class AppGreetingHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppHeading('Hi, $userName!', size: AppHeadingSize.h2),
-        AppHeading(
-          'Selamat Datang!', 
-          size: AppHeadingSize.subtitle, 
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          isBold: false,
-        ),
+        const SizedBox(height: 4),
+        _buildStatusBadge(context),
       ],
+    );
+  }
+
+  Widget _buildStatusBadge(BuildContext context) {
+    Color color;
+    String label;
+
+    switch (budgetStatus) {
+      case 'exceeded':
+        color = SavaioTheme.error;
+        label = 'OVER BUDGET';
+        break;
+      case 'warning':
+        color = Colors.orange;
+        label = 'HATI-HATI';
+        break;
+      default:
+        color = SavaioTheme.tertiary;
+        label = 'AMAN';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusFull),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

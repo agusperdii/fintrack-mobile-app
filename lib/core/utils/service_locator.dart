@@ -39,6 +39,7 @@ class ServiceLocator {
   ServiceLocator._internal();
 
   late final ApiClient apiClient;
+  late final SharedPreferences prefs;
   
   late final AuthRemoteDataSource authRemoteDataSource;
   late final TransactionRemoteDataSource transactionRemoteDataSource;
@@ -73,6 +74,7 @@ class ServiceLocator {
   late final OcrDataSource ocrDataSource;
 
   void setup(SharedPreferences prefs) {
+    this.prefs = prefs;
     authController = AuthController();
     themeController = ThemeController(prefs);
     

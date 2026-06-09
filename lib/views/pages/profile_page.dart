@@ -11,7 +11,7 @@ import 'package:savaio/views/components/molecules/app_profile_menu_item.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/pages/spending_target_list_page.dart';
-import 'package:savaio/views/pages/login_page.dart';
+import 'package:savaio/views/pages/landing_page.dart';
 import 'package:savaio/views/pages/edit_profile_page.dart';
 import 'package:savaio/views/pages/change_username_page.dart';
 import 'package:savaio/views/pages/change_password_page.dart';
@@ -83,10 +83,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   variant: AppButtonVariant.error,
                   icon: Icons.logout_rounded,
                   onTap: () async {
-                    await sl.authController.logout();
+                    await sl.authController.logout(resetLanding: true);
                     if (context.mounted) {
                       Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginPage()),
+                        MaterialPageRoute(builder: (_) => const LandingPage()),
                         (route) => false,
                       );
                     }
@@ -370,10 +370,10 @@ class _ProfileContent extends StatelessWidget {
               icon: Icons.logout_rounded,
               width: 200,
               onTap: () async {
-                await sl.authController.logout();
+                await sl.authController.logout(resetLanding: true);
                 if (context.mounted) {
                   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    MaterialPageRoute(builder: (_) => const LandingPage()),
                     (route) => false,
                   );
                 }

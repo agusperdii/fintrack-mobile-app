@@ -20,6 +20,7 @@ class DashboardController extends ChangeNotifier {
   CheckInStatus? _checkInStatus;
   bool _isLoading = false;
   bool _isSyncingTransaction = false;
+  bool _isBalanceVisible = true;
   String? _error;
 
   // Snapshot for rollback
@@ -29,7 +30,13 @@ class DashboardController extends ChangeNotifier {
   CheckInStatus? get checkInStatus => _checkInStatus;
   bool get isLoading => _isLoading;
   bool get isSyncingTransaction => _isSyncingTransaction;
+  bool get isBalanceVisible => _isBalanceVisible;
   String? get error => _error;
+
+  void toggleBalanceVisibility() {
+    _isBalanceVisible = !_isBalanceVisible;
+    notifyListeners();
+  }
 
   set isSyncingTransaction(bool value) {
     _isSyncingTransaction = value;

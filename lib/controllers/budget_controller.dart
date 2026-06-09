@@ -76,6 +76,9 @@ class BudgetController extends ChangeNotifier {
   bool get isSyncingAny => _allBudgets.any((b) => b.syncStatus == model.SyncStatus.syncing);
   String? get error => _error;
 
+  double get totalMonthlyBudget => _budgetStatuses.fold(0.0, (sum, item) => sum + item.amount);
+  double get totalMonthlySpent => _budgetStatuses.fold(0.0, (sum, item) => sum + item.spent);
+
   void clearError() {
     _error = null;
     notifyListeners();

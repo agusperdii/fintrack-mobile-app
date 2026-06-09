@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/controllers/auth_controller.dart';
-import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 
 class AppTransactionItem extends StatelessWidget {
@@ -41,7 +41,8 @@ class AppTransactionItem extends StatelessWidget {
     String formattedSubtitle = transaction.date.toIso8601String();
     try {
       final dateTime = transaction.date;
-      formattedSubtitle = '${DateFormat('d MMM yyyy').format(dateTime)} @${DateFormat('HH:mm').format(dateTime)}';
+      final categoryName = transaction.category?.name ?? budgetController.getCategoryName(transaction.categoryId);
+      formattedSubtitle = '${DateFormat('HH:mm').format(dateTime)} • $categoryName';
     } catch (e) {
       // Fallback if parsing fails
     }
@@ -57,19 +58,21 @@ class AppTransactionItem extends StatelessWidget {
             vertical: SavaioTheme.spacingM,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
-            border: isFailed ? Border.all(color: colorScheme.error.withValues(alpha: 0.3)) : null,
+            border: Border.all(
+              color: isFailed ? colorScheme.error.withValues(alpha: 0.5) : colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
               AppIconContainer(
                 icon: isFailed ? Icons.sync_problem_rounded : categoryIcon,
-                color: isFailed ? colorScheme.error : accentColor,
+                color: isFailed ? colorScheme.error : colorScheme.surfaceContainerHighest,
                 shape: AppIconShape.rounded,
                 size: 48,
-                opacity: 0.15,
-                iconColor: isFailed ? colorScheme.error : accentColor,
+                opacity: 1.0,
+                iconColor: isFailed ? colorScheme.onError : accentColor,
               ),
               const SizedBox(width: SavaioTheme.spacingM),
               Expanded(
@@ -79,10 +82,13 @@ class AppTransactionItem extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: AppHeading(
+                          child: Text(
                             transaction.title,
-                            size: AppHeadingSize.subtitle,
-                            isBold: true,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
                         ),
                         if (isPending || isSyncing)
@@ -97,32 +103,23 @@ class AppTransactionItem extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: SavaioTheme.spacingXs),
-                    AppHeading(
+                    Text(
                       isFailed ? 'Gagal sinkronisasi' : formattedSubtitle,
-                      size: AppHeadingSize.caption,
-                      color: isFailed ? colorScheme.error : colorScheme.onSurfaceVariant,
-                      isBold: false,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: isFailed ? colorScheme.error : colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AppHeading(
-                    '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrencyShorthand(transaction.amount, isExpense: isExpense, currency: context.watch<AuthController>().currency)}',
-                    size: AppHeadingSize.subtitle,
-                    color: isFailed ? colorScheme.error : (isExpense ? colorScheme.onSurface : colorScheme.primary),
-                    isBold: true,
-                  ),
-                  const SizedBox(height: SavaioTheme.spacingXs),
-                  AppHeading(
-                    isExpense ? 'Expense' : 'Income',
-                    size: AppHeadingSize.caption,
-                    color: isFailed ? colorScheme.error.withValues(alpha: 0.7) : accentColor.withValues(alpha: 0.7),
-                    isBold: false,
-                  ),
-                ],
+              Text(
+                '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrency(transaction.amount, currency: context.watch<AuthController>().currency)}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: isFailed ? colorScheme.error : colorScheme.onSurface,
+                ),
               ),
             ],
           ),

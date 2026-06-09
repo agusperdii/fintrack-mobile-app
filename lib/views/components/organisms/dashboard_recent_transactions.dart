@@ -24,7 +24,7 @@ class DashboardRecentTransactions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppSectionHeader(
-          title: 'Riwayat Terbaru',
+          title: 'Riwayat Hari ini',
           actionLabel: 'Lihat Semua',
           onActionTap: onViewAllTap,
         ),

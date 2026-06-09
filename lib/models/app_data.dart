@@ -317,6 +317,31 @@ class WeeklyPulseVM {
 
   List<double> get values => weeklySpending.map((e) => e.amount).toList();
 
+  /// Aligns weekly spending to the current week (Monday to Sunday)
+  /// Matches the SEN-MIN labels in the UI.
+  List<double> get thisWeekValues {
+    if (weeklySpending.isEmpty) return [0, 0, 0, 0, 0, 0, 0];
+    
+    final now = DateTime.now();
+    // Monday = 1, ..., Sunday = 7
+    final currentWeekday = now.weekday;
+    
+    // Calculate the date of Monday of this week
+    final monday = now.subtract(Duration(days: currentWeekday - 1));
+    
+    return List.generate(7, (index) {
+      final targetDate = monday.add(Duration(days: index));
+      final dateStr = "${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}";
+      
+      try {
+        // Find entry that starts with YYYY-MM-DD
+        return weeklySpending.firstWhere((s) => s.day.startsWith(dateStr)).amount;
+      } catch (_) {
+        return 0.0;
+      }
+    });
+  }
+
   factory WeeklyPulseVM.fromJson(Map<String, dynamic> json) {
     // Caller already passes the weeklyPulse sub-object (already unwrapped).
     // Accept camelCase (dashboard/summary) and snake_case field names.

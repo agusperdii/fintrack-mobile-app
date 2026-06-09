@@ -11,6 +11,7 @@ class AppIconContainer extends StatelessWidget {
   final AppIconShape shape;
   final double opacity;
   final Color? iconColor;
+  final double? customRadius;
 
   const AppIconContainer({
     super.key,
@@ -21,6 +22,7 @@ class AppIconContainer extends StatelessWidget {
     this.shape = AppIconShape.circle,
     this.opacity = 0.1,
     this.iconColor,
+    this.customRadius,
   });
 
   @override
@@ -36,7 +38,9 @@ class AppIconContainer extends StatelessWidget {
         color: gradient == null ? effectiveColor.withValues(alpha: opacity) : null,
         gradient: gradient,
         shape: shape == AppIconShape.circle ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: shape == AppIconShape.rounded ? BorderRadius.circular(SavaioTheme.radiusM) : null,
+        borderRadius: shape == AppIconShape.rounded 
+            ? BorderRadius.circular(customRadius ?? SavaioTheme.radiusM) 
+            : null,
       ),
       child: _buildIcon(effectiveColor),
     );

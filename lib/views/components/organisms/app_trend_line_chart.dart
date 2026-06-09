@@ -71,7 +71,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                   AppHeading(widget.title, size: AppHeadingSize.h3),
                   const SizedBox(height: 4),
                   Text(
-                    widget.isWeekly ? 'Pengeluaran 7 hari terakhir' : 'Pengeluaran bulan ini',
+                    widget.isWeekly ? 'Pengeluaran minggu ini' : 'Pengeluaran bulan ini',
                     style: TextStyle(
                       color: SavaioTheme.onSurfaceVariantOf(context),
                       fontSize: 12,

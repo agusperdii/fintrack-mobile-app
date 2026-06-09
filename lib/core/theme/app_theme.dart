@@ -51,7 +51,7 @@ class SavaioTheme {
   static const Color outlineVariant = Color(0xFF46484D);
 
   // Light Mode Colors
-  static const Color lightBackground = Color(0xFFF8F9FB);
+  static const Color lightBackground = Color(0xFFF5F5F5);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceContainer = Color(0xFFF1F3F7);
   static const Color lightSurfaceContainerLow = Color(0xFFFBFBFE);

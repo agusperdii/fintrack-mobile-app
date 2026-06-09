@@ -112,14 +112,22 @@ class AnalyticsService {
     if (monthlyTrend.isEmpty) return [];
 
     if (isWeekly) {
-      // Last 7 entries
-      final last7 = monthlyTrend.length > 7 
-          ? monthlyTrend.sublist(monthlyTrend.length - 7) 
-          : monthlyTrend;
+      // Weekly mode: show this week (Monday to Sunday)
+      final now = DateTime.now();
+      final currentWeekday = now.weekday; // 1 = Mon, ..., 7 = Sun
       
-      return last7.asMap().entries.map((e) {
-        final val = ParserUtils.toDouble((e.value as Map<String, dynamic>)['expense']);
-        return TrendPoint(e.key.toDouble(), val);
+      // Calculate the day of the month for Monday of this week
+      final mondayDay = now.day - (currentWeekday - 1);
+      
+      return List.generate(7, (index) {
+        final targetDay = mondayDay + index; // 1-based day of month
+        final dayIndex = targetDay - 1; // 0-based index for monthlyTrend
+        
+        double value = 0.0;
+        if (dayIndex >= 0 && dayIndex < monthlyTrend.length) {
+          value = ParserUtils.toDouble((monthlyTrend[dayIndex] as Map<String, dynamic>)['expense']);
+        }
+        return TrendPoint(index.toDouble(), value);
       }).toList();
     } else {
       // Aggregate by 4 groups (weeks approx) if data is long, or just return all
@@ -250,22 +258,27 @@ class AnalyticsService {
   }
 
   /// Builds the trend points for the line chart from daily values
-  /// isWeekly: true = last 7 days, false = daily values for the month
+  /// isWeekly: true = this week (Monday to Sunday), false = weekly aggregation for the month
   List<TrendPoint> calculateTrendPoints(List<double> dailyValues, {required bool isWeekly}) {
     if (dailyValues.isEmpty) return [];
 
     if (isWeekly) {
-      // Weekly mode: show last 7 days from the month
+      // Weekly mode: show this week (Monday to Sunday)
       final now = DateTime.now();
-      final daysInMonth = dailyValues.length;
-      final startDay = (now.day - 6).clamp(1, daysInMonth);
-
+      final currentWeekday = now.weekday; // 1 = Mon, ..., 7 = Sun
+      
+      // Calculate the day of the month for Monday of this week
+      final mondayDay = now.day - (currentWeekday - 1);
+      
       return List.generate(7, (index) {
-        final dayIndex = startDay + index - 1;
+        final targetDay = mondayDay + index; // 1-based day of month
+        final dayIndex = targetDay - 1; // 0-based index for dailyValues
+        
+        double value = 0.0;
         if (dayIndex >= 0 && dayIndex < dailyValues.length) {
-          return TrendPoint(index.toDouble(), dailyValues[dayIndex]);
+          value = dailyValues[dayIndex];
         }
-        return TrendPoint(index.toDouble(), 0.0);
+        return TrendPoint(index.toDouble(), value);
       });
     } else {
       // Monthly mode: aggregate by week (4 weeks)

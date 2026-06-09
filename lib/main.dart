@@ -5,6 +5,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
 import 'package:savaio/views/pages/login_page.dart';
+import 'package:savaio/views/pages/landing_page.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/controllers/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,9 +52,23 @@ class MyApp extends StatelessWidget {
             themeMode: theme.themeMode,
             home: Consumer<AuthController>(
               builder: (context, auth, _) {
-                return auth.isAuthenticated
-                    ? const MainLayout()
-                    : const LoginPage();
+                if (!auth.isInitialized) {
+                  return const Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (auth.isAuthenticated) {
+                  return const MainLayout();
+                }
+                
+                if (!auth.hasSeenLanding) {
+                  return const LandingPage();
+                }
+                
+                return const LoginPage();
               },
             ),
           );

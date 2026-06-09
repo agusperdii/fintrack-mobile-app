@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
+import 'package:savaio/views/pages/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -126,17 +127,19 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: SavaioTheme.onSurfaceOf(context),
-          ),
-          onPressed: authController.isLoading
-              ? null
-              : () {
-                  Navigator.of(context).pop();
-                },
-        ),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: SavaioTheme.onSurfaceOf(context),
+                ),
+                onPressed: authController.isLoading
+                    ? null
+                    : () {
+                        Navigator.of(context).pop();
+                      },
+              )
+            : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -277,7 +280,11 @@ class _RegisterPageState extends State<RegisterPage> {
                 onPressed: authController.isLoading
                     ? null
                     : () {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginPage(),
+                          ),
+                        );
                       },
                 child: Text(
                   'Already have an account? Sign in',

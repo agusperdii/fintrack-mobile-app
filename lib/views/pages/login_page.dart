@@ -28,8 +28,9 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
       );
       return;
     }
@@ -90,6 +91,19 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: SavaioTheme.backgroundOf(context),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: SavaioTheme.onSurfaceOf(context),
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -206,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: authController.isLoading
                       ? null
                       : () {
-                          Navigator.of(context).push(
+                          Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
                               builder: (_) => const RegisterPage(),
                             ),

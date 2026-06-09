@@ -4,6 +4,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/controllers/profile_controller.dart';
+import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/components/organisms/app_balance_card.dart';
@@ -12,6 +13,8 @@ import 'package:savaio/views/components/organisms/app_weekly_pulse_chart.dart';
 import 'package:savaio/views/components/organisms/dashboard_recent_transactions.dart';
 import 'package:savaio/views/components/molecules/dashboard_quick_actions.dart';
 import 'package:savaio/views/components/molecules/app_greeting_header.dart';
+import 'package:savaio/views/components/molecules/budget_donut_card.dart';
+import 'package:savaio/views/components/molecules/consistency_card.dart';
 import 'package:savaio/views/pages/notifications_page.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
 import 'package:savaio/views/pages/transaction_detail_page.dart';
@@ -19,6 +22,7 @@ import 'package:savaio/views/pages/ocr_scan_page.dart';
 import 'package:savaio/views/pages/add_transaction_page.dart';
 import 'package:savaio/views/pages/streak_page.dart';
 import 'package:savaio/views/pages/spending_target_page.dart';
+import 'package:savaio/views/pages/summary_page.dart';
 import 'package:savaio/views/components/organisms/notifications/notification_popup_organism.dart';
 import 'package:savaio/views/components/molecules/daily_checkin_card.dart';
 import 'package:savaio/views/components/molecules/app_section_header.dart';
@@ -79,8 +83,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _handleRefresh() async {
+    final now = DateTime.now();
+    final currentMonth = sl.dashboardController.data?.targetPeriod ??
+        "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
     await Future.wait([
       sl.dashboardController.fetchDashboardData(),
+      sl.budgetController.fetchAll(month: currentMonth),
       sl.profileController.fetchProfile(),
       sl.analyticsController.fetchAll(),
       sl.notificationController.fetchAll(),
@@ -92,7 +101,6 @@ class _DashboardPageState extends State<DashboardPage> {
     // Optimization: Watch only specific parts of the state to avoid full rebuilds
     final isLoading = context.select<DashboardController, bool>((c) => c.isLoading);
     final hasData = context.select<DashboardController, bool>((c) => c.data != null);
-    final userProfile = context.watch<ProfileController>().userProfile;
     final checkInStatus = context.select<DashboardController, dynamic>((c) => c.checkInStatus);
 
     if (isLoading && !hasData) {
@@ -111,24 +119,21 @@ class _DashboardPageState extends State<DashboardPage> {
         onRefresh: _handleRefresh,
         color: SavaioTheme.primary,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 32.0),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppGreetingHeader(
-                userName: userProfile?.fullName.split(' ').first ?? 'User',
-              ),
-              const SizedBox(height: 16),
               if (checkInStatus?.isCheckedInToday == false) ...[
+                const SizedBox(height: 16),
                 const DailyCheckInCard(),
-                const SizedBox(height: 24),
               ],
 
+              const SizedBox(height: 24),
               // Optimized Balance Card
               const _DashboardBalanceSection(),
-              const SizedBox(height: 32),
-
+              
+              const SizedBox(height: 24),
               DashboardQuickActions(
                 onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
                 onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
@@ -137,16 +142,27 @@ class _DashboardPageState extends State<DashboardPage> {
                   MaterialPageRoute(builder: (context) => const OcrScanPage()),
                 ),
               ),
-              const SizedBox(height: 40),
+              
+              const SizedBox(height: 24),
+              // Two Horizontal Budget Progress Cards
+              const _DashboardBudgetSection(),
+              
+              const SizedBox(height: 32),
+              ConsistencyCard(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SummaryPage()),
+                ),
+              ),
 
+              const SizedBox(height: 32),
               // Optimized Recent Transactions
               const _DashboardRecentTransactionsSection(),
 
-              const SizedBox(height: 32),
-
+              const SizedBox(height: 40),
               _buildWeeklyPulseSection(context),
 
-              const SizedBox(height: 100),
+              const SizedBox(height: 120),
             ],
           ),
         ),
@@ -155,14 +171,41 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final userProfile = context.watch<ProfileController>().userProfile;
     final streakCount = context.select<DashboardController, int>((c) => c.checkInStatus?.streakCount ?? 0);
-    final txCount = context.select<DashboardController, int>((c) => c.data?.recentTransactions.length ?? 0);
     final isSyncing = context.select<DashboardController, bool>((c) => c.isSyncingTransaction);
+    
+    // Determine overall budget status
+    final budgetStatuses = context.select<BudgetController, List>((c) => c.budgetStatuses);
+    String overallStatus = 'active';
+    if (budgetStatuses.any((s) => s.status == 'exceeded')) {
+      overallStatus = 'exceeded';
+    } else if (budgetStatuses.any((s) => s.status == 'warning')) {
+      overallStatus = 'warning';
+    }
 
     return AppHeader(
-      leading: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
+      centerTitle: false,
+      titleWidget: Padding(
+        padding: const EdgeInsets.only(left: SavaioTheme.spacingXl),
+        child: AppGreetingHeader(
+          userName: userProfile?.fullName.split(' ').first ?? 'User',
+          budgetStatus: overallStatus,
+        ),
+      ),
+      actions: [
+        if (isSyncing)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: 12.0),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+              ),
+            ),
+          ),
+        Center(
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -171,7 +214,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                 ),
                 child: IconButton(
                   icon: const Icon(
@@ -212,68 +255,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-      ),
-      actions: [
-        if (isSyncing)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.only(right: 12.0),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
-              ),
-            ),
-          ),
-        Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.receipt_long_rounded, color: SavaioTheme.primary, size: 20),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AllTransactionsPage(
-                          initialTransactions: sl.dashboardController.data?.recentTransactions ?? [],
-                        ),
-                      ),
-                    );
-                  },
-                  padding: EdgeInsets.zero,
-                ),
-              ),
-              if (txCount > 0)
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: SavaioTheme.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: SavaioTheme.background, width: 2),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                    child: Text(
-                      txCount > 99 ? '99+' : txCount.toString(),
-                      style: const TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
       ],
       onNotificationTap: () {
         Navigator.push(
@@ -295,7 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
         if (weeklyPulse != null && weeklyPulse.weeklySpending.isNotEmpty)
           AppWeeklyPulseChart(
             growth: weeklyPulse.growth,
-            values: weeklyPulse.values,
+            values: weeklyPulse.thisWeekValues,
           )
         else
           const AppWeeklyPulseChart(growth: 0, values: [0, 0, 0, 0, 0, 0, 0]),
@@ -358,6 +340,51 @@ class _DashboardRecentTransactionsSection extends StatelessWidget {
         MaterialPageRoute(builder: (_) => TransactionDetailPage(transaction: tx)),
       ),
       isLoading: !hasData,
+    );
+  }
+}
+
+class _DashboardBudgetSection extends StatelessWidget {
+  const _DashboardBudgetSection();
+
+  @override
+  Widget build(BuildContext context) {
+    final budgetController = context.watch<BudgetController>();
+    final dashboardController = context.watch<DashboardController>();
+    
+    final monthlyBudget = budgetController.totalMonthlyBudget;
+    final monthlySpent = budgetController.totalMonthlySpent;
+    
+    final weeklyPulse = dashboardController.data?.weeklyPulse;
+    final todaySpent = weeklyPulse?.weeklySpending.isNotEmpty == true 
+        ? weeklyPulse!.weeklySpending.last.amount 
+        : 0.0;
+        
+    // Calculate daily budget based on monthly budget / days in month
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final dailyBudget = monthlyBudget / daysInMonth;
+
+    return Row(
+      children: [
+        Expanded(
+          child: BudgetDonutCard(
+            title: 'Budget Bulanan',
+            spent: monthlySpent,
+            total: monthlyBudget,
+            color: SavaioTheme.primary,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: BudgetDonutCard(
+            title: 'Budget Harian',
+            spent: todaySpent,
+            total: dailyBudget,
+            color: SavaioTheme.secondary,
+          ),
+        ),
+      ],
     );
   }
 }

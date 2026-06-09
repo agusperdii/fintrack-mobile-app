@@ -31,11 +31,11 @@ class ApiClient {
 
   Future<dynamic> get(String url, {Map<String, String>? queryParameters}) async {
     final uri = Uri.parse(url).replace(queryParameters: queryParameters);
-    return _requestWithRetry(() => _client.get(uri, headers: _baseHeaders));
+    return _requestWithRetry(url, () => _client.get(uri, headers: _baseHeaders));
   }
 
   Future<dynamic> post(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.post(
+    return _requestWithRetry(url, () => _client.post(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
@@ -43,7 +43,7 @@ class ApiClient {
   }
 
   Future<dynamic> put(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.put(
+    return _requestWithRetry(url, () => _client.put(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
@@ -51,7 +51,7 @@ class ApiClient {
   }
 
   Future<dynamic> patch(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.patch(
+    return _requestWithRetry(url, () => _client.patch(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
@@ -59,7 +59,7 @@ class ApiClient {
   }
 
   Future<dynamic> delete(String url) async {
-    return _requestWithRetry(() => _client.delete(Uri.parse(url), headers: _baseHeaders));
+    return _requestWithRetry(url, () => _client.delete(Uri.parse(url), headers: _baseHeaders));
   }
 
   /// Upload a file using multipart/form-data.
@@ -86,12 +86,13 @@ class ApiClient {
     ));
     if (fields != null) request.fields.addAll(fields);
 
-    final streamedResponse = await request.send().timeout(timeout);
-    final response = await http.Response.fromStream(streamedResponse);
-    return _processResponse(response);
+    return _requestWithRetry(url, () async {
+      final streamedResponse = await request.send().timeout(timeout);
+      return http.Response.fromStream(streamedResponse);
+    });
   }
 
-  Future<dynamic> _requestWithRetry(Future<http.Response> Function() requestFn) async {
+  Future<dynamic> _requestWithRetry(String url, Future<http.Response> Function() requestFn) async {
     int attempts = 0;
     bool didRefreshOnce = false;
     while (attempts <= _maxRetries) {
@@ -103,18 +104,26 @@ class ApiClient {
       } on async.TimeoutException {
         if (attempts == _maxRetries) throw RequestTimeoutException();
       } on UnauthorizedException {
-        if (!didRefreshOnce && _authController.isAuthenticated) {
+        final isAuthRequest = url.contains('/auth/login') || 
+                              url.contains('/auth/register') || 
+                              url.contains('/auth/refresh');
+        
+        if (!didRefreshOnce && _authController.isAuthenticated && !isAuthRequest) {
           didRefreshOnce = true;
           final refreshed = await _authController.refreshAccessToken();
           if (refreshed) {
             continue;
           }
         }
-        await _authController.forceLogout();
+        
+        // Only force logout if we were actually authenticated
+        if (_authController.isAuthenticated) {
+          await _authController.forceLogout();
+        }
         rethrow;
       } on Exception catch (e) {
         if (attempts == _maxRetries) rethrow;
-        log('Request failed, retrying ($attempts): $e');
+        log('Request failed, retrying ($attempts) for $url: $e');
       }
       attempts++;
       await Future.delayed(Duration(milliseconds: 500 * attempts));
