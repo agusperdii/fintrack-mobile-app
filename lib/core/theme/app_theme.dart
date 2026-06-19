@@ -27,51 +27,63 @@ class SavaioTheme {
   static const Duration durationSlow = Duration(milliseconds: 500);
   static const Curve curveDefault = Curves.easeInOutCubic;
 
-  // Dark Mode Colors
-  static const Color background = Color(0xFF0C0B12);
-  static const Color surface = Color(0xFF0C0B12);
-  static const Color surfaceContainer = Color(0xFF181522);
-  static const Color surfaceContainerLow = Color(0xFF12101A);
-  static const Color surfaceContainerHigh = Color(0xFF211D2E);
-  static const Color surfaceContainerHighest = Color(0xFF2A2538);
+ // Dark Mode Colors
+static const Color background = Color(0xFF0D0D0D);
+static const Color surface = Color(0xFF0D0D0D);
 
-  static const Color primary = Color(0xFFC9A7FF);
-  static const Color primaryFixed = Color(0xFF9B6BFF);
-  static const Color secondary = Color(0xFFFFA8E8);
-  static const Color tertiary = Color(0xFF9FFFE0);
-  static const Color success = Color(0xFF9FFFE0);
-  static const Color error = Color(0xFFFF7A7A);
-  static const Color errorDim = Color(0xFFE04B4B);
-  static const Color errorContainer = Color(0xFF8F1D2C);
+static const Color surfaceContainer = Color(0xFF161616);
+static const Color surfaceContainerLow = Color(0xFF121212);
+static const Color surfaceContainerHigh = Color(0xFF1E1E1E);
+static const Color surfaceContainerHighest = Color(0xFF262626);
 
-  static const Color onSurface = Color(0xFFF8F5FF);
-  static const Color onSurfaceVariant = Color(0xFFB8B0C8);
-  static const Color onPrimaryFixed = Color(0xFF1F1235);
-  static const Color outline = Color(0xFF81778F);
-  static const Color outlineVariant = Color(0xFF4D4658);
+static const Color primary = Color(0xFFD4AF37);
+static const Color primaryFixed = Color(0xFFFFD700);
 
-  // Light Mode Colors
-  static const Color lightBackground = Color(0xFFFAF7FF);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceContainer = Color(0xFFF2ECFA);
-  static const Color lightSurfaceContainerLow = Color(0xFFFDFBFF);
-  static const Color lightSurfaceContainerHigh = Color(0xFFE9E0F3);
-  static const Color lightSurfaceContainerHighest = Color(0xFFDDD1EA);
+static const Color secondary = Color(0xFFE6C766);
+static const Color tertiary = Color(0xFFF4E3A1);
 
-  static const Color lightPrimary = Color(0xFF6F35D6);
-  static const Color lightPrimaryFixed = Color(0xFF9B6BFF);
-  static const Color lightSecondary = Color(0xFF8A4F7D);
-  static const Color lightTertiary = Color(0xFF007A5A);
-  static const Color lightSuccess = Color(0xFF007A5A);
-  static const Color lightError = Color(0xFFBA1A1A);
-  static const Color lightErrorDim = Color(0xFF93000A);
-  static const Color lightErrorContainer = Color(0xFFFFDAD6);
+static const Color success = Color(0xFF6EE7B7);
 
-  static const Color lightOnSurface = Color(0xFF1D1A22);
-  static const Color lightOnSurfaceVariant = Color(0xFF51485F);
-  static const Color lightOnPrimaryFixed = Color(0xFFFFFFFF);
-  static const Color lightOutline = Color(0xFF7A7185);
-  static const Color lightOutlineVariant = Color(0xFFCFC4DA);
+static const Color error = Color(0xFFFF6B6B);
+static const Color errorDim = Color(0xFFE04B4B);
+static const Color errorContainer = Color(0xFF8F1D2C);
+
+static const Color onSurface = Color(0xFFF8F8F8);
+static const Color onSurfaceVariant = Color(0xFFB5B5B5);
+
+static const Color onPrimaryFixed = Color(0xFF1A1A1A);
+
+static const Color outline = Color(0xFF8A8A8A);
+static const Color outlineVariant = Color(0xFF3A3A3A);
+
+// Light Mode Colors
+static const Color lightBackground = Color(0xFFFAFAFA);
+static const Color lightSurface = Color(0xFFFFFFFF);
+
+static const Color lightSurfaceContainer = Color(0xFFF4F4F4);
+static const Color lightSurfaceContainerLow = Color(0xFFFFFFFF);
+static const Color lightSurfaceContainerHigh = Color(0xFFECECEC);
+static const Color lightSurfaceContainerHighest = Color(0xFFE0E0E0);
+
+static const Color lightPrimary = Color(0xFFB8860B);
+static const Color lightPrimaryFixed = Color(0xFFD4AF37);
+
+static const Color lightSecondary = Color(0xFF8A6A00);
+static const Color lightTertiary = Color(0xFF6F5600);
+
+static const Color lightSuccess = Color(0xFF047857);
+
+static const Color lightError = Color(0xFFBA1A1A);
+static const Color lightErrorDim = Color(0xFF93000A);
+static const Color lightErrorContainer = Color(0xFFFFDAD6);
+
+static const Color lightOnSurface = Color(0xFF1A1A1A);
+static const Color lightOnSurfaceVariant = Color(0xFF5F5F5F);
+
+static const Color lightOnPrimaryFixed = Color(0xFFFFFFFF);
+
+static const Color lightOutline = Color(0xFF8A8A8A);
+static const Color lightOutlineVariant = Color(0xFFD0D0D0);
 
   static Color backgroundOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? background : lightBackground;
@@ -152,8 +164,8 @@ class SavaioTheme {
   static LinearGradient secondaryGradientOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
           ? secondaryGradient
-          : LinearGradient(
-              colors: [lightSecondary, lightSecondary.withValues(alpha: 0.7)],
+          : const LinearGradient(
+              colors: [lightSecondary, Color(0xFFE5C26A)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             );
@@ -221,13 +233,13 @@ class SavaioTheme {
   }
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, primaryFixed],
+    colors: [primaryFixed, primary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient secondaryGradient = LinearGradient(
-    colors: [secondary, Color(0xFFFFC4F0)],
+    colors: [secondary, Color(0xFFD8B35A)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
