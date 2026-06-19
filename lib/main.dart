@@ -9,7 +9,6 @@ import 'package:savaio/views/pages/landing_page.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/controllers/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {

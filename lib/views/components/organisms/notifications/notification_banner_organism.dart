@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
-import 'package:savaio/views/components/atoms/glass_card.dart';
+
 
 class NotificationBannerOrganism extends StatefulWidget {
   final NotificationData notification;
@@ -66,102 +66,102 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
     final effectiveColor = widget.notification.isRead ? color.withValues(alpha: 0.5) : color;
 
     return GestureDetector(
-      onTap: widget.onTap,
-      child: GlassCard(
-        padding: EdgeInsets.zero,
-        borderRadius: widget.isFloating ? SavaioTheme.radiusL : 0,
-        borderColor: !widget.notification.isRead
-            ? color.withValues(alpha: 0.4)
-            : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
-        borderWidth: widget.isFloating ? 1.5 : 0,
-        color: !widget.notification.isRead 
-            ? color.withValues(alpha: 0.12) 
-            : Theme.of(context).colorScheme.surfaceContainerLow.withValues(alpha: 0.8),
-        child: Container(
+  onTap: widget.onTap,
+  child: Container(
+    margin: widget.isFloating
+        ? EdgeInsets.zero
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHigh, // abu tua seperti notif WhatsApp
+      borderRadius: BorderRadius.circular(widget.isFloating ? 14 : 12),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: effectiveColor,
-                width: 6,
-              ),
-            ),
+            color: effectiveColor.withValues(alpha: 0.16),
+            shape: BoxShape.circle,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Icon(icon, color: effectiveColor, size: 22),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: effectiveColor, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.notification.type.name.toUpperCase(),
-                          style: TextStyle(
-                            color: effectiveColor,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        if (widget.isFloating)
-                          GestureDetector(
-                            onTap: widget.onDismiss,
-                            child: Icon(Icons.close, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                      ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.notification.type.name.toUpperCase(),
+                    style: TextStyle(
+                      color: effectiveColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
                     ),
-                    AppHeading(
-                      widget.notification.title,
-                      size: AppHeadingSize.subtitle,
-                      color: widget.notification.isRead ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.onSurface,
-                    ),
-                    Text(
-                      widget.notification.message,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: widget.notification.isRead 
-                            ? Theme.of(context).colorScheme.onSurfaceVariant 
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontSize: 12,
-                        height: 1.3,
+                  ),
+                  if (widget.isFloating)
+                    GestureDetector(
+                      onTap: widget.onDismiss,
+                      child: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.55),
                       ),
                     ),
-                    if (widget.actions != null && widget.actions!.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: widget.actions!.map((a) => Padding(
+                ],
+              ),
+              const SizedBox(height: 4),
+              AppHeading(
+                widget.notification.title,
+                size: AppHeadingSize.subtitle,
+                color: widget.notification.isRead
+                    ? Colors.white.withValues(alpha: 0.55)
+                    : Colors.white,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                widget.notification.message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: widget.notification.isRead
+                      ? Colors.white.withValues(alpha: 0.45)
+                      : Colors.white.withValues(alpha: 0.72),
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
+              if (widget.actions != null && widget.actions!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: widget.actions!
+                      .map(
+                        (a) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: a,
-                        )).toList(),
-                      ),
-                    ],
-                  ],
+                        ),
+                      )
+                      .toList(),
                 ),
-              ),
-              if (!widget.isFloating)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-                ),
+              ],
             ],
           ),
         ),
-      ),
-    );
+        if (!widget.isFloating)
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.white.withValues(alpha: 0.25),
+          ),
+      ],
+    ),
+  ),
+);
   }
 }
 
