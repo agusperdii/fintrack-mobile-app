@@ -28,14 +28,17 @@ class AppProfileMenuItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.vertical(
-          top: isTop ? const Radius.circular(8) : Radius.zero,
-          bottom: isBottom ? const Radius.circular(8) : Radius.zero,
+          top: isTop ? const Radius.circular(16) : Radius.zero,
+          bottom: isBottom ? const Radius.circular(16) : Radius.zero,
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           decoration: BoxDecoration(
             border: isTop ? null : Border(
-              top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
+              top: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
+                width: 1,
+              ),
             ),
           ),
           child: Row(
@@ -45,22 +48,26 @@ class AppProfileMenuItem extends StatelessWidget {
                 children: [
                   Icon(
                     icon, 
-                    color: isDestructive ? Theme.of(context).colorScheme.error.withValues(alpha: 0.6) : Theme.of(context).colorScheme.onSurfaceVariant, 
-                    size: 18
+                    color: isDestructive 
+                        ? Theme.of(context).colorScheme.error 
+                        : Theme.of(context).colorScheme.onSurfaceVariant, 
+                    size: 22
                   ),
                   const SizedBox(width: 16),
                   AppHeading(
                     title,
                     size: AppHeadingSize.subtitle,
-                    color: isDestructive ? Theme.of(context).colorScheme.error.withValues(alpha: 0.8) : Theme.of(context).colorScheme.onSurface,
+                    color: isDestructive 
+                        ? Theme.of(context).colorScheme.error 
+                        : Theme.of(context).colorScheme.onSurface,
                     isBold: false,
                   ),
                 ],
               ),
               trailing ?? Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.4),
-                size: 12,
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+                size: 16,
               ),
             ],
           ),

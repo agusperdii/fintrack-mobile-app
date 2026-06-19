@@ -117,7 +117,13 @@ class BudgetController extends ChangeNotifier {
     if (!silent) {
       _isFetchingData = true;
       _error = null;
-      notifyListeners();
+      
+      // FIX 1: Gunakan Future.microtask agar notifyListeners() tertunda
+      // sampai Flutter selesai menggambar frame saat ini.
+      // Ini mencegah error "setState() or markNeedsBuild() called during build".
+      Future.microtask(() {
+        notifyListeners();
+      });
     }
 
     try {
@@ -149,6 +155,10 @@ class BudgetController extends ChangeNotifier {
       _error = e.toString();
     } finally {
       _isFetchingData = false;
+      
+      // FIX 2: Di sini tidak perlu Future.microtask karena ini dieksekusi 
+      // secara asynchronous (setelah 'await Future.wait' selesai),
+      // jadi dipastikan tidak bertabrakan dengan proses build.
       notifyListeners();
     }
   }

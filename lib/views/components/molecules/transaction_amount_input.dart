@@ -18,12 +18,6 @@ class TransactionAmountInput extends StatelessWidget {
     final onSurface = SavaioTheme.onSurfaceOf(context);
     return Column(
       children: [
-        AppHeading(
-          'JUMLAH NOMINAL',
-          size: AppHeadingSize.caption,
-          color: SavaioTheme.onSurfaceVariantOf(context),
-          isBold: true,
-        ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

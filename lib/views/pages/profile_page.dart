@@ -28,7 +28,6 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Load profile immediately when page opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProfileController>().fetchProfile();
     });
@@ -38,7 +37,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final controller = context.watch<ProfileController>();
 
-    // Show error state with logout option
     if (controller.error != null && controller.userProfile == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -72,16 +70,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   label: 'Coba Lagi',
                   variant: AppButtonVariant.primary,
                   icon: Icons.refresh_rounded,
+                  width: double.infinity,
                   onTap: () {
                     controller.clearError();
                     controller.fetchProfile();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 AppButton(
                   label: 'Log Out',
                   variant: AppButtonVariant.error,
                   icon: Icons.logout_rounded,
+                  width: double.infinity,
                   onTap: () async {
                     await sl.authController.logout(resetLanding: true);
                     if (context.mounted) {
@@ -99,12 +99,10 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    // Show cached profile while loading (instant display, no spinner)
     if (controller.isLoading && controller.userProfile != null) {
       return _ProfileContent(profile: controller.userProfile!, controller: controller);
     }
 
-    // Full loading state when no cached profile exists
     if (controller.isLoading || controller.userProfile == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -163,9 +161,9 @@ class _ProfileContent extends StatelessWidget {
         themeController.setThemeMode(mode);
         Navigator.pop(context);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -173,11 +171,12 @@ class _ProfileContent extends StatelessWidget {
               label,
               style: TextStyle(
                 color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 16,
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.primary, size: 24),
           ],
         ),
       ),
@@ -195,180 +194,191 @@ class _ProfileContent extends StatelessWidget {
         showNotification: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Hero Header
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: AppAvatar(imageUrl: profile.avatarUrl ?? ''),
+                  ),
+                  const SizedBox(height: 16),
+                  AppHeading(
+                    profile.fullName,
+                    size: AppHeadingSize.h2,
+                  ),
+                  const SizedBox(height: 4),
+                  AppHeading(
+                    profile.email,
+                    size: AppHeadingSize.subtitle,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: AppHeading(
+                      'ID ${profile.id.split('-').first.toUpperCase()}',
+                      size: AppHeadingSize.caption,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      isBold: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            const AppSectionHeader(title: 'Preferensi'),
+            const SizedBox(height: 16),
+
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Center(
-                child: Column(
-                  children: [
-                    AppAvatar(imageUrl: profile.avatarUrl ?? ''),
-                    const SizedBox(height: 12),
-                    AppHeading(
-                      profile.fullName,
-                      size: AppHeadingSize.h2,
-                    ),
-                    const SizedBox(height: 2),
-                    AppHeading(
-                      profile.email,
-                      size: AppHeadingSize.subtitle,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: AppProfileMenuItem(
+                  icon: themeController.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  title: 'Mode Tampilan',
+                  trailing: Text(
+                    themeController.themeMode == ThemeMode.system 
+                        ? 'Otomatis' 
+                        : (themeController.isDarkMode ? 'Gelap' : 'Terang'),
+                    style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    AppHeading(
-                      profile.id.split('-').first.toUpperCase(),
-                      size: AppHeadingSize.caption,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      isBold: false,
-                    ),
-                  ],
+                  ),
+                  isTop: true,
+                  isBottom: true,
+                  onTap: () {
+                    _showThemeSelection(context, themeController);
+                  },
                 ),
               ),
             ),
 
             const SizedBox(height: 32),
 
-            // Preference Section
-            const AppSectionHeader(title: 'Preferensi'),
-            const SizedBox(height: 12),
+            const AppSectionHeader(title: 'Keuangan'),
+            const SizedBox(height: 16),
 
             Container(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Column(
-                children: [
-                  AppProfileMenuItem(
-                    icon: themeController.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    title: 'Mode Tampilan',
-                    trailing: Text(
-                      themeController.themeMode == ThemeMode.system 
-                          ? 'Otomatis' 
-                          : (themeController.isDarkMode ? 'Gelap' : 'Terang'),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: AppProfileMenuItem(
+                  icon: Icons.track_changes_rounded,
+                  title: 'Target Pengeluaran',
+                  isTop: true,
+                  isBottom: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            const AppSectionHeader(title: 'Profil'),
+            const SizedBox(height: 16),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Column(
+                  children: [
+                    AppProfileMenuItem(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Edit nama',
+                      isTop: true,
+                      onTap: () async {
+                        final updated = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EditProfilePage(currentName: profile.fullName),
+                          ),
+                        );
+                        if (updated == true) {
+                          controller.fetchProfile();
+                        }
+                      },
+                    ),
+                    AppProfileMenuItem(
+                      icon: Icons.alternate_email_rounded,
+                      title: 'Ganti username',
+                      onTap: () async {
+                        final updated = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChangeUsernamePage(
+                              currentUsername: profile.email.split('@').first,
+                              currentFullName: profile.fullName,
+                            ),
+                          ),
+                        );
+                        if (updated == true) {
+                          controller.fetchProfile();
+                        }
+                      },
+                    ),
+                    AppProfileMenuItem(
+                      icon: Icons.lock_outline_rounded,
+                      title: 'Ganti password',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
                       ),
                     ),
-                    isTop: true,
-                    isBottom: true,
-                    onTap: () {
-                      _showThemeSelection(context, themeController);
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Spending Targets Section
-            const AppSectionHeader(title: 'Keuangan'),
-            const SizedBox(height: 12),
-
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: AppProfileMenuItem(
-                icon: Icons.track_changes_rounded,
-                title: 'Target Pengeluaran',
-                isTop: true,
-                isBottom: true,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SpendingTargetListPage()),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Profile Management Section
-            const AppSectionHeader(title: 'Profil'),
-            const SizedBox(height: 12),
-
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                children: [
-                  AppProfileMenuItem(
-                    icon: Icons.person_outline_rounded,
-                    title: 'Edit nama',
-                    isTop: true,
-                    onTap: () async {
-                      final updated = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => EditProfilePage(currentName: profile.fullName),
-                        ),
-                      );
-                      if (updated == true) {
-                        controller.fetchProfile();
-                      }
-                    },
-                  ),
-                  AppProfileMenuItem(
-                    icon: Icons.alternate_email_rounded,
-                    title: 'Ganti username',
-                    onTap: () async {
-                      final updated = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChangeUsernamePage(
-                            currentUsername: profile.email.split('@').first,
-                            currentFullName: profile.fullName,
-                          ),
-                        ),
-                      );
-                      if (updated == true) {
-                        controller.fetchProfile();
-                      }
-                    },
-                  ),
-                  AppProfileMenuItem(
-                    icon: Icons.lock_reset_rounded,
-                    title: 'Ganti password',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
+                    AppProfileMenuItem(
+                      icon: Icons.delete_outline_rounded,
+                      title: 'Hapus akun saya',
+                      isDestructive: true,
+                      isBottom: true,
+                      onTap: () => _navigateToPlaceholder(context, 'Hapus Akun'),
                     ),
-                  ),
-                  AppProfileMenuItem(
-                    icon: Icons.delete_forever_rounded,
-                    title: 'Hapus akun saya',
-                    isDestructive: true,
-                    isBottom: true,
-                    onTap: () => _navigateToPlaceholder(context, 'Hapus Akun'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
             const SizedBox(height: 48),
 
-            // Logout Button
             AppButton(
               label: 'Log Out',
               variant: AppButtonVariant.error,
               icon: Icons.logout_rounded,
-              width: 200,
+              width: double.infinity,
               onTap: () async {
                 await sl.authController.logout(resetLanding: true);
                 if (context.mounted) {
