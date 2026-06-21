@@ -147,106 +147,107 @@ class _MainLayoutState extends State<MainLayout> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      extendBody: true, 
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          border: Border(
-            top: BorderSide(
-              color: theme.dividerColor.withValues(alpha: 0.25),
-              width: 0.7,
-            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: _buildFloatingActionButton(),
+      bottomNavigationBar: _buildModernBottomNav(theme),
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: SavaioTheme.primaryGradient,
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              children: [
-                _buildNavItem(0, Icons.grid_view_rounded, 'Home'),
-                _buildNavItem(1, Icons.bar_chart_rounded, 'Analisa'),
-                _buildAddButton(),
-                _buildNavItem(2, Icons.history_edu_rounded, 'Laporan'),
-                _buildNavItem(3, Icons.person_rounded, 'Profil'),
-              ],
+        ],
+      ),
+      child: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AddTransactionPage(),
             ),
+          );
+        },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        highlightElevation: 0,
+        shape: const CircleBorder(),
+        child: const Icon(
+          Icons.add_rounded,
+          color: SavaioTheme.onPrimaryFixed,
+          size: 30,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernBottomNav(ThemeData theme) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(32.0),
+      ),
+      child: BottomAppBar(
+        // Kunci di tinggi yang pas (misal 65 atau 70)
+        // Angka ini cukup untuk ikon navigasi + ruang aman Home Indicator di bawahnya
+        height: 70, 
+        padding: EdgeInsets.zero,
+        
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 14.0, 
+        
+        color: theme.scaffoldBackgroundColor, 
+        shadowColor: theme.shadowColor.withValues(alpha: 0.04),
+        elevation: 16,
+        
+        // Hapus SafeArea dan padding manual sama sekali
+        child: SizedBox(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavItem(0, Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
+              _buildNavItem(1, Icons.pie_chart_outline_rounded, Icons.pie_chart_rounded),
+              const SizedBox(width: 78), 
+              _buildNavItem(2, Icons.wallet_outlined, Icons.wallet_rounded),
+              _buildNavItem(3, Icons.person_outline_rounded, Icons.person_rounded),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(
-    int index,
-    IconData icon,
-    String label,
-  ) {
+  Widget _buildNavItem(int index, IconData inactiveIcon, IconData activeIcon) {
     final theme = Theme.of(context);
     final isSelected = _selectedIndex == index;
 
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => _onItemTapped(index),
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 22,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutQuint,
+          child: Center(
+            child: Icon(
+              isSelected ? activeIcon : inactiveIcon,
+              size: isSelected ? 30 : 28,
               color: isSelected
                   ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddButton() {
-    return Expanded(
-      child: Center(
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const AddTransactionPage(),
-              ),
-            );
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: 48,
-            height: 34,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              gradient: SavaioTheme.primaryGradient,
-            ),
-            child: const Icon(
-              Icons.add_rounded,
-              color: SavaioTheme.onPrimaryFixed,
-              size: 22,
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
         ),
