@@ -193,74 +193,80 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
       (c) => c['type'].toString().toLowerCase() == _type.toLowerCase()
     ).toList();
 
-    return Scaffold(
-      backgroundColor: SavaioTheme.backgroundOf(context),
-      appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // 1. Pilih Tipe Transaksi
-                TransactionTypeToggle(
-                  currentType: _type,
-                  onTypeChanged: (type) {
-                    setState(() {
-                      _type = type;
-                      _initCategory(); // Reset kategori sesuai tipe
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                
-                // 2. Input Nominal
-                TransactionAmountInput(
-                  controller: _amountController,
-                  onQuickAmountTap: _onQuickAmountTap,
-                ),
-                const SizedBox(height: 24),
+    // MODIFIKASI: Bungkus Scaffold dengan GestureDetector untuk menghilangkan keyboard saat klik di luar area textfield
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: SavaioTheme.backgroundOf(context),
+        appBar: _buildAppBar(),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 1. Pilih Tipe Transaksi
+                  TransactionTypeToggle(
+                    currentType: _type,
+                    onTypeChanged: (type) {
+                      setState(() {
+                        _type = type;
+                        _initCategory(); // Reset kategori sesuai tipe
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // 2. Input Nominal
+                  TransactionAmountInput(
+                    controller: _amountController,
+                    onQuickAmountTap: _onQuickAmountTap,
+                  ),
+                  const SizedBox(height: 24),
 
-                // 3. Input Judul (Dinaikkan dan dibuat lebih clean)
-                _buildTitleSection(),
-                const SizedBox(height: 32),
-                
-                // 4. Pilih Kategori
-                TransactionCategoryGrid(
-                  categories: currentCategories,
-                  selectedCategoryId: _selectedCategoryId,
-                  onCategorySelected: (cat) {
-                    setState(() {
-                      _selectedCategoryId = cat['id']?.toString();
-                      _selectedCategoryName = cat['name'].toString();
-                    });
-                  },
-                  onDeleteCategory: (id) async {
-                    final success = await sl.budgetController.deleteCategory(id);
-                    if (!context.mounted) return;
-                    if (success) {
-                      AppSnackBar.show(context, 'Kategori berhasil dihapus', type: AppSnackBarType.success, minimal: true);
-                      if (_selectedCategoryId == id) _initCategory();
-                    } else {
-                      AppSnackBar.show(context, sl.budgetController.error ?? 'Gagal menghapus', type: AppSnackBarType.error);
-                    }
-                  },
-                  onAddCategoryTap: _showAddCategorySheet,
-                ),
+                  // 3. Input Judul (Dinaikkan dan dibuat lebih clean)
+                  _buildTitleSection(),
+                  const SizedBox(height: 32),
+                  
+                  // 4. Pilih Kategori
+                  TransactionCategoryGrid(
+                    categories: currentCategories,
+                    selectedCategoryId: _selectedCategoryId,
+                    onCategorySelected: (cat) {
+                      setState(() {
+                        _selectedCategoryId = cat['id']?.toString();
+                        _selectedCategoryName = cat['name'].toString();
+                      });
+                    },
+                    onDeleteCategory: (id) async {
+                      final success = await sl.budgetController.deleteCategory(id);
+                      if (!context.mounted) return;
+                      if (success) {
+                        AppSnackBar.show(context, 'Kategori berhasil dihapus', type: AppSnackBarType.success, minimal: true);
+                        if (_selectedCategoryId == id) _initCategory();
+                      } else {
+                        AppSnackBar.show(context, sl.budgetController.error ?? 'Gagal menghapus', type: AppSnackBarType.error);
+                      }
+                    },
+                    onAddCategoryTap: _showAddCategorySheet,
+                  ),
 
-                // 5. Pengaturan Waktu
-                _buildDateTimeSection(),
-                const SizedBox(height: 24),
+                  // 5. Pengaturan Waktu
+                  _buildDateTimeSection(),
+                  const SizedBox(height: 24),
 
-                // 6. Catatan Tambahan (Diturunkan paling bawah)
-                _buildNoteSection(),
-                const SizedBox(height: 120), // Padding untuk Floating Button
-              ],
+                  // 6. Catatan Tambahan (Diturunkan paling bawah)
+                  _buildNoteSection(),
+                  const SizedBox(height: 120), // Padding untuk Floating Button
+                ],
+              ),
             ),
-          ),
-          _buildSubmitButton(),
-        ],
+            _buildSubmitButton(),
+          ],
+        ),
       ),
     );
   }

@@ -31,22 +31,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _handleRegister() async {
     if (_fullNameController.text.trim().isEmpty) {
-      setState(() => _errorMessage = 'Full name is required');
+      setState(() => _errorMessage = 'Nama lengkap wajib diisi.');
       return;
     }
 
     if (_emailController.text.trim().isEmpty) {
-      setState(() => _errorMessage = 'Email is required');
+      setState(() => _errorMessage = 'Email wajib diisi.');
       return;
     }
 
     if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = 'Password must be at least 6 characters');
+      setState(() => _errorMessage = 'Kata sandi minimal 6 karakter.');
       return;
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      setState(() => _errorMessage = 'Passwords do not match');
+      setState(() => _errorMessage = 'Kata sandi tidak cocok.');
       return;
     }
 
@@ -69,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     setState(() {
-      _errorMessage = 'Registration failed. Email might be taken.';
+      _errorMessage = 'Pendaftaran gagal. Email mungkin sudah terdaftar.';
     });
   }
 
@@ -149,7 +149,7 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Create Account',
+                'Buat Akun',
                 style: textTheme.headlineLarge?.copyWith(
                   color: SavaioTheme.onSurfaceOf(context),
                   fontWeight: FontWeight.w800,
@@ -158,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: SavaioTheme.spacingM),
               Text(
-                'Join Savaio today',
+                'Bergabunglah dengan Savaio hari ini',
                 style: textTheme.bodyMedium?.copyWith(
                   color: SavaioTheme.onSurfaceVariantOf(context),
                 ),
@@ -197,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 decoration: _inputDecoration(
                   context,
-                  labelText: 'Full Name',
+                  labelText: 'Nama Lengkap',
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
@@ -221,7 +221,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 decoration: _inputDecoration(
                   context,
-                  labelText: 'Password',
+                  labelText: 'Kata Sandi',
                 ),
                 obscureText: true,
               ),
@@ -233,7 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 decoration: _inputDecoration(
                   context,
-                  labelText: 'Confirm Password',
+                  labelText: 'Konfirmasi Kata Sandi',
                 ),
                 obscureText: true,
               ),
@@ -267,7 +267,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       )
                     : Text(
-                        'Sign Up',
+                        'Daftar',
                         style: textTheme.labelLarge?.copyWith(
                           color: SavaioTheme.onPrimaryFixedOf(context),
                           fontWeight: FontWeight.w800,
@@ -287,7 +287,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         );
                       },
                 child: Text(
-                  'Already have an account? Sign in',
+                  'Sudah punya akun? Masuk',
                   style: textTheme.bodyMedium?.copyWith(
                     color: SavaioTheme.primaryOf(context),
                     fontWeight: FontWeight.w700,

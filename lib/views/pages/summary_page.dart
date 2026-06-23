@@ -229,6 +229,7 @@ class _YearNavButton extends StatelessWidget {
   }
 }
 
+
 class _YearlyTotalCard extends StatelessWidget {
   final List<MonthlySummaryModel> summary;
   final String currency;
@@ -241,50 +242,175 @@ class _YearlyTotalCard extends StatelessWidget {
     final double totalOut = summary.fold(0, (sum, m) => sum + m.totalExpense);
     final double net = totalIn - totalOut;
 
+    final bool isPositive = net >= 0;
+    
+    // Menggunakan color dari SavaioTheme / Material Theme Anda
+    final Color successColor = SavaioTheme.tertiaryOf(context);
+    final Color errorColor = Theme.of(context).colorScheme.error;
+    final Color surfaceColor = SavaioTheme.surfaceContainerOf(context);
+
+    // Kalkulasi rasio untuk Visual Bar Indicator
+    final double totalFlow = totalIn + totalOut;
+    final double inPercentage = totalFlow == 0 ? 0.5 : totalIn / totalFlow;
+    final double outPercentage = totalFlow == 0 ? 0.5 : totalOut / totalFlow;
+
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerOf(context),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // --- HEADER & STATUS CHIP SECTION ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AppHeading(
                 'CASHFLOW BERSIH',
                 size: AppHeadingSize.caption,
                 isBold: true,
               ),
-              Icon(
-                net >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                color: net >= 0 ? SavaioTheme.tertiaryOf(context) : Theme.of(context).colorScheme.error,
+              // Modern Status Chip (Surplus/Defisit)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (isPositive ? successColor : errorColor).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                      color: isPositive ? successColor : errorColor,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    AppHeading(
+                      isPositive ? 'Surplus' : 'Defisit',
+                      size: AppHeadingSize.caption,
+                      isBold: true,
+                      // Uncomment jika AppHeading mendukung property color:
+                      // color: isPositive ? successColor : errorColor, 
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          AppHeading(SavaioTheme.formatCurrency(net, currency: currency), size: AppHeadingSize.h1),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: SavaioTheme.backgroundOf(context).withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(20),
+          const SizedBox(height: 16),
+
+          // --- NET AMOUNT (HERO) SECTION ---
+          AppHeading(
+            SavaioTheme.formatCurrency(net, currency: currency),
+            size: AppHeadingSize.h1,
+          ),
+          const SizedBox(height: 24),
+
+          // --- VISUAL PROGRESS BAR SECTION ---
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              height: 8,
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: (inPercentage * 100).toInt(),
+                    child: Container(color: successColor),
+                  ),
+                  if (totalIn > 0 && totalOut > 0)
+                    Container(width: 2, color: surfaceColor), 
+                  Expanded(
+                    flex: (outPercentage * 100).toInt(),
+                    child: Container(color: errorColor),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _YearStat(label: 'Pemasukan', value: totalIn, color: SavaioTheme.tertiaryOf(context), currency: currency),
-                Container(width: 1, height: 30, color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2)),
-                _YearStat(label: 'Pengeluaran', value: totalOut, color: Theme.of(context).colorScheme.error, currency: currency),
-              ],
-            ),
+          ),
+          const SizedBox(height: 20),
+
+          // --- STATS (IN & OUT) SECTION ---
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Pemasukan
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  label: 'Pemasukan',
+                  amountText: SavaioTheme.formatCurrency(totalIn, currency: currency),
+                  color: successColor,
+                  icon: Icons.south_west_rounded,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Pengeluaran
+              Expanded(
+                child: _buildStatItem(
+                  context: context,
+                  label: 'Pengeluaran',
+                  amountText: SavaioTheme.formatCurrency(totalOut, currency: currency),
+                  color: errorColor,
+                  icon: Icons.north_east_rounded,
+                  isAlignRight: true,
+                ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  // --- HELPER WIDGET ---
+  Widget _buildStatItem({
+    required BuildContext context,
+    required String label,
+    required String amountText,
+    required Color color,
+    required IconData icon,
+    bool isAlignRight = false,
+  }) {
+    return Column(
+      crossAxisAlignment: isAlignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isAlignRight) ...[
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+            ],
+            AppHeading(
+              label,
+              size: AppHeadingSize.caption,
+            ),
+            if (isAlignRight) ...[
+              const SizedBox(width: 4),
+              Icon(icon, size: 14, color: color),
+            ],
+          ],
+        ),
+        const SizedBox(height: 4),
+        AppHeading(
+          amountText,
+          size: AppHeadingSize.h3, // Gunakan size h3/h4 agar cukup untuk menampung nilai "full"
+          isBold: true,
+        ),
+      ],
     );
   }
 }

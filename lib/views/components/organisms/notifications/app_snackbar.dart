@@ -133,7 +133,7 @@ class AppSnackBar extends StatelessWidget {
     AppSnackBarType type = AppSnackBarType.info,
     String? actionLabel,
     VoidCallback? onAction,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = const Duration(seconds: 2),
     bool minimal = false,
   }) {
     final overlay = Overlay.of(context);
@@ -186,17 +186,22 @@ class _SnackBarWrapperState extends State<_SnackBarWrapper> with SingleTickerPro
   @override
   void initState() {
     super.initState();
+    
+    // MENGOPTIMALKAN DURASI (Snappy & Responsive)
     _controller = AnimationController(
-      duration: Duration(milliseconds: widget.minimal ? 300 : 600),
+      duration: Duration(milliseconds: widget.minimal ? 120 : 180),
+      reverseDuration: Duration(milliseconds: widget.minimal ? 100 : 140),
       vsync: this,
     );
 
+    // MENGOPTIMALKAN KURVA ANIMASI
     _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -2.0),
+      begin: const Offset(0.0, -1.5), // Jarak slide dikurangi agar tidak terlalu jauh melompat
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: widget.minimal ? Curves.easeOutCubic : Curves.elasticOut,
+      curve: widget.minimal ? Curves.easeOutCubic : Curves.easeOutBack, // Menghasilkan sedikit hentakan premium tanpa membal lama
+      reverseCurve: Curves.easeInCubic, // Keluar dengan mulus dan cepat
     ));
 
     _controller.forward().then((_) {

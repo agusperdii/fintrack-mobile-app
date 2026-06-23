@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
+// Tambahkan import AppSnackBar di bawah ini (sesuaikan dengan path proyek Anda)
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart'; 
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -59,8 +61,12 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password berhasil diganti'), backgroundColor: SavaioTheme.tertiary),
+        // MENGGUNAKAN APPSNACKBAR KUSTOM
+        AppSnackBar.show(
+          context,
+          'Password berhasil diganti',
+          type: AppSnackBarType.success,
+          minimal: true
         );
         Navigator.pop(context);
       } else {

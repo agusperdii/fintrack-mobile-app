@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String currentName;
@@ -40,11 +41,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil diperbarui'), backgroundColor: SavaioTheme.tertiary),
+        AppSnackBar.show(
+          context,
+          'Profil berhasil diperbarui',
+          type: AppSnackBarType.success,
+          minimal: true, 
         );
         Navigator.pop(context, true);
-      } else {
+      }
+       else {
         setState(() => _errorMessage = 'Gagal memperbarui profil. Coba lagi.');
       }
     }

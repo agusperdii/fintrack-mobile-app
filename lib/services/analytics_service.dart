@@ -6,13 +6,12 @@ import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AnalyticsService {
-  /// Builds the spending breakdown items from API expenses by category
   List<SpendingBreakdownVM> parseSpendingBreakdownFromApi(List<dynamic> expensesByCategory) {
     return expensesByCategory.map((item) {
       final data = item as Map<String, dynamic>;
       return SpendingBreakdownVM(
         categoryId: data['categoryId']?.toString() ?? data['category_id']?.toString() ?? '',
-        name: data['categoryName']?.toString() ?? 'Kategori',
+        name: data['categoryName']?.toString() ?? 'Kategori Lainnya',
         emoji: data['emoji']?.toString() ?? '📦',
         colorHex: data['color']?.toString().replaceAll('#', '') ?? '81ECFF',
         amount: ParserUtils.toDouble(data['total']),
@@ -22,7 +21,6 @@ class AnalyticsService {
     }).toList();
   }
 
-  /// Builds the high-level Hero metrics (Average, Budget %, Daily Values) from API data
   HeroVM parseHeroFromApi({
     required Map<String, dynamic> summary,
     required Map<String, dynamic> period,
@@ -39,7 +37,6 @@ class AnalyticsService {
     final targetAmount = allCategoryBudget?.amount ?? 0.0;
     final dailyTarget = targetAmount > 0 ? targetAmount / (daysCount > 0 ? daysCount : 30) : 0.0;
 
-    // Calculate budget percentage (overall)
     double budgetPercentage = 0.0;
     bool isBelowBudget = true;
 
@@ -54,7 +51,6 @@ class AnalyticsService {
       }
     }
 
-    // Daily values from trend for the mini-chart in Hero card
     final displayDailyValues = monthlyTrend.map((e) {
       final expense = ParserUtils.toDouble((e as Map<String, dynamic>)['expense']);
       if (dailyTarget > 0) return expense / dailyTarget;
@@ -70,7 +66,6 @@ class AnalyticsService {
     );
   }
 
-  /// Builds the detailed category breakdown items from API budget comparison
   List<CategoryVM> parseCategoriesFromApi(List<dynamic> budgetComparison) {
     return budgetComparison.take(10).map((item) {
       final data = item as Map<String, dynamic>;
@@ -80,9 +75,9 @@ class AnalyticsService {
       
       String accentColorHex = data['color']?.toString().replaceAll('#', '') ?? '00C1D4';
       if (isOver) {
-        accentColorHex = 'FF4B4B'; // force error color if exceeded
+        accentColorHex = 'FF4B4B';
       } else if (status == 'warning') {
-        accentColorHex = 'FFA500'; // force warning color
+        accentColorHex = 'FFA500';
       }
 
       final spent = ParserUtils.toDouble(data['spent']);
@@ -90,13 +85,13 @@ class AnalyticsService {
 
       return CategoryVM(
         categoryId: data['categoryId']?.toString() ?? data['category_id']?.toString() ?? '',
-        name: data['categoryName']?.toString() ?? 'Kategori',
-        amount: '${SavaioTheme.formatCurrency(spent)} terpakai',
+        name: data['categoryName']?.toString() ?? 'Kategori Lainnya',
+        amount: '${SavaioTheme.formatCurrency(spent)} dipakai',
         progress: progress.clamp(0.0, 1.0),
         limitText: budgetAmount > 0
-            ? 'Target: ${SavaioTheme.formatCurrency(budgetAmount)}'
-            : 'Target belum diatur',
-        statusText: isOver ? 'OVER BUDGET!' : '${(progress * 100).toStringAsFixed(0)}%',
+            ? 'Anggaran: ${SavaioTheme.formatCurrency(budgetAmount)}'
+            : 'Belum ada anggaran',
+        statusText: isOver ? 'LEWAT BUDGET!' : '${(progress * 100).toStringAsFixed(0)}%',
         accentColorHex: accentColorHex,
         isOver: isOver,
         isBudgetExists: budgetAmount > 0,
@@ -107,21 +102,17 @@ class AnalyticsService {
     }).toList();
   }
 
-  /// Builds the trend points from API monthly trend
   List<TrendPoint> parseTrendFromApi(List<dynamic> monthlyTrend, {required bool isWeekly}) {
     if (monthlyTrend.isEmpty) return [];
 
     if (isWeekly) {
-      // Weekly mode: show this week (Monday to Sunday)
       final now = DateTime.now();
-      final currentWeekday = now.weekday; // 1 = Mon, ..., 7 = Sun
-      
-      // Calculate the day of the month for Monday of this week
+      final currentWeekday = now.weekday;
       final mondayDay = now.day - (currentWeekday - 1);
       
       return List.generate(7, (index) {
-        final targetDay = mondayDay + index; // 1-based day of month
-        final dayIndex = targetDay - 1; // 0-based index for monthlyTrend
+        final targetDay = mondayDay + index;
+        final dayIndex = targetDay - 1;
         
         double value = 0.0;
         if (dayIndex >= 0 && dayIndex < monthlyTrend.length) {
@@ -130,7 +121,6 @@ class AnalyticsService {
         return TrendPoint(index.toDouble(), value);
       }).toList();
     } else {
-      // Aggregate by 4 groups (weeks approx) if data is long, or just return all
       if (monthlyTrend.length > 14) {
         final aggregated = <double>[];
         int groupSize = (monthlyTrend.length / 4).ceil();
@@ -151,7 +141,6 @@ class AnalyticsService {
     }
   }
 
-  /// Builds pie segments from API expenses by category
   List<PieSegment> parsePieFromApi(List<dynamic> expensesByCategory) {
     return expensesByCategory.map((item) {
       final data = item as Map<String, dynamic>;
@@ -163,7 +152,6 @@ class AnalyticsService {
     }).toList();
   }
 
-  /// Builds the high-level Hero metrics (Average, Budget %, Daily Values) (LOCAL FALLBACK)
   HeroVM calculateHeroMetrics({
     required double totalSpent,
     required BudgetModel? allCategoryBudget,
@@ -174,7 +162,6 @@ class AnalyticsService {
     final targetAmount = allCategoryBudget?.amount ?? 0.0;
     final dailyTarget = targetAmount > 0 ? targetAmount / daysInMonth : 0.0;
 
-    // Calculate budget percentage
     double budgetPercentage = 0.0;
     bool isBelowBudget = true;
 
@@ -189,14 +176,11 @@ class AnalyticsService {
       }
     }
 
-    // For daily values, use actual values if no budget target, or ratio if budget exists
     final displayDailyValues = <double>[];
     for (int i = 0; i < dailyValues.length; i++) {
       if (dailyTarget > 0) {
-        // Ratio to daily target
         displayDailyValues.add(dailyValues[i] / dailyTarget);
       } else {
-        // Direct value (will be scaled by chart)
         displayDailyValues.add(dailyValues[i]);
       }
     }
@@ -210,12 +194,10 @@ class AnalyticsService {
     );
   }
 
-  /// Builds the detailed category breakdown items from real transaction data (LOCAL FALLBACK)
   List<CategoryVM> calculateCategoryBreakdown({
     required List<SpendingTargetItemVM> budgetTargets,
     required Map<String, double> realByCategory,
   }) {
-    // Sort: Budget exists > Progress > Alphabetical
     final sortedTargets = List<SpendingTargetItemVM>.from(budgetTargets);
     sortedTargets.sort((a, b) {
       if (a.isBudgetExists && !b.isBudgetExists) return -1;
@@ -223,30 +205,28 @@ class AnalyticsService {
       return b.progress.compareTo(a.progress);
     });
 
-    // 3. Map to pure VM (Top 3)
     return sortedTargets.take(3).map((target) {
       final progress = target.progress;
       final isOver = target.isOver;
 
-      // Color Hex logic based on budget status
-      String accentColorHex = '00C1D4'; // tertiary
+      String accentColorHex = '00C1D4';
       if (isOver) {
-        accentColorHex = 'FF4B4B'; // error
+        accentColorHex = 'FF4B4B';
       } else if (target.status == 'warning') {
-        accentColorHex = 'FFA500'; // warning
+        accentColorHex = 'FFA500';
       } else if (!target.isBudgetExists) {
-        accentColorHex = '6366F1'; // primary
+        accentColorHex = '6366F1';
       }
 
       return CategoryVM(
         categoryId: target.categoryId,
         name: target.categoryName,
-        amount: '${SavaioTheme.formatCurrency(target.spent)} terpakai',
+        amount: '${SavaioTheme.formatCurrency(target.spent)} dipakai',
         progress: progress,
         limitText: target.isBudgetExists
-            ? 'Target: ${SavaioTheme.formatCurrency(target.target)}'
-            : 'Target belum diatur',
-        statusText: isOver ? 'OVER BUDGET!' : '${(progress * 100).toStringAsFixed(0)}%',
+            ? 'Anggaran: ${SavaioTheme.formatCurrency(target.target)}'
+            : 'Belum ada anggaran',
+        statusText: isOver ? 'LEWAT BUDGET!' : '${(progress * 100).toStringAsFixed(0)}%',
         accentColorHex: accentColorHex,
         isOver: isOver,
         isBudgetExists: target.isBudgetExists,
@@ -257,22 +237,17 @@ class AnalyticsService {
     }).toList();
   }
 
-  /// Builds the trend points for the line chart from daily values
-  /// isWeekly: true = this week (Monday to Sunday), false = weekly aggregation for the month
   List<TrendPoint> calculateTrendPoints(List<double> dailyValues, {required bool isWeekly}) {
     if (dailyValues.isEmpty) return [];
 
     if (isWeekly) {
-      // Weekly mode: show this week (Monday to Sunday)
       final now = DateTime.now();
-      final currentWeekday = now.weekday; // 1 = Mon, ..., 7 = Sun
-      
-      // Calculate the day of the month for Monday of this week
+      final currentWeekday = now.weekday;
       final mondayDay = now.day - (currentWeekday - 1);
       
       return List.generate(7, (index) {
-        final targetDay = mondayDay + index; // 1-based day of month
-        final dayIndex = targetDay - 1; // 0-based index for dailyValues
+        final targetDay = mondayDay + index;
+        final dayIndex = targetDay - 1;
         
         double value = 0.0;
         if (dayIndex >= 0 && dayIndex < dailyValues.length) {
@@ -281,7 +256,6 @@ class AnalyticsService {
         return TrendPoint(index.toDouble(), value);
       });
     } else {
-      // Monthly mode: aggregate by week (4 weeks)
       final weeklyAggregated = <double>[];
       for (int i = 0; i < 4; i++) {
         double weekTotal = 0.0;
@@ -296,21 +270,17 @@ class AnalyticsService {
     }
   }
 
-  /// Builds pie segments from real category breakdown
   List<PieSegment> buildPieSegmentsFromCategories({
     required Map<String, double> byCategory,
     required double totalSpent,
   }) {
     if (totalSpent <= 0 || byCategory.isEmpty) return [];
 
-    // Predefined colors for categories
     final colors = ['FF4242', '4285F4', '34A853', 'FBBC05', '9C27B0', '00BCD4'];
 
-    // Sort by amount descending
     final sortedCategories = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Map to PieSegment with colors
     return sortedCategories.asMap().entries.map((entry) {
       final idx = entry.key;
       final category = entry.value;
@@ -322,17 +292,15 @@ class AnalyticsService {
     }).toList();
   }
 
-  /// Parses insight from API data
   AnalysisInsight? parseInsightFromApi(Map<String, dynamic>? json) {
     if (json == null) return null;
     return AnalysisInsight(
-      title: json['title']?.toString() ?? 'Wawasan Pintar',
+      title: json['title']?.toString() ?? 'Rekomendasi Pintar',
       description: json['message']?.toString() ?? json['description']?.toString() ?? '',
       severity: json['severity']?.toString() ?? 'info',
     );
   }
 
-  /// Generates smart insights based on actual spending patterns (fallback)
   AnalysisInsight generateInsight({
     required double totalSpent,
     required Map<String, double> byCategory,
@@ -340,14 +308,13 @@ class AnalyticsService {
   }) {
     if (totalSpent <= 0 || byCategory.isEmpty) {
       return AnalysisInsight(
-        title: 'Wawasan Pintar',
-        description: 'Belum ada data pengeluaran yang cukup untuk memberikan wawasan.',
-        buttonLabel: 'DETAIL PENGHEMATAN',
+        title: 'Rekomendasi Pintar',
+        description: 'Belum cukup data transaksi untuk menyusun rekomendasi finansial.',
+        buttonLabel: 'ANALISIS HEMAT',
         severity: 'info',
       );
     }
 
-    // Find top category
     final sortedCategories = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -355,42 +322,37 @@ class AnalyticsService {
     final topAmount = sortedCategories.first.value;
     final topPercentage = (topAmount / totalSpent * 100).toStringAsFixed(0);
 
-    // Check for over-budget categories
     final overBudgetCategories = budgetTargets
         .where((t) => t.isOver)
         .map((t) => t.categoryName)
         .toList();
 
     String description;
-    String buttonLabel = 'DETAIL PENGHEMATAN';
+    String buttonLabel = 'ANALISIS HEMAT';
     String severity = 'info';
 
     if (overBudgetCategories.isNotEmpty) {
-      description = 'Kategori ${overBudgetCategories.first} melebihi budget! Pengeluaran terbesar pada $topCategory ($topPercentage%).';
-      buttonLabel = 'ATUR BUDGET';
+      description = 'Pos ${overBudgetCategories.first} melebihi budget! Konsumsi tertinggi ada di $topCategory ($topPercentage%).';
+      buttonLabel = 'SESUAIKAN BUDGET';
       severity = 'danger';
     } else {
-      // Check if close to budget (80%+)
       final closeToBudget = budgetTargets.where((t) => t.progress > 0.8 && t.isBudgetExists).toList();
       if (closeToBudget.isNotEmpty) {
-        description = '$topCategory menghabiskan $topPercentage% dari total pengeluaran. Hati-hati, kategori ${closeToBudget.first.categoryName} sudah hampir melebihi budget!';
+        description = '$topCategory menyerap $topPercentage% total pengeluaran. Waspada, pos ${closeToBudget.first.categoryName} sudah mendekati limit!';
         severity = 'warning';
       } else {
-        description = 'Pengeluaran terbesar Anda adalah pada kategori $topCategory ($topPercentage%). Pertahankan pengelolaan keuangan yang baik!';
+        description = 'Alokasi terbesar Anda berada di kategori $topCategory ($topPercentage%). Pertahankan performa keuangan sehat ini!';
       }
     }
 
     return AnalysisInsight(
-      title: 'Wawasan Pintar',
+      title: 'Rekomendasi Pintar',
       description: description,
       buttonLabel: buttonLabel,
       severity: severity,
     );
   }
 
-  // --- Legacy methods kept for backwards compatibility ---
-
-  /// Builds the distribution segments for the pie chart (legacy)
   List<PieSegment> calculatePieSegments(List<AnalysisData> rawAnalysis) {
     return rawAnalysis.map((item) {
       return PieSegment(

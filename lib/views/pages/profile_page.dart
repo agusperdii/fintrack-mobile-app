@@ -13,7 +13,6 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/pages/spending_target_list_page.dart';
 import 'package:savaio/views/pages/landing_page.dart';
 import 'package:savaio/views/pages/edit_profile_page.dart';
-import 'package:savaio/views/pages/change_username_page.dart';
 import 'package:savaio/views/pages/change_password_page.dart';
 import 'package:savaio/views/pages/placeholder_page.dart';
 
@@ -327,24 +326,6 @@ class _ProfileContent extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => EditProfilePage(currentName: profile.fullName),
-                          ),
-                        );
-                        if (updated == true) {
-                          controller.fetchProfile();
-                        }
-                      },
-                    ),
-                    AppProfileMenuItem(
-                      icon: Icons.alternate_email_rounded,
-                      title: 'Ganti username',
-                      onTap: () async {
-                        final updated = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChangeUsernamePage(
-                              currentUsername: profile.email.split('@').first,
-                              currentFullName: profile.fullName,
-                            ),
                           ),
                         );
                         if (updated == true) {

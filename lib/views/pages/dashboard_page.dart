@@ -72,16 +72,6 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  void _navigateToAddTransaction({required String type, String? category}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            AddTransactionPage(initialType: type, initialCategory: category),
-      ),
-    );
-  }
-
   Future<void> _handleRefresh() async {
     final now = DateTime.now();
     final currentMonth = sl.dashboardController.data?.targetPeriod ??
@@ -96,9 +86,17 @@ class _DashboardPageState extends State<DashboardPage> {
     ]);
   }
 
+  void _navigateToAddTransaction({required String type, String? category}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddTransactionPage(initialType: type, initialCategory: category),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Optimization: Watch only specific parts of the state to avoid full rebuilds
     final isLoading = context.select<DashboardController, bool>((c) => c.isLoading);
     final hasData = context.select<DashboardController, bool>((c) => c.data != null);
     final checkInStatus = context.select<DashboardController, dynamic>((c) => c.checkInStatus);
@@ -106,9 +104,8 @@ class _DashboardPageState extends State<DashboardPage> {
     if (isLoading && !hasData) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(color: SavaioTheme.primary),
-        ),
+        // UX: Idealnya gunakan Shimmer Loading di sini untuk retensi persepsi performa
+        body: const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
       );
     }
 
@@ -118,22 +115,25 @@ class _DashboardPageState extends State<DashboardPage> {
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         color: SavaioTheme.primary,
+        backgroundColor: SavaioTheme.surfaceContainerHigh,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 32.0),
+          // UX: Padding dikurangi sedikit agar konten terasa lebih lega di layar kecil
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 1. Alert / Actionable Nudge (Di atas agar langsung terlihat)
               if (checkInStatus?.isCheckedInToday == false) ...[
-                const SizedBox(height: 16),
                 const DailyCheckInCard(),
+                const SizedBox(height: 20),
               ],
 
-              const SizedBox(height: 24),
-              // Optimized Balance Card
+              // 2. Main Hero Section (Saldo)
               const _DashboardBalanceSection(),
-              
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // 3. Quick Actions (Primary Actions)
               DashboardQuickActions(
                 onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
                 onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
@@ -142,31 +142,31 @@ class _DashboardPageState extends State<DashboardPage> {
                   MaterialPageRoute(builder: (context) => const OcrScanPage()),
                 ),
               ),
-              
-              const SizedBox(height: 24),
-              // Two Horizontal Budget Progress Cards
+              const SizedBox(height: 12),
+              const SizedBox(height: 12),
               const _DashboardBudgetSection(),
-              
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               ConsistencyCard(
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SummaryPage()),
                 ),
               ),
+              const SizedBox(height: 28),
 
-              const SizedBox(height: 32),
-              // Optimized Recent Transactions
+              // 5. Recent Activity (Kontekstual)
               const _DashboardRecentTransactionsSection(),
 
-              const SizedBox(height: 40),
-              _buildWeeklyPulseSection(context),
+              // 6. Analytics (Di bawah karena butuh waktu untuk dicerna)
 
-              const SizedBox(height: 120),
+              // UX: Memberikan ruang aman untuk navigasi bawah atau FAB
+              const SizedBox(height: 50), 
             ],
           ),
         ),
       ),
+      // UX Suggestion: Pertimbangkan menggunakan FloatingActionButton (FAB)
+      // untuk menambah transaksi agar bisa diakses walau di-scroll ke bawah.
     );
   }
 
@@ -266,24 +266,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildWeeklyPulseSection(BuildContext context) {
-    final weeklyPulse = context.select<DashboardController, WeeklyPulseVM?>((c) => c.data?.weeklyPulse);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader(title: 'Wawasan Mingguan'),
-        const SizedBox(height: 16),
-        if (weeklyPulse != null && weeklyPulse.weeklySpending.isNotEmpty)
-          AppWeeklyPulseChart(
-            growth: weeklyPulse.growth,
-            values: weeklyPulse.thisWeekValues,
-          )
-        else
-          const AppWeeklyPulseChart(growth: 0, values: [0, 0, 0, 0, 0, 0, 0]),
-      ],
-    );
-  }
+  
 }
 
 class _DashboardBalanceSection extends StatelessWidget {
@@ -300,18 +283,10 @@ class _DashboardBalanceSection extends StatelessWidget {
       balance: balance,
       income: income,
       expense: expense,
-      onIncomeTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddTransactionPage(initialType: 'Income')),
-        );
-      },
-      onExpenseTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddTransactionPage(initialType: 'Expense')),
-        );
-      },
+      // UX Fix: Hapus aksi tap di sini jika sudah ada di DashboardQuickActions
+      // Pastikan widget AppBalanceCard Anda mendukung parameter null untuk fungsi ini.
+      onIncomeTap: null, 
+      onExpenseTap: null,
       isLoading: !hasData,
     );
   }
@@ -360,7 +335,6 @@ class _DashboardBudgetSection extends StatelessWidget {
         ? weeklyPulse!.weeklySpending.last.amount 
         : 0.0;
         
-    // Calculate daily budget based on monthly budget / days in month
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final dailyBudget = monthlyBudget / daysInMonth;
@@ -369,16 +343,16 @@ class _DashboardBudgetSection extends StatelessWidget {
       children: [
         Expanded(
           child: BudgetDonutCard(
-            title: 'Budget Bulanan',
+            title: 'Bulanan', // UX Fix: Singkat judul agar tidak overflow
             spent: monthlySpent,
             total: monthlyBudget,
             color: SavaioTheme.primary,
           ),
         ),
-        const SizedBox(width: 24),
+        const SizedBox(width: 16), // UX Fix: Jarak dikurangi agar proporsional
         Expanded(
           child: BudgetDonutCard(
-            title: 'Budget Harian',
+            title: 'Harian',
             spent: todaySpent,
             total: dailyBudget,
             color: SavaioTheme.secondary,

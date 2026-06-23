@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -18,30 +20,42 @@ class _LandingPageState extends State<LandingPage> {
   int _currentPage = 0;
 
   final List<OnboardingData> _onboardingData = [
-    OnboardingData(
-      title: 'Welcome to Savaio',
-      description: 'Elegant finance tracking for the modern era. Take control of your money with style.',
-      image: 'assets/savaio-logo-tinted.png',
-    ),
-    OnboardingData(
-      title: 'Smart Insights',
-      description: 'Get AI-powered analytics to understand your spending patterns and save more efficiently.',
-      icon: Icons.auto_awesome_rounded,
-    ),
-    OnboardingData(
-      title: 'Secure & Private',
-      description: 'Your financial data is encrypted and secure. We prioritize your privacy above all else.',
-      icon: Icons.security_rounded,
-    ),
-  ];
+  OnboardingData(
+    title: 'Masih sering lupa catat pengeluaran?',
+    description:
+        'Pengeluaran kecil yang terlihat sepele sering kali bikin budget berantakan tanpa disadari.',
+    image: 'assets/gambar1.png',
+  ),
+  OnboardingData(
+    title: 'Bingung uang habis ke mana?',
+    description:
+        'Savaio bantu kamu memahami pola spending lewat insight yang relevan dan mudah dipahami.',
+    image: 'assets/gambar2.png',
+  ),
+  OnboardingData(
+    title: 'Pengen ambil kendali atas keuanganmu?',
+    description:
+        'Yuk mulai bersama Savaio dan bangun kebiasaan finansial yang lebih sehat, satu langkah kecil setiap hari.',
+    image: 'assets/gambar3.png',
+  ),
+];
 
-  Future<void> _completeOnboarding(BuildContext context, {Widget? destination}) async {
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _completeOnboarding(BuildContext context,
+      {Widget? destination}) async {
     final authController = context.read<AuthController>();
     await authController.setHasSeenLanding(true);
-    
+
     if (!context.mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => destination ?? const LoginPage()),
+      MaterialPageRoute(
+        builder: (_) => destination ?? const LoginPage(),
+      ),
     );
   }
 
@@ -50,99 +64,129 @@ class _LandingPageState extends State<LandingPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: SavaioTheme.backgroundOf(context),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _onboardingData.length,
-                itemBuilder: (context, index) {
-                  return OnboardingSlide(
-                    data: _onboardingData[index],
-                    textTheme: textTheme,
-                  );
-                },
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              SavaioTheme.primaryOf(context).withOpacity(0.15),
+              SavaioTheme.backgroundOf(context),
+              SavaioTheme.backgroundOf(context),
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  physics: const BouncingScrollPhysics(),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  itemCount: _onboardingData.length,
+                  itemBuilder: (context, index) {
+                    return OnboardingSlide(
+                      data: _onboardingData[index],
+                      textTheme: textTheme,
+                      pageController: _pageController,
+                      index: index,
+                    );
+                  },
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SavaioTheme.spacing2xl),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _onboardingData.length,
-                      (index) => AnimatedContainer(
-                        duration: SavaioTheme.durationNormal,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        height: 8,
-                        width: _currentPage == index ? 24 : 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? SavaioTheme.primaryOf(context)
-                              : SavaioTheme.outlineVariantOf(context),
-                          borderRadius: BorderRadius.circular(SavaioTheme.radiusFull),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: SavaioTheme.spacing3xl),
-                  if (_currentPage == _onboardingData.length - 1)
-                    Column(
-                      children: [
-                        AppButton(
-                          label: 'Get Started',
-                          onTap: () => _completeOnboarding(context, destination: const RegisterPage()),
-                        ),
-                        const SizedBox(height: SavaioTheme.spacingM),
-                        AppButton(
-                          label: 'I already registered',
-                          variant: AppButtonVariant.ghost,
-                          onTap: () => _completeOnboarding(context, destination: const LoginPage()),
-                        ),
-                      ],
-                    )
-                  else
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SavaioTheme.spacing2xl,
+                ),
+                child: Column(
+                  children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          onPressed: () => _completeOnboarding(context, destination: const LoginPage()),
-                          child: Text(
-                            'SKIP',
-                            style: textTheme.labelLarge?.copyWith(
-                              color: SavaioTheme.onSurfaceVariantOf(context),
-                              letterSpacing: 1.2,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        _onboardingData.length,
+                        (index) => AnimatedContainer(
+                          duration: SavaioTheme.durationNormal,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          height: 8,
+                          width: _currentPage == index ? 24 : 8,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? SavaioTheme.primaryOf(context)
+                                : SavaioTheme.outlineVariantOf(context)
+                                    .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(
+                              SavaioTheme.radiusFull,
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 140,
-                          child: AppButton(
-                            label: 'NEXT',
-                            icon: Icons.arrow_forward_rounded,
-                            onTap: () {
-                              _pageController.nextPage(
-                                duration: SavaioTheme.durationNormal,
-                                curve: SavaioTheme.curveDefault,
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  const SizedBox(height: SavaioTheme.spacing2xl),
-                ],
+                    const SizedBox(height: SavaioTheme.spacing3xl),
+                    if (_currentPage == _onboardingData.length - 1)
+                      Column(
+                        children: [
+                          AppButton(
+                            label: 'Mulai',
+                            onTap: () => _completeOnboarding(
+                              context,
+                              destination: const RegisterPage(),
+                            ),
+                          ),
+                          const SizedBox(height: SavaioTheme.spacingM),
+                          AppButton(
+                            label: 'Saya Sudah Terdaftar',
+                            variant: AppButtonVariant.ghost,
+                            onTap: () => _completeOnboarding(
+                              context,
+                              destination: const LoginPage(),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => _completeOnboarding(
+                              context,
+                              destination: const LoginPage(),
+                            ),
+                            child: Text(
+                              'LEWATI',
+                              style: textTheme.labelLarge?.copyWith(
+                                color: SavaioTheme.onSurfaceVariantOf(context),
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 140,
+                            child: AppButton(
+                              label: 'LANJUT',
+                              icon: Icons.arrow_forward_rounded,
+                              onTap: () {
+                                _pageController.nextPage(
+                                  duration: const Duration(milliseconds: 700),
+                                  curve: Curves.easeInOutCubic,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: SavaioTheme.spacing2xl),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -163,66 +207,134 @@ class OnboardingData {
   });
 }
 
-class OnboardingSlide extends StatelessWidget {
+class OnboardingSlide extends StatefulWidget {
   final OnboardingData data;
   final TextTheme textTheme;
+  final PageController pageController;
+  final int index;
 
   const OnboardingSlide({
     super.key,
     required this.data,
     required this.textTheme,
+    required this.pageController,
+    required this.index,
   });
 
   @override
+  State<OnboardingSlide> createState() => _OnboardingSlideState();
+}
+
+class _OnboardingSlideState extends State<OnboardingSlide>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _floatController;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(SavaioTheme.spacing2xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (data.image != null)
-            Image.asset(
-              data.image!,
-              height: 200,
-              fit: BoxFit.contain,
-            )
-          else if (data.icon != null)
-            Container(
-              padding: const EdgeInsets.all(SavaioTheme.spacing3xl),
-              decoration: BoxDecoration(
-                color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: SavaioTheme.primaryOf(context).withValues(alpha: 0.2),
-                  width: 2,
+    return AnimatedBuilder(
+      animation: widget.pageController,
+      builder: (context, child) {
+        double page = 0.0;
+        if (widget.pageController.hasClients &&
+            widget.pageController.position.haveDimensions) {
+          page = widget.pageController.page ?? 0.0;
+        } else {
+          page = widget.index.toDouble();
+        }
+
+        double offset = page - widget.index;
+        double textOpacity = 1 - (offset.abs() * 1.5).clamp(0.0, 1.0);
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SavaioTheme.spacing2xl),
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: widget.data.image != null
+                      ? AnimatedBuilder(
+                          animation: _floatController,
+                          builder: (context, childImage) {
+                            final floatY = math.sin(_floatController.value * math.pi * 2) * 8;
+                            
+                            return Transform.translate(
+                              offset: Offset(
+                                -offset * 80, 
+                                floatY,       
+                              ),
+                              child: childImage,
+                            );
+                          },
+                          child: Image.asset(
+                            widget.data.image!,
+                            fit: BoxFit.contain,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
               ),
-              child: Icon(
-                data.icon,
-                size: 80,
-                color: SavaioTheme.primaryOf(context),
+              Transform.translate(
+                offset: Offset(-offset * 30, 0), 
+                child: Opacity(
+                  opacity: textOpacity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: SavaioTheme.surfaceOf(context).withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.data.title,
+                              style: widget.textTheme.headlineMedium?.copyWith(
+                                fontSize: 24, 
+                                letterSpacing: -0.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: SavaioTheme.spacingM),
+                            Text(
+                              widget.data.description,
+                              // PERBAIKAN: fontSize dinaikkan ke 15 agar sedikit lebih besar
+                              style: widget.textTheme.bodyLarge?.copyWith(
+                                fontSize: 15, 
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          const SizedBox(height: SavaioTheme.spacing4xl),
-          Text(
-            data.title,
-            style: textTheme.headlineMedium?.copyWith(
-              color: SavaioTheme.onSurfaceOf(context),
-              fontWeight: FontWeight.w900,
-            ),
-            textAlign: TextAlign.center,
+              const SizedBox(height: SavaioTheme.spacing2xl),
+            ],
           ),
-          const SizedBox(height: SavaioTheme.spacingL),
-          Text(
-            data.description,
-            style: textTheme.bodyLarge?.copyWith(
-              color: SavaioTheme.onSurfaceVariantOf(context),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

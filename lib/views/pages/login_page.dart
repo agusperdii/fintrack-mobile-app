@@ -36,7 +36,8 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() {
-      _errorMessage = 'Invalid email or password';
+      // PERBAIKAN: Pesan error yang lebih jelas dan solutif
+      _errorMessage = 'Email atau kata sandi salah. Silakan coba lagi.';
     });
   }
 
@@ -112,8 +113,9 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // PERBAIKAN: Judul utama yang menyambut pengguna
                 Text(
-                  'Welcome Back',
+                  'Selamat Datang Kembali',
                   style: textTheme.headlineLarge?.copyWith(
                     color: SavaioTheme.onSurfaceOf(context),
                     fontWeight: FontWeight.w800,
@@ -121,8 +123,9 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: SavaioTheme.spacingM),
+                // PERBAIKAN: Sub-judul/ajakan masuk
                 Text(
-                  'Log in to continue to Savaio',
+                  'Silakan masuk untuk melanjutkan ke Savaio',
                   style: textTheme.bodyMedium?.copyWith(
                     color: SavaioTheme.onSurfaceVariantOf(context),
                   ),
@@ -161,6 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   decoration: _inputDecoration(
                     context,
+                    // Tetap menggunakan 'Email' karena sudah umum di UI Indonesia
                     labelText: 'Email',
                   ),
                   keyboardType: TextInputType.emailAddress,
@@ -173,7 +177,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   decoration: _inputDecoration(
                     context,
-                    labelText: 'Password',
+                    // PERBAIKAN: Mengubah Password menjadi Kata Sandi
+                    labelText: 'Kata Sandi',
                   ),
                   obscureText: true,
                 ),
@@ -207,7 +212,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         )
                       : Text(
-                          'Log In',
+                          // PERBAIKAN: Mengubah Log In menjadi Masuk
+                          'Masuk',
                           style: textTheme.labelLarge?.copyWith(
                             color: SavaioTheme.onPrimaryFixedOf(context),
                             fontWeight: FontWeight.w800,
@@ -227,7 +233,8 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         },
                   child: Text(
-                    'Don\'t have an account? Sign up',
+                    // PERBAIKAN: Ajakan daftar yang lebih natural
+                    'Belum punya akun? Daftar sekarang',
                     style: textTheme.bodyMedium?.copyWith(
                       color: SavaioTheme.primaryOf(context),
                       fontWeight: FontWeight.w700,

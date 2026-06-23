@@ -22,6 +22,8 @@ class BudgetDonutCard extends StatelessWidget {
     final percentage = total > 0 ? (spent / total) : 0.0;
     final displayPercentage = (percentage * 100).clamp(0, 100).toStringAsFixed(0);
     final isOver = spent > total && total > 0;
+    final difference = (total - spent).abs();
+    final prefixText = isOver ? 'Kelebihan ' : 'Sisa ';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -91,9 +93,9 @@ class BudgetDonutCard extends StatelessWidget {
                 color: SavaioTheme.onSurfaceVariantOf(context),
               ),
               children: [
-                const TextSpan(text: 'Sisa '),
+                TextSpan(text: prefixText), // Menggunakan teks dinamis
                 TextSpan(
-                  text: SavaioTheme.formatCurrencyShorthand(total - spent),
+                  text: SavaioTheme.formatCurrencyShorthand(difference), // Menggunakan selisih absolut
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w900,
                     color: isOver ? SavaioTheme.error : color,

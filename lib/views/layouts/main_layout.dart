@@ -201,8 +201,7 @@ class _MainLayoutState extends State<MainLayout> {
         top: Radius.circular(32.0),
       ),
       child: BottomAppBar(
-        // Kunci di tinggi yang pas (misal 65 atau 70)
-        // Angka ini cukup untuk ikon navigasi + ruang aman Home Indicator di bawahnya
+
         height: 70, 
         padding: EdgeInsets.zero,
         
@@ -213,7 +212,6 @@ class _MainLayoutState extends State<MainLayout> {
         shadowColor: theme.shadowColor.withValues(alpha: 0.04),
         elevation: 16,
         
-        // Hapus SafeArea dan padding manual sama sekali
         child: SizedBox(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
