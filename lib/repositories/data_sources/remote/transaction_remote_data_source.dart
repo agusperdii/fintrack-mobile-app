@@ -71,13 +71,36 @@ class TransactionRemoteDataSource {
   }
 
   /// PATCH /transactions/{id}
-  Future<Transaction> updateTransaction(String id, Map<String, dynamic> body) async {
-    final data = await _client.patch(
-      '${ApiConfig.baseUrl}/transactions/$id',
-      body: body,
-    ) as Map<String, dynamic>;
-    return Transaction.fromJson(data);
+  Future<Transaction> updateTransaction({
+  required String id,
+  String? title,
+  String? description,
+  double? amount,
+  DateTime? date,
+  String? categoryId,
+  String? receiptId,
+  bool? isConfirmed,
+}) async {
+  final body = <String, dynamic>{};
+
+  if (title != null) body['title'] = title;
+  if (description != null) body['description'] = description;
+  if (amount != null) body['amount'] = amount;
+  if (categoryId != null) body['category_id'] = categoryId;
+  if (receiptId != null) body['receipt_id'] = receiptId;
+  if (isConfirmed != null) body['is_confirmed'] = isConfirmed;
+
+  if (date != null) {
+    body['date'] = date.toIso8601String();
   }
+
+  final data = await _client.patch(
+    '${ApiConfig.baseUrl}/transactions/$id',
+    body: body,
+  );
+
+  return Transaction.fromJson(data as Map<String, dynamic>);
+}
 
   /// DELETE /transactions/{id}
   Future<void> deleteTransaction(String id) async {

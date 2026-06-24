@@ -19,7 +19,7 @@ import 'package:savaio/views/pages/notifications_page.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
 import 'package:savaio/views/pages/transaction_detail_page.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
-import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/views/pages/transaction_form_page.dart';
 import 'package:savaio/views/pages/streak_page.dart';
 import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/views/pages/summary_page.dart';
@@ -90,7 +90,7 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddTransactionPage(initialType: type, initialCategory: category),
+        builder: (context) => TransactionFormPage(initialType: type, initialCategory: category),
       ),
     );
   }

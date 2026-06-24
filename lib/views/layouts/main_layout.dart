@@ -5,7 +5,7 @@ import 'package:savaio/views/pages/dashboard_page.dart';
 import 'package:savaio/views/pages/analisa_page.dart';
 import 'package:savaio/views/pages/profile_page.dart';
 import 'package:savaio/views/pages/summary_page.dart';
-import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/views/pages/transaction_form_page.dart';
 import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/notifications/notification_popup_organism.dart';
@@ -178,7 +178,7 @@ class _MainLayoutState extends State<MainLayout> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const AddTransactionPage(),
+              builder: (_) => const TransactionFormPage(),
             ),
           );
         },

@@ -4,7 +4,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
-import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/views/pages/transaction_form_page.dart';
 import 'package:savaio/models/ocr_result.dart';
 
 class OcrScanPage extends StatefulWidget {
@@ -96,7 +96,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddTransactionPage(
+                    builder: (context) => TransactionFormPage(
                       initialTitle: result.parsedData?.merchantName ?? result.parsedData?.title ?? '-',
                       initialAmount: result.parsedData?.amount ?? 0.0,
                       initialCategory: result.parsedData?.categorySuggestion,

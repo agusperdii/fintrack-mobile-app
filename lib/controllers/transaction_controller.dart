@@ -25,6 +25,7 @@ class TransactionController extends ChangeNotifier {
   bool _isLoading = false;
   bool _isAddingTransaction = false;
   bool _isDeletingTransaction = false;
+  bool _isUpdatingTransaction = false;
   String? _error;
 
   List<Transaction>? get transactions => _transactions;
@@ -33,6 +34,7 @@ class TransactionController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAddingTransaction => _isAddingTransaction;
   bool get isDeletingTransaction => _isDeletingTransaction;
+  bool get isUpdatingTransaction => _isUpdatingTransaction;
   String? get error => _error;
 
   Future<void> fetchTransactions({String? month}) async {
@@ -224,6 +226,106 @@ class TransactionController extends ChangeNotifier {
       _safeNotifyListeners(this);
     } finally {
       dashboardController.isSyncingTransaction = false; // Stop global sync indicator
+    }
+  }
+
+  Future<Transaction> updateTransaction({
+    required String id,
+    DashboardController? dashboardController,
+    String? title,
+    String? description,
+    double? amount,
+    String? categoryId,
+    DateTime? date,
+    String? receiptId,
+  }) async {
+    _isUpdatingTransaction = true;
+    _error = null;
+
+    if (dashboardController != null) {
+      dashboardController.isSyncingTransaction = true;
+    }
+
+    _safeNotifyListeners(this);
+
+    Transaction? oldTransaction;
+
+    try {
+      oldTransaction = _transactions?.firstWhere((t) => t.id == id);
+    } catch (_) {}
+
+    if (oldTransaction == null) {
+      _error = 'Transaction not found';
+      _isUpdatingTransaction = false;
+      _safeNotifyListeners(this);
+      // PERBAIKAN
+      // Melempar exception agar blok catch di Form Page bisa menangkapnya
+      throw Exception(_error); 
+    }
+
+    // Backup list for rollback
+    final previousTransactions =
+        _transactions != null ? List<Transaction>.from(_transactions!) : null;
+
+    // Optimistic update
+    if (_transactions != null) {
+      _transactions = _transactions!.map((tx) {
+        if (tx.id != id) return tx;
+
+        return tx.copyWith(
+          title: title ?? tx.title,
+          description: description ?? tx.description,
+          amount: amount ?? tx.amount,
+          categoryId: categoryId ?? tx.categoryId,
+          receiptId: receiptId ?? tx.receiptId,
+          date: date ?? tx.date,
+        );
+      }).toList();
+
+      _safeNotifyListeners(this);
+    }
+
+    try {
+      final updated = await _repository.updateTransaction(
+        id: id,
+        title: title,
+        description: description,
+        amount: amount,
+        categoryId: categoryId,
+        date: date,
+        receiptId: receiptId,
+      );
+
+      // Replace optimistic data with actual server response
+      if (_transactions != null) {
+        _transactions = _transactions!.map((tx) {
+          return tx.id == id ? updated : tx;
+        }).toList();
+      }
+
+      // PERBAIKAN
+      // Mengembalikan objek Transaction terbaru
+      return updated; 
+      
+    } catch (e) {
+      _error = e.toString();
+
+      // Rollback
+      _transactions = previousTransactions;
+      _safeNotifyListeners(this);
+
+      // PERBAIKAN
+      // Melempar error ke UI Form Page agar memunculkan Snackbar merah
+      throw Exception(e); 
+    } finally {
+      _isUpdatingTransaction = false;
+
+      if (dashboardController != null) {
+        dashboardController.isSyncingTransaction = false;
+        dashboardController.fetchDashboardData();
+      }
+
+      _safeNotifyListeners(this);
     }
   }
 

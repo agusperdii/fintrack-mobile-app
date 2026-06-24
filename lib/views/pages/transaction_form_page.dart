@@ -16,8 +16,11 @@ import 'package:savaio/views/components/organisms/transaction_category_grid.dart
 import 'package:savaio/views/components/organisms/add_category_sheet.dart';
 import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
+import 'package:savaio/models/app_data.dart';
 
-class AddTransactionPage extends StatefulWidget {
+class TransactionFormPage extends StatefulWidget {
+  final Transaction? transaction;
+
   final String? initialTitle;
   final double? initialAmount;
   final String? initialCategory;
@@ -25,8 +28,9 @@ class AddTransactionPage extends StatefulWidget {
   final String? initialReceiptId;
   final String? source;
 
-  const AddTransactionPage({
+  const TransactionFormPage({
     super.key,
+    this.transaction,
     this.initialTitle,
     this.initialAmount,
     this.initialCategory,
@@ -35,11 +39,13 @@ class AddTransactionPage extends StatefulWidget {
     this.source,
   });
 
+  bool get isEditMode => transaction != null;
+
   @override
-  State<AddTransactionPage> createState() => _AddTransactionPageState();
+  State<TransactionFormPage> createState() => _TransactionFormPageState();
 }
 
-class _AddTransactionPageState extends State<AddTransactionPage> {
+class _TransactionFormPageState extends State<TransactionFormPage> {
   String _type = 'Expense'; 
   late final TextEditingController _titleController; 
   late final TextEditingController _descriptionController;
@@ -51,39 +57,66 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType ?? 'Expense';
-    _titleController = TextEditingController(text: widget.initialTitle);
-    _descriptionController = TextEditingController();
-    _amountController = TextEditingController(
-      text: widget.initialAmount != null ? widget.initialAmount!.toStringAsFixed(0) : '',
+    final tx = widget.transaction;
+
+    // PERBAIKAN 1: Memastikan pengecekan tipe lebih kebal terhadap perbedaan enum vs string
+    if (tx != null) {
+      final typeString = tx.type.toString().toLowerCase();
+      _type = typeString.contains('income') ? 'Income' : 'Expense';
+    } else {
+      _type = widget.initialType ?? 'Expense';
+    }
+
+    _titleController = TextEditingController(
+      text: tx?.title ?? widget.initialTitle,
     );
-    
+
+    _descriptionController = TextEditingController(
+      text: tx?.description ?? '',
+    );
+
+    _amountController = TextEditingController(
+      text: tx != null
+          ? tx.amount.toStringAsFixed(0)
+          : widget.initialAmount?.toStringAsFixed(0) ?? '',
+    );
+
+    _selectedDate = tx?.date ?? DateTime.now();
+
+    // PERBAIKAN 2: Pemanggilan inisialisasi kategori (tx?.categoryId diurus di dalam fungsi ini)
     _initCategory();
   }
 
-  void _initCategory() {
-    final categories = sl.budgetController.categories.where(
-      (c) => c['type'].toString().toLowerCase() == _type.toLowerCase()
-    ).toList();
-    final initialName = widget.initialCategory ?? (widget.initialType == 'Income' ? 'Salary' : 'Food');
-    
-    try {
-      final cat = categories.firstWhere(
-        (c) => c['name'].toString().toLowerCase() == initialName.toLowerCase(),
-        orElse: () => categories.first,
-      );
-      _selectedCategoryId = cat['id']?.toString();
-      _selectedCategoryName = cat['name'].toString();
-    } catch (_) {
-      if (categories.isNotEmpty) {
-        _selectedCategoryId = categories.first['id']?.toString();
-        _selectedCategoryName = categories.first['name'].toString();
-      } else {
-        _selectedCategoryName = initialName;
-      }
-    }
-  }
+  void _initCategory({bool fromEdit = true}) {
+    final tx = widget.transaction;
 
+    if (tx != null && fromEdit) {
+      // ISSUE: Tambahin categoryId di bagian response Dashboard, lalu ganti ini pake categoryID, bukan category?.id...
+      _selectedCategoryId = tx.category?.id;
+      _selectedCategoryName = tx.category?.name ?? 'Food';
+      return;
+    }
+
+    final categories = sl.budgetController.categories.where(
+      (c) => c['type'].toString().toLowerCase() == _type.toLowerCase(),
+    ).toList();
+
+    final initialName = widget.initialCategory ??
+        (widget.initialType == 'Income' ? 'Salary' : 'Food');
+
+    if (categories.isEmpty) {
+      _selectedCategoryName = initialName;
+      return;
+    }
+
+    final cat = categories.firstWhere(
+      (c) => c['name'].toString().toLowerCase() == initialName.toLowerCase(),
+      orElse: () => categories.first,
+    );
+
+    _selectedCategoryId = cat['id']?.toString();
+    _selectedCategoryName = cat['name'].toString();
+  }
   @override
   void dispose() {
     _titleController.dispose();
@@ -133,24 +166,54 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   }
 
   Future<void> _submitData() async {
-    if (_amountController.text.isEmpty || double.tryParse(_amountController.text) == null) {
-      AppSnackBar.show(context, 'Tolong masukkan nominal yang valid', type: AppSnackBarType.error);
-      return;
-    }
+  if (_amountController.text.isEmpty ||
+      double.tryParse(_amountController.text) == null) {
+    AppSnackBar.show(
+      context,
+      'Tolong masukkan nominal yang valid',
+      type: AppSnackBarType.error,
+    );
+    return;
+  }
 
-    if (_selectedCategoryId == null) {
-      AppSnackBar.show(context, 'Tolong pilih kategori', type: AppSnackBarType.error);
-      return;
-    }
+  if (_selectedCategoryId == null) {
+    AppSnackBar.show(
+      context,
+      'Tolong pilih kategori',
+      type: AppSnackBarType.error,
+    );
+    return;
+  }
 
-    final transactionController = context.read<TransactionController>();
-    
-    try {
+  final transactionController = context.read<TransactionController>();
+
+  try {
+    final title = _titleController.text.isEmpty
+        ? 'Transaksi $_selectedCategoryName'
+        : _titleController.text;
+
+    final amount = double.parse(_amountController.text);
+
+    if (widget.isEditMode) {
+      final updatedTx = await transactionController.updateTransaction(
+        id: widget.transaction!.id,
+        dashboardController: sl.dashboardController,
+        title: title,
+        description: _descriptionController.text,
+        amount: amount,
+        categoryId: _selectedCategoryId!,
+        date: _selectedDate,
+      );
+
+      if (mounted) {
+        Navigator.pop(context, updatedTx);
+      }
+    } else {
       await transactionController.createTransactionOptimistic(
         dashboardController: sl.dashboardController,
-        title: _titleController.text.isEmpty ? 'Transaksi $_selectedCategoryName' : _titleController.text,
+        title: title,
         description: _descriptionController.text,
-        amount: double.parse(_amountController.text),
+        amount: amount,
         categoryId: _selectedCategoryId!,
         type: _type.toLowerCase(),
         date: _selectedDate,
@@ -158,13 +221,20 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         source: widget.source ?? 'manual',
       );
 
-      if (mounted) Navigator.pop(context, true);
-    } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context, 'Gagal menyimpan: $e', type: AppSnackBarType.error);
+        Navigator.pop(context, true);
       }
     }
+  } catch (e) {
+    if (!mounted) return;
+
+    AppSnackBar.show(
+      context,
+      'Gagal menyimpan: $e',
+      type: AppSnackBarType.error,
+    );
   }
+}
 
   void _showAddCategorySheet() {
     showModalBottomSheet(
@@ -214,7 +284,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     onTypeChanged: (type) {
                       setState(() {
                         _type = type;
-                        _initCategory(); // Reset kategori sesuai tipe
+                        _initCategory(fromEdit: false); // Reset kategori sesuai tipe
                       });
                     },
                   ),
@@ -273,25 +343,32 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: SavaioTheme.backgroundOf(context),
-      elevation: 0,
-      centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: const AppHeading('Tambah Transaksi', size: AppHeadingSize.h3),
-      actions: [
+    backgroundColor: SavaioTheme.backgroundOf(context),
+    elevation: 0,
+    centerTitle: true,
+    leading: IconButton(
+      icon: Icon(Icons.close, color: Theme.of(context).colorScheme.primary),
+      onPressed: () => Navigator.pop(context),
+    ),
+    title: AppHeading(
+      widget.isEditMode ? 'Edit Transaksi' : 'Tambah Transaksi',
+      size: AppHeadingSize.h3,
+    ),
+    actions: [
+      // Jika BUKAN mode edit, tampilkan icon OCR
+      if (!widget.isEditMode) ...[
         IconButton(
           onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (context) => const OcrScanPage())
+            context,
+            MaterialPageRoute(builder: (context) => const OcrScanPage()),
           ),
           icon: Icon(Icons.document_scanner_outlined, color: Theme.of(context).colorScheme.primary),
           tooltip: 'Scan Struk (OCR)',
         ),
         const SizedBox(width: 8),
       ],
-    );
+    ],
+  );
   }
 
   Widget _buildTitleSection() {
@@ -466,9 +543,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         ),
         child: Consumer<TransactionController>(
           builder: (context, controller, child) => AppButton(
-            label: 'SIMPAN TRANSAKSI',
-            isLoading: controller.isAddingTransaction,
-            onTap: controller.isAddingTransaction ? null : _submitData,
+            label: widget.isEditMode
+                  ? 'SIMPAN PERUBAHAN'
+                  : 'SIMPAN TRANSAKSI',
+            isLoading: widget.isEditMode
+                  ? controller.isUpdatingTransaction
+                  : controller.isAddingTransaction,
+            onTap: (controller.isAddingTransaction ||
+                    controller.isUpdatingTransaction)
+                  ? null
+                  : _submitData,
           ),
         ),
       ),

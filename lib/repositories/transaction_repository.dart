@@ -30,6 +30,26 @@ class TransactionRepository {
     );
   }
 
+  Future<Transaction> updateTransaction({
+    required String id,
+    String? title,
+    String? description,
+    double? amount,
+    String? categoryId,
+    DateTime? date,
+    String? receiptId,
+  }) {
+    return _remoteDataSource.updateTransaction(
+      id: id,
+      title: title,
+      description: description,
+      amount: amount,
+      categoryId: categoryId,
+      date: date,
+      receiptId: receiptId,
+    );
+  }
+
   Future<bool> deleteTransaction(String id) async {
     try {
       await _remoteDataSource.deleteTransaction(id);
