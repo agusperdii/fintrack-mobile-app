@@ -1,30 +1,64 @@
+// notification_controller.dart
+// Controller yang mengelola state notifikasi pengguna, termasuk pengambilan dari
+// backend, penandaan sudah dibaca, penghapusan, dan penerimaan notifikasi real-time.
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/notification_data.dart';
-import 'package:savaio/models/nudge_data.dart';
 import 'package:savaio/repositories/notification_repository.dart';
+import 'package:savaio/services/notification_supabase_service.dart';
 
 class NotificationController extends ChangeNotifier {
   final NotificationRepository _repository;
+  final NotificationSupabaseService _supabaseService;
+  StreamSubscription? _wsSubscription;
 
-  NotificationController(this._repository);
+  NotificationController(this._repository, this._supabaseService) {
+    _initWsListener();
+  }
 
   List<NotificationData> _notifications = [];
-  List<NudgeData> _nudges = [];
   bool _isLoading = false;
   String? _error;
 
+  // Stream untuk UI mendengarkan popup/banner real-time
+  final _realtimeNotifController = StreamController<NotificationData>.broadcast();
+  Stream<NotificationData> get realtimeNotifications => _realtimeNotifController.stream;
+
   List<NotificationData> get notifications => _notifications;
-  List<NudgeData> get nudges => _nudges;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  void _initWsListener() {
+    _wsSubscription?.cancel();
+    _wsSubscription = _supabaseService.notifications.listen((notif) {
+      debugPrint('[NotificationController] Received real-time notification: ${notif.title}');
+      
+      // Cek apakah sudah ada di list (mencegah duplikat jika fetchAll tumpang tindih)
+      final exists = _notifications.any((n) => n.id == notif.id);
+      if (!exists) {
+        _notifications = [notif, ..._notifications];
+      }
+
+      // SELALU broadcast ke UI agar popup/toast langsung muncul
+      _realtimeNotifController.add(notif);
+      
+      notifyListeners();
+    });
+  }
+
   int get unreadNotificationsCount => _notifications.where((n) => !n.isRead).length;
 
-  NudgeData? get latestUnreadNudge {
-    if (_nudges.isEmpty) return null;
+  NotificationData? get latestUnreadPopup {
+    if (_notifications.isEmpty) return null;
     try {
-      return _nudges.firstWhere((n) => !n.isRead);
-    } catch (e) {
+      return _notifications.firstWhere(
+        (n) => !n.isRead && (
+          n.presentation == NotificationPresentation.popup ||
+          n.presentation == NotificationPresentation.banner ||
+          n.presentation == NotificationPresentation.toast
+        ),
+      );
+    } catch (_) {
       return null;
     }
   }
@@ -35,14 +69,11 @@ class NotificationController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final results = await Future.wait([
-        _repository.getNotifications(),
-        _repository.getNudges(),
-      ]);
-      _notifications = results[0] as List<NotificationData>;
-      _nudges = results[1] as List<NudgeData>;
+      _notifications = await _repository.getNotifications();
+      _error = null;
     } catch (e) {
       _error = e.toString();
+      debugPrint('Error fetching notifications: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -51,19 +82,11 @@ class NotificationController extends ChangeNotifier {
 
   Future<void> markAsRead(String id) async {
     try {
-      final success = await _repository.markNotificationRead(id);
+      final success = await _repository.markNotificationAsRead(id);
       if (success) {
         _notifications = _notifications.map((n) {
           if (n.id == id) {
-            return NotificationData(
-              id: n.id,
-              title: n.title,
-              message: n.message,
-              type: n.type,
-              isRead: true,
-              createdAt: n.createdAt,
-              extraData: n.extraData,
-            );
+            return n.copyWith(isRead: true, readAt: DateTime.now());
           }
           return n;
         }).toList();
@@ -86,27 +109,10 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
-  Future<void> markNudgeAsRead(String id) async {
-    try {
-      final success = await _repository.markNudgeRead(id);
-      if (success) {
-        _nudges = _nudges.map((n) {
-          if (n.id == id) {
-            return NudgeData(
-              id: n.id,
-              type: n.type,
-              category: n.category,
-              message: n.message,
-              isRead: true,
-              createdAt: n.createdAt,
-            );
-          }
-          return n;
-        }).toList();
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Error marking nudge as read: $e');
-    }
+  @override
+  void dispose() {
+    _wsSubscription?.cancel();
+    _realtimeNotifController.close();
+    super.dispose();
   }
 }

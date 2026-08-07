@@ -1,10 +1,15 @@
+// ocr_scan_page.dart
+// Halaman untuk memindai struk belanja menggunakan OCR/AI, menampilkan hasil
+// ekstraksi data, lalu mengarahkan pengguna ke form transaksi yang sudah
+// terisi otomatis.
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
-import 'package:savaio/views/pages/add_transaction_page.dart';
+import 'package:savaio/views/pages/transaction_form_page.dart';
 import 'package:savaio/models/ocr_result.dart';
 
 class OcrScanPage extends StatefulWidget {
@@ -83,36 +88,26 @@ class _OcrScanPageState extends State<OcrScanPage> {
           children: [
             const AppHeading('Hasil Scan AI', size: AppHeadingSize.h3),
             const SizedBox(height: 24),
-            _buildResultRow('Merchant', result.merchantName),
-            _buildResultRow('Tanggal', result.transactionDate),
-            _buildResultRow('Total', 'Rp ${result.totalAmount.toStringAsFixed(0)}'),
+            _buildResultRow('Merchant', result.parsedData?.merchantName ?? result.parsedData?.title ?? '-'),
+            _buildResultRow('Kategori', result.parsedData?.categorySuggestion ?? '-'),
+            _buildResultRow('Tanggal', result.parsedData?.date ?? '-'),
+            _buildResultRow('Total', SavaioTheme.formatCurrency(result.parsedData?.amount ?? 0, currency: 'IDR')),
             const SizedBox(height: 24),
-            const AppHeading('Line Items', size: AppHeadingSize.subtitle, isBold: true),
-            const SizedBox(height: 12),
-            ...result.lineItems.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(child: Text(item.itemName, style: const TextStyle(color: Colors.white70, fontSize: 12))),
-                  Text('x${item.itemQuantity}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(width: 12),
-                  Text('Rp ${item.itemPrice.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            )),
             const SizedBox(height: 32),
             AppButton(
               label: 'KONFIRMASI & LANJUT',
               onTap: () {
-                Navigator.pop(context); // Close sheet
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddTransactionPage(
-                      initialTitle: result.merchantName,
-                      initialAmount: result.totalAmount,
+                    builder: (context) => TransactionFormPage(
+                      initialTitle: result.parsedData?.merchantName ?? result.parsedData?.title ?? '-',
+                      initialAmount: result.parsedData?.amount ?? 0.0,
+                      initialCategory: result.parsedData?.categorySuggestion,
                       initialType: 'Expense',
+                      initialReceiptId: result.id,
+                      source: 'ocr',
                     ),
                   ),
                 );
@@ -195,7 +190,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                   ),
                 if (controller.selectedImage == null)
                   AppButton(
-                    label: 'AMBIL FOTO STRUK',
+                    label: 'Ambil Foto Struk',
                     onTap: _showImagePickerOptions,
                   )
                 else
@@ -203,7 +198,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: 'GANTI FOTO',
+                          label: 'Ganti Foto',
                           variant: AppButtonVariant.secondary,
                           onTap: _showImagePickerOptions,
                         ),
@@ -211,7 +206,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: AppButton(
-                          label: 'MULAI SCAN',
+                          label: 'Mulai Scan',
                           isLoading: controller.isLoading,
                           onTap: _processScan,
                         ),

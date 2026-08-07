@@ -1,3 +1,6 @@
+// ocr_controller.dart
+// Controller yang menangani pemilihan gambar struk dan proses pemindaian OCR
+// untuk mengekstrak data transaksi dari foto struk belanja.
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -43,7 +46,7 @@ class OcrController with ChangeNotifier {
     notifyListeners();
 
     try {
-      _scanResult = await _repository.scanReceipt(_selectedImage!);
+      _scanResult = await _repository.uploadReceipt(_selectedImage!);
       _isLoading = false;
       notifyListeners();
       return true;

@@ -1,30 +1,42 @@
-import 'package:savaio/core/network/api_client.dart';
-import 'package:savaio/core/constants/api_config.dart';
-import 'package:savaio/models/category_model.dart';
+// category_remote_data_source.dart
+// Data source yang berkomunikasi langsung dengan endpoint categories di
+// backend (ambil daftar, buat, perbarui, dan hapus kategori).
 
-abstract class CategoryRemoteDataSource {
-  Future<List<CategoryModel>> getCategories();
-  Future<CategoryModel> addCategory(String name, String icon);
-}
+import '../../../core/constants/api_config.dart';
+import '../../../core/network/api_client.dart';
+import '../../../models/category_model.dart';
 
-class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
-  final ApiClient apiClient;
-  final String baseUrl = ApiConfig.baseUrl;
+class CategoryRemoteDataSource {
+  final ApiClient _client;
 
-  CategoryRemoteDataSourceImpl({required this.apiClient});
+  CategoryRemoteDataSource(this._client);
 
-  @override
+  /// GET /categories — mengambil daftar seluruh kategori.
   Future<List<CategoryModel>> getCategories() async {
-    final response = await apiClient.get('$baseUrl/categories/');
-    return (response as List).map((c) => CategoryModel.fromJson(c)).toList();
+    final data = await _client.get('${ApiConfig.baseUrl}/categories') as List? ?? [];
+    return data.map((c) => CategoryModel.fromJson(c as Map<String, dynamic>)).toList();
   }
 
-  @override
-  Future<CategoryModel> addCategory(String name, String icon) async {
-    final response = await apiClient.post('$baseUrl/categories/', body: {
-      'name': name,
-      'icon': icon,
-    });
-    return CategoryModel.fromJson(response);
+  /// POST /categories — membuat kategori baru.
+  Future<CategoryModel> createCategory(Map<String, dynamic> data) async {
+    final resData = await _client.post(
+      '${ApiConfig.baseUrl}/categories',
+      body: data,
+    ) as Map<String, dynamic>;
+    return CategoryModel.fromJson(resData);
+  }
+
+  /// PATCH /categories/{id} — memperbarui kategori berdasarkan id.
+  Future<CategoryModel> updateCategory(String id, Map<String, dynamic> data) async {
+    final resData = await _client.patch(
+      '${ApiConfig.baseUrl}/categories/$id',
+      body: data,
+    ) as Map<String, dynamic>;
+    return CategoryModel.fromJson(resData);
+  }
+
+  /// DELETE /categories/{id} — menghapus kategori berdasarkan id.
+  Future<void> deleteCategory(String id) async {
+    await _client.delete('${ApiConfig.baseUrl}/categories/$id');
   }
 }

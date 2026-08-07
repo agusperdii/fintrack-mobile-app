@@ -1,232 +1,455 @@
+// transaction_detail_page.dart
+// Halaman detail satu transaksi, menampilkan informasi lengkap serta aksi
+// untuk mengedit atau menghapus transaksi tersebut.
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/models/app_data.dart';
-import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
+import 'package:savaio/views/pages/transaction_form_page.dart';
 
-class TransactionDetailPage extends StatelessWidget {
+class TransactionDetailPage extends StatefulWidget {
   final Transaction transaction;
 
-  const TransactionDetailPage({super.key, required this.transaction});
+  const TransactionDetailPage({
+    super.key,
+    required this.transaction,
+  });
 
+  @override
+  State<TransactionDetailPage> createState() => _TransactionDetailPageState();
+}
+
+class _TransactionDetailPageState extends State<TransactionDetailPage> {
+  bool _isDeleting = false;
+  late Transaction _transaction;
+
+  @override
+  void initState() {
+    super.initState();
+    _transaction = widget.transaction;
+  }
+  
   String _formatDate(String dateStr) {
     try {
       final dateTime = DateTime.parse(dateStr);
       return DateFormat('dd MMMM yyyy, HH:mm').format(dateTime);
-    } catch (e) {
+    } catch (_) {
       return dateStr;
     }
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: SavaioTheme.surfaceContainerHigh,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Transaksi?', style: GoogleFonts.inter(color: SavaioTheme.onSurface, fontWeight: FontWeight.bold)),
-        content: Text('Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.', style: GoogleFonts.inter(color: SavaioTheme.onSurfaceVariant, fontSize: 14)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Hapus', style: TextStyle(color: SavaioTheme.error, fontWeight: FontWeight.bold)),
-          ),
-        ],
+  Future<void> _handleEdit() async {
+    final updatedTx = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionFormPage(
+          transaction: _transaction,
+        ),
       ),
     );
 
-    if (confirm == true && transaction.id != null) {
-      final success = await sl.transactionController.deleteTransaction(transaction.id!);
-      if (success && context.mounted) {
-        sl.dashboardController.fetchDashboardData();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Transaksi berhasil dihapus'), 
-            backgroundColor: SavaioTheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+    if (!mounted) return;
+
+
+    if (updatedTx is Transaction) {
+      setState(() {
+        _transaction = updatedTx;
+      });
+    }
+  }
+
+  Future<void> _handleDelete() async {
+    if (_isDeleting) return;
+
+    final confirm = await _showConfirmDialog();
+    if (confirm != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+
+    try {
+      final success = await sl.transactionController.deleteTransaction(
+        _transaction.id,
+        dashboardController: sl.dashboardController,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
         Navigator.pop(context, true);
+        
+        AppSnackBar.show(
+          context,
+          'Transaksi berhasil dihapus',
+          type: AppSnackBarType.success,
+          minimal: true,
+          duration: const Duration(milliseconds: 500),
+        );
+      } else {
+        setState(() => _isDeleting = false);
+        AppSnackBar.show(
+          context,
+          'Gagal menghapus transaksi. Silakan coba lagi.',
+          type: AppSnackBarType.error,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isDeleting = false);
       }
     }
   }
 
+  Future<bool?> _showConfirmDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: SavaioTheme.surfaceContainerHighOf(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
+          ),
+          title: Text(
+            'Hapus Transaksi?',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: SavaioTheme.onSurfaceOf(context),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Text(
+            'Transaksi ini akan dihapus secara permanen dari catatan keuangan Anda.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: SavaioTheme.onSurfaceVariantOf(context),
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: Text(
+                'Batal',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: SavaioTheme.onSurfaceVariantOf(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            TextButton(
+              // PERBAIKAN: Langsung menutup dialog dengan nilai true tanpa memicu rebuild konflik
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: Text(
+                'Hapus',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: SavaioTheme.errorOf(context),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isIncome = transaction.type == TransactionType.income;
+    final isIncome = _transaction.type == TransactionType.income;
+    final isSavings = _transaction.type == TransactionType.savings;
+    final currency = context.watch<AuthController>().currency;
+    final textTheme = Theme.of(context).textTheme;
+    final transactionColor = isSavings 
+        ? ((_transaction.amount < 0) ? SavaioTheme.errorOf(context) : SavaioTheme.successOf(context))
+        : (isIncome
+            ? SavaioTheme.tertiaryOf(context)
+            : SavaioTheme.errorOf(context));
 
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
-      appBar: const AppHeader(title: 'Detail Transaksi', showBackButton: true, showNotification: false),
+      backgroundColor: SavaioTheme.backgroundOf(context),
+      appBar: const AppHeader(
+        title: 'Detail Transaksi',
+        showBackButton: true,
+        showNotification: false,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(SavaioTheme.spacingXl),
         child: Column(
           children: [
-            // Amount Hero Section
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              padding: const EdgeInsets.symmetric(
+                vertical: SavaioTheme.spacing3xl,
+                horizontal: SavaioTheme.spacingXl,
+              ),
               decoration: BoxDecoration(
-                color: SavaioTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+                color: SavaioTheme.surfaceContainerLowOf(context),
+                borderRadius: BorderRadius.circular(SavaioTheme.radiusXl),
+                border: Border.all(
+                  color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.35),
+                ),
               ),
               child: Column(
                 children: [
                   AppIconContainer(
-                    icon: isIncome ? Icons.south_west_rounded : Icons.north_east_rounded,
-                    color: isIncome ? SavaioTheme.tertiary : SavaioTheme.error,
+                    icon: isSavings 
+                        ? Icons.savings_rounded
+                        : (isIncome
+                            ? Icons.south_west_rounded
+                            : Icons.north_east_rounded),
+                    color: transactionColor,
                     size: 64,
                     opacity: 0.15,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: SavaioTheme.spacingXl),
                   AppHeading(
-                    '${isIncome ? "+" : "-"}${SavaioTheme.formatCurrency(transaction.amount)}',
+                    (isSavings && _transaction.amount < 0)
+                        ? '➔ ${SavaioTheme.formatCurrency(_transaction.amount.abs(), currency: currency)}'
+                        : '${isSavings ? "" : (isIncome ? "+" : "-")}${SavaioTheme.formatCurrency(
+                      _transaction.amount,
+                      currency: currency,
+                    )}',
                     size: AppHeadingSize.h1,
-                    color: isIncome ? SavaioTheme.tertiary : SavaioTheme.onSurface,
+                    color: isIncome
+                        ? SavaioTheme.tertiaryOf(context)
+                        : SavaioTheme.onSurfaceOf(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: SavaioTheme.spacingS),
                   Text(
-                    isIncome ? 'Pemasukan Berhasil' : 'Pengeluaran Berhasil',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: SavaioTheme.onSurfaceVariant,
+                    (isSavings && _transaction.amount < 0) 
+                        ? 'Tabungan ➔ Saldo Utama' 
+                        : (isSavings ? 'Saldo Utama ➔ Tabungan' : (isIncome ? 'Pemasukan Berhasil' : 'Pengeluaran Berhasil')),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: SavaioTheme.onSurfaceVariantOf(context),
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 32),
-
-            // Details Section
-            const AppHeading('INFORMASI TRANSAKSI', size: AppHeadingSize.caption, color: SavaioTheme.primary, isBold: true),
-            const SizedBox(height: 16),
-            
+            const SizedBox(height: SavaioTheme.spacing2xl),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: AppHeading(
+                'Informasi Transaksi',
+                size: AppHeadingSize.caption,
+                color: SavaioTheme.primaryOf(context),
+                isBold: true,
+              ),
+            ),
+            const SizedBox(height: SavaioTheme.spacingL),
             GlassCard(
               padding: EdgeInsets.zero,
-              borderRadius: 20,
+              borderRadius: SavaioTheme.radiusL,
               child: Column(
                 children: [
-                  _buildDetailItem(
-                    icon: Icons.title_rounded, 
-                    label: 'Judul Transaksi', 
-                    value: transaction.title,
+                  _DetailItem(
+                    icon: Icons.title_rounded,
+                    label: 'Judul Transaksi',
+                    value: _transaction.title,
                     isFirst: true,
                   ),
-                  if (transaction.description != null && transaction.description!.isNotEmpty)
-                    _buildDetailItem(
-                      icon: Icons.notes_rounded, 
-                      label: 'Catatan', 
-                      value: transaction.description!,
+                  if (_transaction.description != null &&
+                      _transaction.description!.isNotEmpty)
+                    _DetailItem(
+                      icon: Icons.notes_rounded,
+                      label: 'Catatan',
+                      value: _transaction.description!,
                     ),
-                  _buildDetailItem(
-                    icon: Icons.category_rounded, 
-                    label: 'Kategori', 
-                    value: transaction.category,
+                  _DetailItem(
+                    icon: Icons.category_rounded,
+                    label: 'Kategori',
+                    value: _transaction.category?.name ??
+                        _transaction.categoryId ??
+                        '-',
                   ),
-                  _buildDetailItem(
-                    icon: Icons.calendar_today_rounded, 
-                    label: 'Waktu & Tanggal', 
-                    value: _formatDate(transaction.date),
-                  ),
-                  _buildDetailItem(
-                    icon: Icons.account_balance_wallet_rounded, 
-                    label: 'Sumber Dana', 
-                    value: transaction.source ?? 'Dompet Utama',
-                  ),
-                  if (transaction.id != null)
-                    _buildDetailItem(
-                      icon: Icons.tag_rounded, 
-                      label: 'ID Transaksi', 
-                      value: transaction.id!.split('-').first.toUpperCase(),
-                      isLast: true,
+                  _DetailItem(
+                    icon: Icons.calendar_today_rounded,
+                    label: 'Waktu & Tanggal',
+                    value: _formatDate(
+                      _transaction.date.toIso8601String(),
                     ),
+                  ),
+                  _DetailItem(
+                    icon: Icons.account_balance_wallet_rounded,
+                    label: 'Sumber Dana',
+                    value: _transaction.source,
+                  ),
+                  _DetailItem(
+                    icon: Icons.tag_rounded,
+                    label: 'ID Transaksi',
+                    value: _transaction.id.split('-').first.toUpperCase(),
+                    isLast: true,
+                  ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 48),
-
-            // Actions
-            if (transaction.id != null)
-              OutlinedButton.icon(
-                onPressed: () => _confirmDelete(context),
-                icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                label: const Text('HAPUS DATA INI'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: SavaioTheme.error,
-                  side: BorderSide(color: SavaioTheme.error.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                  textStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 1.1),
+            const SizedBox(height: SavaioTheme.spacing3xl),
+            if (isSavings && _transaction.amount < 0 && _transaction.source.toLowerCase() == 'system')
+              Container(
+                padding: const EdgeInsets.all(SavaioTheme.spacingL),
+                decoration: BoxDecoration(
+                  color: SavaioTheme.errorOf(context).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
+                  border: Border.all(color: SavaioTheme.errorOf(context).withValues(alpha: 0.3)),
                 ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: SavaioTheme.errorOf(context),
+                      size: 20,
+                    ),
+                    const SizedBox(width: SavaioTheme.spacingM),
+                    Expanded(
+                      child: Text(
+                        'Transaksi penarikan tabungan ini dibuat otomatis oleh sistem dan tidak dapat diedit atau dihapus secara manual. Silakan edit transaksi pengeluaran utamanya.',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: SavaioTheme.errorOf(context),
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _handleEdit,
+                      icon: const Icon(Icons.edit_rounded, size: 20),
+                      label: const Text('EDIT'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: SavaioTheme.primaryOf(context),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: SavaioTheme.spacingL,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            SavaioTheme.radiusFull,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: SavaioTheme.spacingL),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isDeleting ? null : _handleDelete,
+                      icon: _isDeleting
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: SavaioTheme.errorOf(context),
+                              ),
+                            )
+                          : Icon(
+                              Icons.delete_outline_rounded,
+                              size: 20,
+                              color: SavaioTheme.errorOf(context),
+                            ),
+                      label: Text(_isDeleting ? 'Menghapus...' : 'Hapus'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: SavaioTheme.errorOf(context),
+                        side: BorderSide(
+                          color: SavaioTheme.errorOf(context).withValues(alpha: 0.5),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: SavaioTheme.spacingL,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            SavaioTheme.radiusFull,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            const SizedBox(height: 40),
+            const SizedBox(height: SavaioTheme.spacing3xl),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildDetailItem({
-    required IconData icon, 
-    required String label, 
-    required String value,
-    bool isFirst = false,
-    bool isLast = false,
-  }) {
+class _DetailItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isFirst;
+  final bool isLast;
+
+  const _DetailItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       children: [
-        if (!isFirst) 
+        if (!isFirst)
           Divider(
-            height: 1, 
-            indent: 56, 
-            endIndent: 20, 
-            color: SavaioTheme.outlineVariant.withValues(alpha: 0.1),
+            height: 1,
+            indent: 56,
+            endIndent: SavaioTheme.spacingXl,
+            color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.25),
           ),
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(SavaioTheme.spacingL),
           child: Row(
             children: [
               AppIconContainer(
                 icon: icon,
-                color: SavaioTheme.primary,
+                color: SavaioTheme.primaryOf(context),
                 size: 40,
                 opacity: 0.1,
-                iconColor: SavaioTheme.onSurfaceVariant,
+                iconColor: SavaioTheme.onSurfaceVariantOf(context),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: SavaioTheme.spacingL),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: SavaioTheme.onSurfaceVariant,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: SavaioTheme.onSurfaceVariantOf(context),
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: SavaioTheme.onSurface,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: SavaioTheme.onSurfaceOf(context),
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],

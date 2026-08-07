@@ -1,11 +1,14 @@
+// spending_target_list_page.dart
+// Halaman daftar target pengeluaran (budget) per kategori untuk bulan
+// terpilih, lengkap dengan status sinkronisasi dan progres tiap kategori.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/budget_controller.dart';
-import 'package:savaio/controllers/transaction_controller.dart';
-import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_progress_bar.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
@@ -14,7 +17,8 @@ import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/models/app_data.dart';
 
 class SpendingTargetListPage extends StatefulWidget {
-  const SpendingTargetListPage({super.key});
+  final String? initialMonth;
+  const SpendingTargetListPage({super.key, this.initialMonth});
 
   @override
   State<SpendingTargetListPage> createState() => _SpendingTargetListPageState();
@@ -28,8 +32,12 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+    if (widget.initialMonth != null) {
+      _selectedMonth = widget.initialMonth!;
+    } else {
+      final now = DateTime.now();
+      _selectedMonth = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+    }
     _updateFormattedMonth();
     
     final hasCache = sl.budgetController.allBudgets.isNotEmpty;
@@ -54,7 +62,7 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
     
     try {
       await Future.wait([
-        sl.budgetController.fetchAll(silent: !showGlobalLoading),
+        sl.budgetController.fetchAll(silent: !showGlobalLoading, month: _selectedMonth),
         sl.transactionController.fetchTransactions(month: _selectedMonth),
       ]);
     } catch (e) {
@@ -70,16 +78,19 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
     await _fetchMonthData(showGlobalLoading: false);
   }
 
-  Future<void> _handleNavigateToEdit(String categoryName) async {
+  Future<void> _handleNavigateToEdit(String categoryId) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SpendingTargetPage(initialCategory: categoryName),
+        builder: (context) => SpendingTargetPage(
+          initialCategoryId: categoryId,
+          initialMonth: _selectedMonth,
+        ),
       ),
     );
 
     if (result == true && mounted) {
-      // Data updated optimistically in the page, sync already triggered in controller.
+       _fetchMonthData(showGlobalLoading: false);
     }
   }
 
@@ -102,48 +113,41 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final budgetController = context.watch<BudgetController>();
+    final vms = budgetController.getSpendingTargetsForMonth(month: _selectedMonth);
+
     return Scaffold(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       appBar: _buildAppBar(),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: SavaioTheme.primary,
-        backgroundColor: SavaioTheme.surfaceContainerHigh,
-        child: Selector2<BudgetController, TransactionController, List<SpendingTargetItemVM>>(
-          selector: (context, budgetCtrl, txCtrl) => budgetCtrl.getSpendingTargetsForMonth(
-            month: _selectedMonth,
-            getSpentAmount: txCtrl.getSpentAmountFor,
-          ),
-          builder: (context, vms, _) {
-            if (vms.isEmpty && !_isMonthLoading) {
-              return _buildEmptyState();
-            }
-            
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
-              itemCount: vms.length,
-              itemBuilder: (context, index) {
-                final vm = vms[index];
-                
-                return SpendingTargetCard(
-                  key: ValueKey('${vm.category}_${vm.syncStatus}_$_selectedMonth'),
-                  vm: vm,
-                  onTap: () => _handleNavigateToEdit(vm.category),
-                );
-              },
-            );
-          },
-        ),
+        color: SavaioTheme.primaryOf(context),
+        backgroundColor: SavaioTheme.surfaceContainerHighOf(context),
+        child: vms.isEmpty && !_isMonthLoading
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+                  itemCount: vms.length,
+                  itemBuilder: (context, index) {
+                    final vm = vms[index];
+                    
+                    return SpendingTargetCard(
+                      key: ValueKey('${vm.categoryId}_${vm.syncStatus}_$_selectedMonth'),
+                      vm: vm,
+                      onTap: () => _handleNavigateToEdit(vm.categoryId),
+                    );
+                  },
+                ),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: SavaioTheme.background,
+      backgroundColor: SavaioTheme.backgroundOf(context),
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: SavaioTheme.primary, size: 20),
+        icon: Icon(Icons.arrow_back_ios_new_rounded, color: SavaioTheme.primaryOf(context), size: 20),
         onPressed: () => Navigator.pop(context),
       ),
       title: AppHeading(_formattedMonth ?? '', size: AppHeadingSize.h3),
@@ -152,18 +156,18 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
         IconButton(
           icon: Icon(
             Icons.calendar_month_rounded, 
-            color: _isMonthLoading ? SavaioTheme.onSurfaceVariant.withValues(alpha: 0.3) : SavaioTheme.primary
+            color: _isMonthLoading ? SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.3) : SavaioTheme.primaryOf(context)
           ),
           onPressed: _isMonthLoading ? null : _showMonthPicker,
         ),
       ],
       bottom: _isMonthLoading 
-        ? const PreferredSize(
+        ? PreferredSize(
             preferredSize: Size.fromHeight(2),
             child: LinearProgressIndicator(
               minHeight: 2,
               backgroundColor: Colors.transparent,
-              valueColor: AlwaysStoppedAnimation<Color>(SavaioTheme.primary),
+              valueColor: AlwaysStoppedAnimation<Color>(SavaioTheme.primaryOf(context)),
             ),
           )
         : null,
@@ -177,9 +181,9 @@ class _SpendingTargetListPageState extends State<SpendingTargetListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.category_outlined, size: 64, color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            const AppHeading('Belum ada kategori', size: AppHeadingSize.subtitle, color: SavaioTheme.onSurfaceVariant),
+            Icon(Icons.category_outlined, size: 64, color: SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.2)),
+            SizedBox(height: 16),
+            AppHeading('Belum ada kategori', size: AppHeadingSize.subtitle, color: SavaioTheme.onSurfaceVariantOf(context)),
           ],
         ),
       ),
@@ -212,7 +216,7 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
       _oldProgress = oldWidget.vm.progress;
     }
     
-    // Success feedback
+    // Tampilkan feedback sukses saat status sinkronisasi baru saja berubah menjadi synced
     if (oldWidget.vm.syncStatus != SyncStatus.synced && widget.vm.syncStatus == SyncStatus.synced) {
       _triggerSuccessCheck();
     }
@@ -228,7 +232,6 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = widget.vm.category == 'All' ? 'Total Pengeluaran' : widget.vm.category;
     final isSyncing = widget.vm.syncStatus == SyncStatus.syncing;
     
     return Padding(
@@ -239,9 +242,13 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
         child: InkWell(
           onTap: isSyncing ? null : widget.onTap,
           borderRadius: BorderRadius.circular(20),
-          child: GlassCard(
+          child: Container(
             padding: const EdgeInsets.all(20),
-            borderRadius: 20,
+            decoration: BoxDecoration(
+              color: SavaioTheme.surfaceContainerOf(context),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.1)),
+            ),
             child: Column(
               children: [
                 Row(
@@ -249,23 +256,23 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
                     AppIconContainer(
                       icon: widget.vm.iconData ?? widget.vm.emoji ?? Icons.category,
                       size: 40,
-                      color: SavaioTheme.primary,
+                      color: SavaioTheme.primaryOf(context),
                       opacity: 0.1,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppHeading(displayName, size: AppHeadingSize.subtitle),
-                          const SizedBox(height: 4),
+                          AppHeading(widget.vm.categoryName, size: AppHeadingSize.subtitle),
+                          SizedBox(height: 4),
                           Text(
                             widget.vm.target > 0 
-                                ? 'Target: ${SavaioTheme.formatCurrency(widget.vm.target)}'
+                                ? 'Target: ${SavaioTheme.formatCurrency(widget.vm.target, currency: context.watch<AuthController>().currency)}'
                                 : 'Target belum diatur',
                             style: TextStyle(
                               fontSize: 12, 
-                              color: widget.vm.target > 0 ? SavaioTheme.onSurfaceVariant : SavaioTheme.onSurfaceVariant.withValues(alpha: 0.5)
+                              color: widget.vm.target > 0 ? SavaioTheme.onSurfaceVariantOf(context) : SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.5)
                             ),
                           ),
                         ],
@@ -275,29 +282,29 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
                   ],
                 ),
                 if (widget.vm.target > 0) ...[
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${SavaioTheme.formatCurrency(widget.vm.spent)} terpakai',
-                        style: const TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariant),
+                        '${SavaioTheme.formatCurrency(widget.vm.spent, currency: context.watch<AuthController>().currency)} terpakai',
+                        style: TextStyle(fontSize: 11, color: SavaioTheme.onSurfaceVariantOf(context)),
                       ),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: Text(
                           widget.vm.isOver ? 'Over Budget!' : '${(widget.vm.progress * 100).toStringAsFixed(0)}%',
-                          key: ValueKey('${widget.vm.category}_${widget.vm.progress}_${widget.vm.syncStatus}'),
+                          key: ValueKey('${widget.vm.categoryId}_${widget.vm.progress}_${widget.vm.syncStatus}'),
                           style: TextStyle(
                             fontSize: 11, 
                             fontWeight: FontWeight.bold,
-                            color: widget.vm.isOver ? SavaioTheme.error : SavaioTheme.tertiary
+                            color: widget.vm.isOver ? SavaioTheme.errorOf(context) : SavaioTheme.tertiaryOf(context)
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   TweenAnimationBuilder<double>(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutCubic,
@@ -305,7 +312,7 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
                     builder: (context, value, _) {
                       return AppProgressBar(
                         value: value,
-                        color: widget.vm.isOver ? SavaioTheme.error : (value > 0.8 ? Colors.orange : SavaioTheme.tertiary),
+                        color: widget.vm.isOver ? SavaioTheme.errorOf(context) : (value > 0.8 ? SavaioTheme.errorOf(context).withValues(alpha: 0.7) : SavaioTheme.tertiaryOf(context)),
                         height: 6,
                       );
                     },
@@ -323,7 +330,7 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: _showSuccessCheck 
-        ? const Icon(Icons.check_circle_rounded, color: SavaioTheme.tertiary, size: 20, key: ValueKey('success'))
+        ? Icon(Icons.check_circle_rounded, color: SavaioTheme.tertiaryOf(context), size: 20, key: ValueKey('success'))
         : _getIconForStatus(widget.vm.syncStatus),
     );
   }
@@ -331,20 +338,20 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
   Widget _getIconForStatus(SyncStatus status) {
     switch (status) {
       case SyncStatus.idle:
-        return const Icon(Icons.chevron_right_rounded, color: SavaioTheme.onSurfaceVariant, key: ValueKey('idle'));
+        return Icon(Icons.chevron_right_rounded, color: SavaioTheme.onSurfaceVariantOf(context), key: ValueKey('idle'));
       case SyncStatus.pending:
-        return const Icon(Icons.cloud_upload_outlined, color: SavaioTheme.onSurfaceVariant, size: 20, key: ValueKey('pending'));
+        return Icon(Icons.cloud_upload_outlined, color: SavaioTheme.onSurfaceVariantOf(context), size: 20, key: ValueKey('pending'));
       case SyncStatus.syncing:
-        return const SizedBox(
+        return SizedBox(
           width: 16,
           height: 16,
           key: ValueKey('syncing'),
-          child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+          child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primaryOf(context)),
         );
       case SyncStatus.failed:
-        return const Icon(Icons.error_outline_rounded, color: SavaioTheme.error, size: 20, key: ValueKey('failed'));
+        return Icon(Icons.error_outline_rounded, color: SavaioTheme.errorOf(context), size: 20, key: ValueKey('failed'));
       case SyncStatus.synced:
-        return const Icon(Icons.chevron_right_rounded, color: SavaioTheme.onSurfaceVariant, key: ValueKey('synced'));
+        return Icon(Icons.chevron_right_rounded, color: SavaioTheme.onSurfaceVariantOf(context), key: ValueKey('synced'));
     }
   }
 }

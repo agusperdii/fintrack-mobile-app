@@ -1,3 +1,7 @@
+// daily_checkin_card.dart
+// Widget molecule kartu ajakan check-in harian untuk menjaga streak
+// pengguna, hanya tampil jika pengguna belum check-in hari ini.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -19,10 +23,10 @@ class DailyCheckInCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
+        color: SavaioTheme.surfaceContainerLowOf(context),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: SavaioTheme.primary.withValues(alpha: 0.1),
+          color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -31,28 +35,28 @@ class DailyCheckInCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: SavaioTheme.primary.withValues(alpha: 0.1),
+              color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.local_fire_department_rounded,
-              color: SavaioTheme.primary,
+              color: SavaioTheme.primaryOf(context),
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppHeading(
+                const AppHeading(
                   'Daily Check-in',
                   size: AppHeadingSize.subtitle,
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Ayo check-in hari ini untuk jaga streak kamu!',
                   style: TextStyle(
-                    color: SavaioTheme.onSurfaceVariant,
+                    color: SavaioTheme.onSurfaceVariantOf(context),
                     fontSize: 12,
                   ),
                 ),
@@ -62,8 +66,8 @@ class DailyCheckInCard extends StatelessWidget {
           const SizedBox(width: 8),
           AppButton(
             onTap: () async {
-              final success = await controller.performCheckIn();
-              if (success) {
+              final status = await controller.checkIn();
+              if (status.isCheckedInToday) {
                 sl.notificationController.fetchAll();
               }
             },

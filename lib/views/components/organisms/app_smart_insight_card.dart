@@ -1,49 +1,78 @@
+// app_smart_insight_card.dart
+// Kartu insight otomatis yang menampilkan judul dan deskripsi wawasan
+// keuangan dengan warna dan ikon yang menyesuaikan tingkat severity.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
 
 class AppSmartInsightCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final String buttonLabel;
-  final VoidCallback onTap;
+  final AnalysisInsight vm;
 
   const AppSmartInsightCard({
     super.key,
-    required this.title,
-    required this.description,
-    required this.buttonLabel,
-    required this.onTap,
+    required this.vm,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color accentColor;
+    IconData icon;
+
+    switch (vm.severity) {
+      case 'danger':
+        accentColor = isDark ? SavaioTheme.error : SavaioTheme.lightError;
+        icon = Icons.error_outline_rounded;
+        break;
+      case 'warning':
+        accentColor = Colors.orange;
+        icon = Icons.warning_amber_rounded;
+        break;
+      case 'info':
+      default:
+        accentColor = Theme.of(context).colorScheme.primary;
+        icon = Icons.lightbulb_outline_rounded;
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
+        color: accentColor.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
+        border: Border.all(color: accentColor.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppHeading(
-            title,
-            size: AppHeadingSize.h3,
+          Row(
+            children: [
+              Icon(icon, color: accentColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppHeading(
+                  vm.title,
+                  size: AppHeadingSize.h3,
+                  color: accentColor,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           AppHeading(
-            description,
+            vm.description,
             size: AppHeadingSize.subtitle,
-            color: SavaioTheme.onSurfaceVariant,
+            color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: false,
-          ),
-          const SizedBox(height: 24),
-          AppButton(
-            label: buttonLabel,
-            onTap: onTap,
-            icon: Icons.arrow_forward,
           ),
         ],
       ),

@@ -1,17 +1,22 @@
-import 'dart:async';
+// api_client.dart
+// Wrapper HTTP client untuk komunikasi dengan backend, menangani pemasangan
+// header autentikasi, retry otomatis saat token kedaluwarsa, unwrap response
+// standar FastAPI, dan pemetaan status code ke exception yang sesuai.
+
+import 'dart:async' as async;
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'exceptions.dart';
 
 class ApiClient {
   final AuthController _authController;
   final http.Client _client;
-
-  static const Duration _defaultTimeout = Duration(seconds: 15);
-  static const int _maxRetries = 2;
+  static const Duration _defaultTimeout = Duration(seconds: 10);
+  static const int _maxRetries = 1;
 
   ApiClient({
     required AuthController authController,
@@ -19,89 +24,202 @@ class ApiClient {
   })  : _authController = authController,
         _client = client ?? http.Client();
 
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
+  Map<String, String> get _baseHeaders => {
         'Accept': 'application/json',
         if (_authController.token != null)
           'Authorization': 'Bearer ${_authController.token}',
       };
 
+  Future<String?> getStoredToken() async {
+    return _authController.token;
+  }
+
   Future<dynamic> get(String url, {Map<String, String>? queryParameters}) async {
     final uri = Uri.parse(url).replace(queryParameters: queryParameters);
-    return _requestWithRetry(() => _client.get(uri, headers: _headers));
+    return _requestWithRetry(url, () => _client.get(uri, headers: _baseHeaders));
   }
 
   Future<dynamic> post(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.post(
+    return _requestWithRetry(url, () => _client.post(
           Uri.parse(url),
-          headers: _headers,
+          headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
         ));
   }
 
   Future<dynamic> put(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.put(
+    return _requestWithRetry(url, () => _client.put(
           Uri.parse(url),
-          headers: _headers,
+          headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
         ));
   }
 
   Future<dynamic> patch(String url, {dynamic body}) async {
-    return _requestWithRetry(() => _client.patch(
+    return _requestWithRetry(url, () => _client.patch(
           Uri.parse(url),
-          headers: _headers,
+          headers: {'Content-Type': 'application/json', ..._baseHeaders},
           body: body != null ? jsonEncode(body) : null,
         ));
   }
 
   Future<dynamic> delete(String url) async {
-    return _requestWithRetry(() => _client.delete(Uri.parse(url), headers: _headers));
+    return _requestWithRetry(url, () => _client.delete(Uri.parse(url), headers: _baseHeaders));
   }
 
-  Future<dynamic> _requestWithRetry(Future<http.Response> Function() requestFn) async {
+  /// Mengunggah file menggunakan multipart/form-data.
+  /// Mengembalikan data yang sudah di-unwrap setelah server merespons.
+  Future<dynamic> uploadFile(
+    String url,
+    File file, {
+    String fieldName = 'file',
+    Map<String, String>? fields,
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
+    final uri = Uri.parse(url);
+    final extension = file.path.split('.').last.toLowerCase();
+    String mimeType = 'image/jpeg';
+    if (extension == 'png') mimeType = 'image/png';
+    if (extension == 'webp') mimeType = 'image/webp';
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers.addAll(_baseHeaders);
+    request.files.add(await http.MultipartFile.fromPath(
+      fieldName,
+      file.path,
+      contentType: MediaType.parse(mimeType),
+    ));
+    if (fields != null) request.fields.addAll(fields);
+
+    return _requestWithRetry(url, () async {
+      final streamedResponse = await request.send().timeout(timeout);
+      return http.Response.fromStream(streamedResponse);
+    });
+  }
+
+  Future<dynamic> _requestWithRetry(String url, Future<http.Response> Function() requestFn) async {
     int attempts = 0;
+    bool didRefreshOnce = false;
     while (attempts <= _maxRetries) {
       try {
         final response = await requestFn().timeout(_defaultTimeout);
         return _processResponse(response);
       } on SocketException {
         if (attempts == _maxRetries) throw NetworkException();
-      } on TimeoutException {
-        if (attempts == _maxRetries) throw TimeoutException();
+      } on async.TimeoutException {
+        if (attempts == _maxRetries) throw RequestTimeoutException();
+      } on UnauthorizedException {
+        final isAuthRequest = url.contains('/auth/login') || 
+                              url.contains('/auth/register') || 
+                              url.contains('/auth/refresh');
+        
+        if (!didRefreshOnce && _authController.isAuthenticated && !isAuthRequest) {
+          didRefreshOnce = true;
+          final refreshed = await _authController.refreshAccessToken();
+          if (refreshed) {
+            continue;
+          }
+        }
+        
+        // Paksa logout hanya jika sebelumnya memang sudah terautentikasi
+        if (_authController.isAuthenticated) {
+          await _authController.forceLogout();
+        }
+        rethrow;
       } on Exception catch (e) {
         if (attempts == _maxRetries) rethrow;
-        log('Request failed, retrying ($attempts): $e');
+        log('Request failed, retrying ($attempts) for $url: $e');
       }
       attempts++;
       await Future.delayed(Duration(milliseconds: 500 * attempts));
     }
+    throw ServerException('Request failed after retries');
   }
 
+  /// Membongkar (unwrap) response standar FastAPI: {success: true, data: ...}
+  /// atau {success: false, message: ...}
   dynamic _processResponse(http.Response response) {
     log('API Response [${response.statusCode}]: ${response.request?.url}');
-    
-    final responseJson = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+
+    if (response.statusCode == 204) return null;
+
+    dynamic raw;
+    bool isJson = false;
+    try {
+      if (response.body.isNotEmpty) {
+        raw = jsonDecode(response.body);
+        isJson = true;
+      }
+    } catch (e) {
+      log('Failed to decode response body as JSON: ${response.body}');
+    }
 
     switch (response.statusCode) {
       case 200:
       case 201:
-        return responseJson;
+        return _unwrap(raw);
       case 400:
-        throw BadRequestException(responseJson?['detail'] ?? 'Bad Request', response.statusCode);
+        throw BadRequestException(isJson ? _errorMessage(raw) : 'Request error', response.statusCode);
       case 401:
-        _authController.logout();
-        throw UnauthorizedException(responseJson?['detail'] ?? 'Unauthorized');
       case 403:
-        throw UnauthorizedException(responseJson?['detail'] ?? 'Forbidden');
+        log('Unauthorized access detected for: ${response.request?.url}');
+        throw UnauthorizedException(isJson ? _errorMessage(raw) : 'Unauthorized');
       case 404:
-        throw NotFoundException(responseJson?['detail'] ?? 'Not Found', response.statusCode);
+        throw NotFoundException(isJson ? _errorMessage(raw) : 'Resource not found', response.statusCode);
+      case 409:
+        throw ApiErrorException(isJson ? _errorMessage(raw) : 'Conflict occurred');
+      case 422:
+        log('Validation error details: $raw');
+        throw BadRequestException(isJson ? _errorMessage(raw) : 'Validation failed', response.statusCode);
       case 500:
+        throw ServerException(
+          'Internal Server Error (500). Please try again later.',
+          response.statusCode,
+        );
       default:
         throw ServerException(
-          'Error occurred while communicating with server with status code: ${response.statusCode}',
+          'Error occurred with status code: ${response.statusCode}',
           response.statusCode,
         );
     }
+  }
+
+  /// Unwrap {success: true, data: ...} → langsung mengembalikan data.
+  /// Melempar ApiErrorException untuk {success: false, message: ...}.
+  dynamic _unwrap(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is! Map) return raw;
+    final map = raw as Map<String, dynamic>;
+
+    if (map.containsKey('success')) {
+      if (map['success'] == false) {
+        throw ApiErrorException(map['message']?.toString() ?? 'Request failed');
+      }
+      return map['data'];
+    }
+    // Legacy: tanpa wrapper success — kembalikan raw apa adanya
+    return raw;
+  }
+
+  String _errorMessage(dynamic raw) {
+    if (raw == null) return 'Unknown error';
+    if (raw is Map) {
+      if (raw.containsKey('message')) return raw['message'].toString();
+      if (raw.containsKey('detail')) {
+        final detail = raw['detail'];
+        if (detail is List) {
+          try {
+            return detail.map((e) {
+              if (e is Map && e.containsKey('msg')) return e['msg'];
+              return e.toString();
+            }).join(', ');
+          } catch (_) {
+            return detail.toString();
+          }
+        }
+        return detail.toString();
+      }
+    }
+    return 'Unknown error';
   }
 }

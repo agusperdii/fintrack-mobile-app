@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:savaio/main.dart';
 import 'package:savaio/core/utils/service_locator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('App initialization smoke test', (WidgetTester tester) async {
-    // Initialize dependencies
-    sl.setup();
+    // Initialize dependencies with mock prefs
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    sl.setup(prefs);
     
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());

@@ -1,3 +1,7 @@
+// placeholder_page.dart
+// Halaman placeholder generik yang ditampilkan untuk fitur yang masih dalam
+// tahap pengembangan, agar navigasi ke fitur tersebut tetap memiliki tampilan.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -63,10 +67,10 @@ class PlaceholderPage extends StatelessWidget {
                       backgroundColor: SavaioTheme.primary,
                       foregroundColor: SavaioTheme.onPrimaryFixed,
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusL)),
                     ),
                     child: Text(
-                      'KEMBALI',
+                      'Kembali',
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w800,
                       ),

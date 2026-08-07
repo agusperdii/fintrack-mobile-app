@@ -1,3 +1,7 @@
+// ocr_repository.dart
+// Repository untuk fitur OCR struk belanja, meneruskan file gambar ke
+// data source untuk diproses dan diubah menjadi data transaksi.
+
 import 'dart:io';
 import 'package:savaio/repositories/data_sources/ocr_data_source.dart';
 import 'package:savaio/models/ocr_result.dart';
@@ -7,8 +11,7 @@ class OcrRepository {
 
   OcrRepository(this._dataSource);
 
-  Future<OcrResult> scanReceipt(File imageFile) async {
-    final data = await _dataSource.scanReceipt(imageFile);
-    return OcrResult.fromJson(data);
+  Future<OcrResult> uploadReceipt(File imageFile) async {
+    return _dataSource.uploadReceipt(imageFile);
   }
 }

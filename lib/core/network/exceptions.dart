@@ -1,3 +1,7 @@
+// exceptions.dart
+// Kumpulan kelas exception kustom untuk merepresentasikan berbagai jenis
+// kegagalan komunikasi dengan API (jaringan, timeout, autentikasi, dsb).
+
 class AppException implements Exception {
   final String message;
   final String? prefix;
@@ -16,8 +20,8 @@ class NetworkException extends AppException {
       : super(message, 'Network Error: ');
 }
 
-class TimeoutException extends AppException {
-  TimeoutException([String message = 'Connection timeout'])
+class RequestTimeoutException extends AppException {
+  RequestTimeoutException([String message = 'Connection timeout'])
       : super(message, 'Timeout: ');
 }
 
@@ -39,4 +43,9 @@ class BadRequestException extends AppException {
 class NotFoundException extends AppException {
   NotFoundException([String message = 'Resource not found', int? statusCode])
       : super(message, 'Not Found: ', statusCode);
+}
+
+/// Dilempar ketika API mengembalikan {success: false, message: ...}
+class ApiErrorException extends AppException {
+  ApiErrorException(String message) : super(message, '', 400);
 }

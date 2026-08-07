@@ -1,23 +1,26 @@
+// analisa_page.dart
+// Halaman analisa keuangan yang menampilkan ringkasan rata-rata harian,
+// distribusi pengeluaran per kategori, tren pengeluaran, dan insight
+// finansial berdasarkan data dashboard, budget, analytics, dan transaksi.
+
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
-import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/controllers/analytics_controller.dart';
-import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/controllers/budget_controller.dart';
+import 'package:savaio/controllers/transaction_controller.dart';
+import 'package:savaio/views/components/molecules/app_section_header.dart';
 import 'package:savaio/views/components/organisms/app_hero_analysis_card.dart';
 import 'package:savaio/views/components/organisms/app_smart_insight_card.dart';
-import 'package:savaio/views/components/organisms/app_category_card.dart';
-import 'package:savaio/views/components/organisms/app_trend_line_chart.dart';
 import 'package:savaio/views/components/organisms/app_category_pie_chart.dart';
-import 'package:savaio/views/components/molecules/app_section_header.dart';
-import 'package:savaio/models/budget_model.dart';
-import 'package:savaio/models/app_data.dart';
-import 'package:savaio/views/pages/placeholder_page.dart';
-import 'package:savaio/views/pages/spending_target_page.dart';
-import 'package:savaio/core/utils/analysis_calculator.dart';
+import 'package:savaio/views/components/organisms/app_trend_line_chart.dart';
+import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/pages/spending_target_list_page.dart';
+import 'package:savaio/core/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
+import 'package:savaio/views/components/atoms/app_grid_background.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -27,202 +30,225 @@ class AnalisaPage extends StatefulWidget {
 }
 
 class _AnalisaPageState extends State<AnalisaPage> {
-  bool _isWeeklyTrend = true;
+  bool _isWeekly = true;
 
-  void _navigateToPlaceholder(String feature) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => PlaceholderPage(featureName: feature)),
-    );
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => _handleRefresh());
   }
 
+  /// Data dashboard diambil terlebih dahulu untuk mendapatkan periode bulan
+  /// yang benar (targetPeriod, dengan fallback ke bulan berjalan), karena
+  /// nilai bulan tersebut dibutuhkan sebagai acuan saat mengambil data
+  /// budget, analytics, dan transaksi secara paralel setelahnya.
   Future<void> _handleRefresh() async {
+    final now = DateTime.now();
+
+    await sl.dashboardController.fetchDashboardData();
+
+    final currentMonth = sl.dashboardController.data?.targetPeriod ??
+        "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
+    debugPrint('[AnalisaPage] Using month: $currentMonth');
+
     await Future.wait([
-      sl.dashboardController.fetchDashboardData(),
-      sl.budgetController.fetchAll(),
+      sl.budgetController.fetchAll(silent: false, month: currentMonth),
       sl.analyticsController.fetchAll(),
+      sl.transactionController.fetchTransactions(month: currentMonth),
     ]);
   }
 
   @override
   Widget build(BuildContext context) {
-    final dashboard = context.watch<DashboardController>();
-    final budget = context.watch<BudgetController>();
-    final analytics = context.watch<AnalyticsController>();
+    return Consumer4<AnalyticsController, DashboardController, BudgetController, TransactionController>(
+      builder: (context, analytics, dashboard, budget, transactions, child) {
+        final vm = analytics.buildAnalysisPageVM(
+          isWeekly: _isWeekly,
+          dashboard: dashboard,
+          budget: budget,
+          transactions: transactions,
+        );
 
-    final data = dashboard.data;
-    final spendingTarget = budget.spendingTarget;
-    final allBudgets = budget.allBudgets;
-    final weeklyPulse = analytics.weeklyPulse;
-    
-    // Calculate budget percentage for hero card
-    double budgetPercentage = 0.0;
-    bool isBelowBudget = true;
-    
-    final targetAmount = spendingTarget?.amount ?? 0.0;
-    final dailyBudget = targetAmount / 30;
-
-    if (targetAmount > 0 && data != null) {
-      budgetPercentage = AnalysisCalculator.budgetPercentage(targetAmount, data.totalExpense);
-      isBelowBudget = AnalysisCalculator.isBelowBudget(targetAmount, data.totalExpense);
-      
-      // If we want to show "how much left" or "how much over"
-      if (isBelowBudget) {
-        budgetPercentage = 100 - budgetPercentage;
-      } else {
-        budgetPercentage = budgetPercentage - 100;
-      }
-    }
-
-    // Get actual daily expenses from weekly pulse
-    List<double> dailyExpenses = [];
-    if (weeklyPulse != null) {
-      dailyExpenses = weeklyPulse.values;
-    }
-
-    // Ensure we have exactly 7 values for the chart
-    while (dailyExpenses.length < 7) {
-      dailyExpenses.add(0.0);
-    }
-    if (dailyExpenses.length > 7) {
-      dailyExpenses = dailyExpenses.sublist(0, 7);
-    }
-
-    return Scaffold(
-      backgroundColor: SavaioTheme.background,
-      appBar: const AppHeader(
-        title: 'Analisa Pengeluaran',
-        showNotification: false,
-      ),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: SavaioTheme.primary,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-
-              // Hero Analysis Card (Organism)
-              AppHeroAnalysisCard(
-                averageAmount: AnalysisCalculator.averageDailyExpense(data?.totalExpense ?? 0),
-                budgetPercentage: budgetPercentage,
-                isBelowBudget: isBelowBudget,
-                dailyValues: AnalysisCalculator.buildDailyValues(dailyExpenses, dailyBudget),
-              ),
-              
-              const SizedBox(height: 20),
-
-              // Smart Insight (Organism)
-              AppSmartInsightCard(
-                title: 'Wawasan Pintar',
-                description: (data?.totalExpense ?? 0) > 0 
-                    ? 'Pengeluaran terbesar Anda adalah pada kategori ${data!.analysis.isNotEmpty ? data.analysis.first.label : "Lainnya"}. Pastikan tetap sesuai budget!'
-                    : 'Belum ada data pengeluaran yang cukup untuk memberikan wawasan.',
-                buttonLabel: 'DETAIL PENGHEMATAN',
-                onTap: () => _navigateToPlaceholder('Detail Penghematan'),
-              ),
-
-              const SizedBox(height: 32),
-
-              if (data != null && data.analysis.isNotEmpty) ...[
-                AppCategoryPieChart(data: data.analysis),
-                const SizedBox(height: 32),
-              ],
-
-              // Category Breakdown Section
-              const AppSectionHeader(
-                title: 'Breakdown Kategori',
-                actionLabel: 'Lihat Semua',
-                onActionTap: null,
-              ),
-              const SizedBox(height: 20),
-              
-              if (data != null && data.analysis.isNotEmpty)
-                ...data.analysis.map((item) {
-                  final color = Color(int.parse('FF${item.colorHex}', radix: 16));
-                  
-                  // Find category info from controller for better emoji/naming
-                  final categoryInfo = budget.categories.firstWhere(
-                    (c) => c['name'].toLowerCase() == item.label.toLowerCase(),
-                    orElse: () => <String, dynamic>{'name': item.label, 'icon': Icons.category},
-                  );
-
-                  // Find matching budget for this category
-                  final categoryBudget = allBudgets.firstWhere(
-                    (b) => b.category.toLowerCase() == item.label.toLowerCase(),
-                    orElse: () => BudgetModel(
-                      id: '', 
-                      amount: 0.0, 
-                      periodType: 'monthly', 
-                      month: '', 
-                      category: item.label,
-                      syncStatus: SyncStatus.idle,
-                    ),
-                  );
-
-                  double progress = 0.0;
-                  String limitText = 'Batas: Rp -.---.---';
-                  String status = 'Stabil';
-
-                  if (categoryBudget.id.isNotEmpty) {
-                    final budgetAmount = categoryBudget.amount;
-                    if (budgetAmount > 0) {
-                      progress = item.amount / budgetAmount;
-                      limitText = 'Batas: ${SavaioTheme.formatCurrency(budgetAmount)}';
-                      status = progress > 1.0 ? 'Over' : (progress > 0.8 ? 'Peringatan' : 'Aman');
-                    }
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: AppCategoryCard(
-                      icon: categoryInfo['icon'],
-                      title: categoryInfo['name'],
-                      amount: SavaioTheme.formatCurrency(item.amount),
-                      progress: progress.clamp(0.0, 1.0),
-                      limit: limitText,
-                      status: status,
-                      accentColor: color,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SpendingTargetPage(initialCategory: item.label),
-                        ),
+        return Scaffold(
+          backgroundColor: SavaioTheme.backgroundOf(context),
+          appBar: AppHeader(
+            title: 'Analisa Keuangan',
+            showNotification: false,
+            actions: [
+              if (dashboard.isSyncingTransaction)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12.0),
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-                  );
-                })
-              else if (data != null)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text('Belum ada data kategori', style: TextStyle(color: SavaioTheme.onSurfaceVariant)),
                   ),
-                )
-              else
-                const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
+                ),
+            ],
+          ),
+          body: AppGridBackground(
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: Theme.of(context).colorScheme.primary,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              children: [
+                if (analytics.isLoading && !vm.hasData)
+                  const Center(child: CircularProgressIndicator())
+                else if (analytics.error != null)
+                  Center(child: Text('Error: ${analytics.error}'))
+                else ...[
+                  AppHeroAnalysisCard(vm: vm.hero),
 
-              const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-              // Weekly Trend Visualization (Organism)
-              AppTrendLineChart(
-                title: 'Tren Ledger',
-                isWeekly: _isWeeklyTrend,
-                spots: analytics.weeklyPulse?.values.asMap().entries.map((e) {
-                        return FlSpot(e.key.toDouble(), e.value / 100000);
-                      }).toList(),
-                onPeriodChanged: (isWeekly) {
-                  setState(() {
-                    _isWeeklyTrend = isWeekly;
-                  });
-                },
+                  if (vm.hasData && vm.pieSegments.isNotEmpty) ...[
+                    AppCategoryPieChart(
+                      segments: vm.pieSegments,
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+
+                  if (vm.spendingBreakdown.isNotEmpty) ...[
+                    AppSectionHeader(
+                      title: 'Proporsi Pengeluaran',
+                      actionLabel: 'Atur Budget',
+                      onActionTap: () {
+                        final currentMonth = sl.dashboardController.data?.targetPeriod ??
+                            "${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}";
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => SpendingTargetListPage(initialMonth: currentMonth))
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    ...vm.spendingBreakdown.take(5).map((item) => _SpendingBreakdownTile(item: item)),
+                    const SizedBox(height: 16),
+                  ],
+
+                  AppTrendLineChart(
+                    trendPoints: vm.trendPoints,
+                    isWeekly: vm.isWeekly,
+                    title: 'Tren Pengeluaran',
+                    onPeriodChanged: (isWeekly) {
+                      setState(() {
+                        _isWeekly = isWeekly;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  AppSmartInsightCard(
+                    vm: vm.insight,
+                  ),
+                ],
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SpendingBreakdownTile extends StatelessWidget {
+  final SpendingBreakdownVM item;
+  const _SpendingBreakdownTile({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color accentColor;
+    try {
+      accentColor = Color(int.parse('FF${item.colorHex}', radix: 16));
+    } catch (_) {
+      accentColor = Theme.of(context).colorScheme.primary;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: SavaioTheme.surfaceContainerOf(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: SavaioTheme.outlineVariantOf(context).withValues(alpha: isDark ? 0.1 : 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Text(item.emoji, style: const TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: SavaioTheme.onSurfaceOf(context),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.transactionCount} Transaksi',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: SavaioTheme.onSurfaceVariantOf(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                SavaioTheme.formatCurrency(item.amount),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: SavaioTheme.onSurfaceOf(context),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${item.percentage.toStringAsFixed(1)}%',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: accentColor,
+                  ),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

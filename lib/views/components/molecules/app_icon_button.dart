@@ -1,3 +1,7 @@
+// app_icon_button.dart
+// Widget molecule tombol berbentuk ikon bulat/rounded dengan label di
+// bawahnya, mendukung varian warna normal maupun gradient.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
@@ -25,33 +29,35 @@ class AppIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(SavaioTheme.radiusXl),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             AppIconContainer(
               icon: icon,
-              size: 56,
+              size: 72,
+              shape: AppIconShape.rounded,
+              customRadius: SavaioTheme.radiusXl,
               color: variant == AppIconButtonVariant.normal 
-                ? SavaioTheme.surfaceContainerHighest 
+                ? Theme.of(context).colorScheme.surfaceContainerHighest 
                 : null,
               gradient: variant == AppIconButtonVariant.gradient 
                 ? SavaioTheme.primaryGradient 
                 : null,
               iconColor: variant == AppIconButtonVariant.gradient 
                 ? SavaioTheme.onPrimaryFixed 
-                : (color ?? SavaioTheme.primary),
+                : (color ?? Theme.of(context).colorScheme.primary),
               opacity: 1.0,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             AppHeading(
               label,
               size: AppHeadingSize.caption,
               color: variant == AppIconButtonVariant.gradient 
-                ? SavaioTheme.onSurface 
-                : SavaioTheme.onSurfaceVariant,
+                ? Theme.of(context).colorScheme.onSurface 
+                : Theme.of(context).colorScheme.onSurfaceVariant,
               isBold: true,
             ),
           ],

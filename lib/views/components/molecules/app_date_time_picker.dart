@@ -1,6 +1,9 @@
+// app_date_time_picker.dart
+// Kumpulan helper statis untuk menampilkan bottom sheet pemilih tanggal,
+// waktu, atau bulan menggunakan Cupertino date picker.
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 
@@ -17,68 +20,70 @@ class AppDateTimePicker {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: SavaioTheme.surfaceContainer,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: SavaioTheme.outlineVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            AppHeading(title, size: AppHeadingSize.h3),
-            const SizedBox(height: 24),
-            
-            // The Picker
-            SizedBox(
-              height: 200,
-              child: CupertinoTheme(
-                data: CupertinoThemeData(
-                  textTheme: CupertinoTextThemeData(
-                    dateTimePickerTextStyle: TextStyle(
-                      color: SavaioTheme.onSurface,
-                      fontSize: 18,
-                    ),
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                child: CupertinoDatePicker(
-                  mode: mode,
-                  initialDateTime: initialDate,
-                  use24hFormat: true,
-                  onDateTimeChanged: (DateTime newDate) {
-                    selectedDate = newDate;
-                  },
+              ),
+              const SizedBox(height: 24),
+              AppHeading(title, size: AppHeadingSize.h3),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                height: 200,
+                child: CupertinoTheme(
+                  data: CupertinoThemeData(
+                    textTheme: CupertinoTextThemeData(
+                      dateTimePickerTextStyle: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  child: CupertinoDatePicker(
+                    mode: mode,
+                    initialDateTime: initialDate,
+                    use24hFormat: true,
+                    onDateTimeChanged: (DateTime newDate) {
+                      selectedDate = newDate;
+                    },
+                  ),
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 32),
-            AppButton(
-              label: 'KONFIRMASI',
-              onTap: () => Navigator.pop(context, selectedDate),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
+              
+              const SizedBox(height: 32),
+              AppButton(
+                label: 'Konfirmasi',
+                onTap: () => Navigator.pop(context, selectedDate),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 
   static Future<String?> showMonthPicker({
     required BuildContext context,
-    required String initialMonth, // Format: YYYY-MM
+    // Format: YYYY-MM
+    required String initialMonth,
   }) async {
     final now = DateTime.now();
     final parts = initialMonth.split('-');

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1053090250478",
+    "project_id": "savaio",
+    "storage_bucket": "savaio.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1053090250478:android:59231c2c3293ca6f5e7dff",
+        "android_client_info": {
+          "package_name": "com.perdianaka.savaio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBogtrFGONWLFp7mZdStvFZ4ileuW0XLBQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

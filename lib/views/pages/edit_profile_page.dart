@@ -1,8 +1,13 @@
+// edit_profile_page.dart
+// Halaman untuk mengedit nama lengkap pengguna, memvalidasi input, lalu
+// menyimpan perubahan melalui ProfileController.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String currentName;
@@ -40,11 +45,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil diperbarui'), backgroundColor: SavaioTheme.tertiary),
+        AppSnackBar.show(
+          context,
+          'Profil berhasil diperbarui',
+          type: AppSnackBarType.success,
+          minimal: true, 
         );
         Navigator.pop(context, true);
-      } else {
+      }
+       else {
         setState(() => _errorMessage = 'Gagal memperbarui profil. Coba lagi.');
       }
     }
@@ -89,11 +98,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 backgroundColor: SavaioTheme.primary,
                 foregroundColor: SavaioTheme.onPrimaryFixed,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusL)),
               ),
               child: _isSaving
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.onPrimaryFixed))
-                  : Text('SIMPAN', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  : Text('Simpan', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

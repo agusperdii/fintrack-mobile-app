@@ -1,3 +1,7 @@
+// app_badge.dart
+// Widget atom badge/label kecil dengan beberapa varian warna (success,
+// error, warning, neutral) untuk menampilkan status singkat.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -18,19 +22,20 @@ class AppBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     Color color;
     switch (variant) {
-      case AppBadgeVariant.success: color = SavaioTheme.tertiary; break;
-      case AppBadgeVariant.error: color = SavaioTheme.error; break;
+      case AppBadgeVariant.success: color = colorScheme.tertiary; break;
+      case AppBadgeVariant.error: color = colorScheme.error; break;
       case AppBadgeVariant.warning: color = Colors.orange; break;
-      case AppBadgeVariant.neutral: color = SavaioTheme.onSurfaceVariant; break;
+      case AppBadgeVariant.neutral: color = colorScheme.onSurfaceVariant; break;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusS),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -41,10 +46,10 @@ class AppBadge extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            label.toUpperCase(),
+            label,
             style: GoogleFonts.inter(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
               color: color,
             ),
           ),

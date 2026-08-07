@@ -1,3 +1,7 @@
+// selection_card.dart
+// Widget molecule kartu pilihan (misalnya kategori atau akun) yang
+// menampilkan label, ikon, dan nilai terpilih, dapat ditekan untuk diubah.
+
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -23,34 +27,34 @@ class SelectionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: SavaioTheme.surfaceContainerHigh,
+          color: SavaioTheme.surfaceContainerHighOf(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: SavaioTheme.outlineVariant.withValues(alpha: 0.1)),
+          border: Border.all(color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
-                color: SavaioTheme.primary,
+                color: SavaioTheme.primaryOf(context),
                 letterSpacing: 1,
               ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildIcon(),
+                _buildIcon(context),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: SavaioTheme.onSurface,
+                      color: SavaioTheme.onSurfaceOf(context),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -64,12 +68,12 @@ class SelectionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon() {
+  Widget _buildIcon(BuildContext context) {
     if (icon is IconData) {
       return Icon(
         icon as IconData,
         size: 16,
-        color: SavaioTheme.onSurface,
+        color: SavaioTheme.onSurfaceOf(context),
       );
     } else if (icon is String) {
       return Text(
@@ -77,6 +81,6 @@ class SelectionCard extends StatelessWidget {
         style: const TextStyle(fontSize: 14),
       );
     }
-    return const Icon(Icons.category, size: 16, color: SavaioTheme.onSurface);
+    return Icon(Icons.category, size: 16, color: SavaioTheme.onSurfaceOf(context));
   }
 }

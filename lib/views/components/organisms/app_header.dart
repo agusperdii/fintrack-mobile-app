@@ -1,3 +1,7 @@
+// app_header.dart
+// AppBar kustom aplikasi yang mendukung mode transparan, tombol back, avatar,
+// dan ikon notifikasi dengan badge jumlah belum dibaca.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_avatar.dart';
@@ -6,6 +10,8 @@ import 'package:savaio/core/utils/service_locator.dart';
 
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
+  final Widget? titleWidget;
+  final bool centerTitle;
   final bool showBackButton;
   final bool showNotification;
   final String? avatarUrl;
@@ -18,6 +24,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   const AppHeader({
     super.key,
     this.title,
+    this.titleWidget,
+    this.centerTitle = true,
     this.showBackButton = false,
     this.showNotification = true,
     this.avatarUrl,
@@ -44,7 +52,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
         leadingWidget = Align(
           alignment: Alignment.centerLeft,
           child: Padding(
-            padding: const EdgeInsets.only(left: SavaioTheme.spacingL),
+            padding: const EdgeInsets.only(left: SavaioTheme.spacingXl),
             child: AppAvatar(
               imageUrl: avatarUrl!,
               size: 36,
@@ -56,20 +64,24 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      backgroundColor: transparent ? Colors.transparent : SavaioTheme.background,
+      backgroundColor: transparent ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       scrolledUnderElevation: 0,
       toolbarHeight: kToolbarHeight + SavaioTheme.spacingM,
-      centerTitle: true,
+      centerTitle: centerTitle,
+      titleSpacing: 0,
       leading: leadingWidget,
-      leadingWidth: leadingWidth ?? (showBackButton ? null : ((avatarUrl != null || leading != null) ? 64 + SavaioTheme.spacingL : null)),
-      title: ShaderMask(
-        shaderCallback: (bounds) => SavaioTheme.primaryGradient.createShader(bounds),
-        child: AppHeading(
-          title ?? 'Savaio',
-          size: AppHeadingSize.h3,
-          color: Colors.white,
-          overflow: TextOverflow.ellipsis,
+      leadingWidth: leadingWidth ?? (showBackButton ? null : ((avatarUrl != null || leading != null) ? 64 + SavaioTheme.spacingXl : null)),
+      title: titleWidget ?? Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SavaioTheme.spacingXl),
+        child: ShaderMask(
+          shaderCallback: (bounds) => SavaioTheme.primaryGradient.createShader(bounds),
+          child: AppHeading(
+            title ?? 'Savaio',
+            size: AppHeadingSize.h3,
+            color: Colors.white,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
       actions: [
@@ -87,11 +99,11 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.notifications_none_rounded, color: SavaioTheme.primary, size: 20),
+                        icon: Icon(Icons.notifications_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
                         onPressed: onNotificationTap,
                         padding: EdgeInsets.zero,
                       ),
@@ -103,9 +115,9 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: SavaioTheme.error,
+                            color: Theme.of(context).colorScheme.error,
                             shape: BoxShape.circle,
-                            border: Border.all(color: SavaioTheme.background, width: 2),
+                            border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
                           ),
                           constraints: const BoxConstraints(
                             minWidth: 18,
@@ -127,9 +139,10 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
               );
             },
           ),
-          const SizedBox(width: SavaioTheme.spacingL),
+          const SizedBox(width: SavaioTheme.spacingXl),
         ] else if (showBackButton || avatarUrl != null || leading != null)
-          const SizedBox(width: 48), // Balance the leading widget for centering
+          // Menyeimbangkan lebar leading widget agar title tetap center
+          const SizedBox(width: 48),
       ],
     );
   }

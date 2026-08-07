@@ -1,3 +1,7 @@
+// glass_card.dart
+// Widget atom kartu dengan efek glassmorphism (blur transparan) yang
+// digunakan sebagai container visual pada berbagai layar.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -21,6 +25,9 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
@@ -28,10 +35,12 @@ class GlassCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: color ?? const Color(0x9923262C),
+            color: color ?? theme.colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.6 : 0.4),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
-              color: borderColor,
+              color: borderColor == const Color(0x1AFFFFFF) 
+                  ? theme.colorScheme.outlineVariant.withValues(alpha: 0.2)
+                  : borderColor,
               width: borderWidth,
             ),
           ),

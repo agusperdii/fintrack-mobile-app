@@ -1,3 +1,7 @@
+// budget_repository.dart
+// Repository untuk mengelola data budget/anggaran pengguna, termasuk
+// pengambilan target belanja dengan fallback ke cache saat offline.
+
 import 'package:savaio/models/budget_model.dart';
 import 'package:savaio/repositories/data_sources/remote/budget_remote_data_source.dart';
 
@@ -17,11 +21,11 @@ class BudgetRepository {
       BudgetModel target;
       if (budgets.isNotEmpty) {
         target = budgets.firstWhere(
-          (b) => b.category == 'All' || b.category == 'Total',
+          (b) => b.categoryId == 'All' || b.categoryId == 'Total',
           orElse: () => budgets[0],
         );
       } else {
-        target = BudgetModel(id: '', amount: 0.0, periodType: 'monthly', month: '', category: 'All');
+        target = BudgetModel(id: '', amount: 0.0, startMonth: '', categoryId: 'All');
       }
       _cachedTarget = target;
       return target;
@@ -33,15 +37,17 @@ class BudgetRepository {
 
   Future<bool> saveBudget({
     required double amount,
-    required String periodType,
-    String category = 'All',
-    String? month,
+    required String categoryId,
+    required String startMonth,
   }) {
     return _remoteDataSource.saveBudget(
       amount: amount,
-      period: periodType,
-      category: category,
-      month: month,
+      category: categoryId,
+      month: startMonth,
     );
+  }
+
+  Future<List<BudgetStatusVM>> getBudgetStatus({String? month}) {
+    return _remoteDataSource.getBudgetStatus(month: month);
   }
 }

@@ -1,3 +1,7 @@
+// transaction_repository.dart
+// Repository untuk mengelola data transaksi pengguna: mengambil daftar,
+// membuat, memperbarui, dan menghapus transaksi.
+
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/repositories/data_sources/remote/transaction_remote_data_source.dart';
 
@@ -10,25 +14,60 @@ class TransactionRepository {
     return _remoteDataSource.getTransactions(month: month);
   }
 
-  Future<bool> addTransaction({
+  Future<Transaction> createTransaction({
     required String title,
     String? description,
     required double amount,
-    required String category,
-    required String type,
-    DateTime? date,
+    required String categoryId,
+    required DateTime date,
+    String? receiptId,
+    String source = 'manual',
+    String fundSource = 'primary',
+    bool useOverdraft = false,
   }) {
-    return _remoteDataSource.addTransaction(
+    return _remoteDataSource.createTransaction(
       title: title,
       description: description,
       amount: amount,
-      category: category,
-      type: type,
+      categoryId: categoryId,
       date: date,
+      receiptId: receiptId,
+      source: source,
+      fundSource: fundSource,
+      useOverdraft: useOverdraft,
     );
   }
 
-  Future<bool> deleteTransaction(String id) {
-    return _remoteDataSource.deleteTransaction(id);
+  Future<Transaction> updateTransaction({
+    required String id,
+    String? title,
+    String? description,
+    double? amount,
+    String? categoryId,
+    DateTime? date,
+    String? receiptId,
+    String? fundSource,
+    bool useOverdraft = false,
+  }) {
+    return _remoteDataSource.updateTransaction(
+      id: id,
+      title: title,
+      description: description,
+      amount: amount,
+      categoryId: categoryId,
+      date: date,
+      receiptId: receiptId,
+      fundSource: fundSource,
+      useOverdraft: useOverdraft,
+    );
+  }
+
+  Future<bool> deleteTransaction(String id) async {
+    try {
+      await _remoteDataSource.deleteTransaction(id);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }
