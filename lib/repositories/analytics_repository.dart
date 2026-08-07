@@ -1,3 +1,8 @@
+// analytics_repository.dart
+// Repository yang menyediakan data analitik (weekly pulse, ringkasan
+// bulanan, data analisis kategori, dan export laporan) ke layer atas
+// dengan memanfaatkan cache lokal saat request ke server gagal.
+
 import 'package:savaio/models/weekly_pulse_model.dart';
 import 'package:savaio/models/monthly_summary_model.dart';
 import 'package:savaio/models/app_data.dart';
@@ -46,7 +51,7 @@ class AnalyticsRepository {
     return _remoteDataSource.getAnalytics(month: month);
   }
 
-  /// DEPRECATED: Use getExportToken for the new secure flow.
+  /// DEPRECATED: Gunakan getExportToken untuk alur yang lebih aman.
   String getExportUrl(String month, String format) {
     return _remoteDataSource.getExportUrl(month, format);
   }

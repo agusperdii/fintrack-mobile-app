@@ -1,3 +1,7 @@
+// transaction_remote_data_source.dart
+// Data source yang berkomunikasi langsung dengan endpoint transactions di
+// backend (ambil daftar/detail, buat, perbarui, dan hapus transaksi).
+
 import '../../../core/constants/api_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../models/app_data.dart';
@@ -7,7 +11,7 @@ class TransactionRemoteDataSource {
 
   TransactionRemoteDataSource(this._client);
 
-  /// GET /transactions
+  /// GET /transactions — mengambil daftar transaksi.
   Future<List<Transaction>> getTransactions({
     String? month,
     String? categoryId,
@@ -29,15 +33,13 @@ class TransactionRemoteDataSource {
     return data.map((t) => Transaction.fromJson(t as Map<String, dynamic>)).toList();
   }
 
-  /// GET /transactions/{id}
+  /// GET /transactions/{id} — mengambil detail transaksi berdasarkan id.
   Future<Transaction> getTransaction(String id) async {
     final data = await _client.get('${ApiConfig.baseUrl}/transactions/$id') as Map<String, dynamic>;
     return Transaction.fromJson(data);
   }
 
-  /// POST /transactions
-  /// Returns the created Transaction (from API response data).
-  /// Throws on API error.
+  /// POST /transactions — membuat transaksi baru.
   Future<Transaction> createTransaction({
     required String title,
     String? description,
@@ -46,7 +48,9 @@ class TransactionRemoteDataSource {
     String? categoryId,
     String? receiptId,
     String source = 'manual',
+    String fundSource = 'primary',
     bool isConfirmed = false,
+    bool useOverdraft = false,
   }) async {
     final offset = '+07:00';
     final isoDate = '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}$offset';
@@ -56,13 +60,15 @@ class TransactionRemoteDataSource {
       'amount': amount,
       'date': isoDate,
       'source': source,
+      'fund_source': fundSource,
       'is_confirmed': isConfirmed,
+      'use_overdraft': useOverdraft,
     };
     if (description != null) body['description'] = description;
     if (categoryId != null) body['category_id'] = categoryId;
     if (receiptId != null) body['receipt_id'] = receiptId;
 
-    // _unwrap already strips {success, message, data} → returns data directly
+    // _unwrap sudah melepas struktur {success, message, data} sehingga hasilnya langsung berupa data.
     final data = await _client.post(
       '${ApiConfig.baseUrl}/transactions',
       body: body,
@@ -70,7 +76,7 @@ class TransactionRemoteDataSource {
     return Transaction.fromJson(data as Map<String, dynamic>);
   }
 
-  /// PATCH /transactions/{id}
+  /// PATCH /transactions/{id} — memperbarui transaksi berdasarkan id.
   Future<Transaction> updateTransaction({
   required String id,
   String? title,
@@ -79,7 +85,9 @@ class TransactionRemoteDataSource {
   DateTime? date,
   String? categoryId,
   String? receiptId,
+  String? fundSource,
   bool? isConfirmed,
+  bool useOverdraft = false,
 }) async {
   final body = <String, dynamic>{};
 
@@ -88,7 +96,9 @@ class TransactionRemoteDataSource {
   if (amount != null) body['amount'] = amount;
   if (categoryId != null) body['category_id'] = categoryId;
   if (receiptId != null) body['receipt_id'] = receiptId;
+  if (fundSource != null) body['fund_source'] = fundSource;
   if (isConfirmed != null) body['is_confirmed'] = isConfirmed;
+  if (useOverdraft) body['use_overdraft'] = useOverdraft;
 
   if (date != null) {
     body['date'] = date.toIso8601String();
@@ -102,7 +112,7 @@ class TransactionRemoteDataSource {
   return Transaction.fromJson(data as Map<String, dynamic>);
 }
 
-  /// DELETE /transactions/{id}
+  /// DELETE /transactions/{id} — menghapus transaksi berdasarkan id.
   Future<void> deleteTransaction(String id) async {
     await _client.delete('${ApiConfig.baseUrl}/transactions/$id');
   }

@@ -1,3 +1,8 @@
+// analisa_page.dart
+// Halaman analisa keuangan yang menampilkan ringkasan rata-rata harian,
+// distribusi pengeluaran per kategori, tren pengeluaran, dan insight
+// finansial berdasarkan data dashboard, budget, analytics, dan transaksi.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/utils/service_locator.dart';
@@ -13,8 +18,9 @@ import 'package:savaio/views/components/organisms/app_trend_line_chart.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/pages/spending_target_list_page.dart';
 import 'package:savaio/core/theme/app_theme.dart';
-import 'package:savaio/views/view_models/analysis_view_model.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:savaio/views/view_models/analysis_view_model.dart';
+import 'package:savaio/views/components/atoms/app_grid_background.dart';
 
 class AnalisaPage extends StatefulWidget {
   const AnalisaPage({super.key});
@@ -32,19 +38,20 @@ class _AnalisaPageState extends State<AnalisaPage> {
     Future.microtask(() => _handleRefresh());
   }
 
+  /// Data dashboard diambil terlebih dahulu untuk mendapatkan periode bulan
+  /// yang benar (targetPeriod, dengan fallback ke bulan berjalan), karena
+  /// nilai bulan tersebut dibutuhkan sebagai acuan saat mengambil data
+  /// budget, analytics, dan transaksi secara paralel setelahnya.
   Future<void> _handleRefresh() async {
     final now = DateTime.now();
 
-    // Fetch dashboard data first to get the correct period
     await sl.dashboardController.fetchDashboardData();
 
-    // Get the current month from dashboard data, fallback to current month
     final currentMonth = sl.dashboardController.data?.targetPeriod ??
         "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
     debugPrint('[AnalisaPage] Using month: $currentMonth');
 
-    // Now fetch all other data in parallel
     await Future.wait([
       sl.budgetController.fetchAll(silent: false, month: currentMonth),
       sl.analyticsController.fetchAll(),
@@ -85,9 +92,10 @@ class _AnalisaPageState extends State<AnalisaPage> {
                 ),
             ],
           ),
-          body: RefreshIndicator(
-            onRefresh: _handleRefresh,
-            color: Theme.of(context).colorScheme.primary,
+          body: AppGridBackground(
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: Theme.of(context).colorScheme.primary,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               children: [
@@ -96,12 +104,10 @@ class _AnalisaPageState extends State<AnalisaPage> {
                 else if (analytics.error != null)
                   Center(child: Text('Error: ${analytics.error}'))
                 else ...[
-                  // 1. Daily Average Analysis
                   AppHeroAnalysisCard(vm: vm.hero),
 
                   const SizedBox(height: 32),
 
-                  // 2. Pie Chart (Distribution)
                   if (vm.hasData && vm.pieSegments.isNotEmpty) ...[
                     AppCategoryPieChart(
                       segments: vm.pieSegments,
@@ -109,7 +115,6 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     const SizedBox(height: 32),
                   ],
 
-                  // 3. Spending Breakdown (Replacing old Category Breakdown)
                   if (vm.spendingBreakdown.isNotEmpty) ...[
                     AppSectionHeader(
                       title: 'Proporsi Pengeluaran',
@@ -128,7 +133,6 @@ class _AnalisaPageState extends State<AnalisaPage> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 4. Trend Analysis
                   AppTrendLineChart(
                     trendPoints: vm.trendPoints,
                     isWeekly: vm.isWeekly,
@@ -142,14 +146,14 @@ class _AnalisaPageState extends State<AnalisaPage> {
 
                   const SizedBox(height: 32),
 
-                  // 5. Smart Insight
                   AppSmartInsightCard(
                     vm: vm.insight,
                   ),
                 ],
-                const SizedBox(height: 100), // Bottom spacing
+                const SizedBox(height: 100),
               ],
             ),
+          ),
           ),
         );
       },

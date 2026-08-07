@@ -1,3 +1,7 @@
+// summary_page.dart
+// Halaman laporan tahunan yang menampilkan ringkasan cashflow per bulan
+// beserta rincian pemasukan, pengeluaran, dan tabungan.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,9 +9,12 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/controllers/analytics_controller.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
 import 'package:savaio/models/monthly_summary_model.dart';
+
+import 'package:savaio/views/components/atoms/app_grid_background.dart';
 
 class SummaryPage extends StatefulWidget {
   const SummaryPage({super.key});
@@ -23,22 +30,20 @@ class _SummaryPageState extends State<SummaryPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = context.read<AnalyticsController>();
       controller.fetchMonthlySummary();
-      
-      // Add error listener
       controller.addListener(_onControllerChange);
     });
   }
 
+  /// Controller mungkin lebih lama hidup dari halaman ini (biasanya
+  /// singleton/provider berumur panjang), tapi listener tetap harus
+  /// dilepas. Karena controller diambil lewat context.read di initState,
+  /// referensinya disimpan di _analyticsController agar bisa dilepas
+  /// dengan aman saat deactivate.
   @override
   void dispose() {
-    // We need to be careful here as the controller might outlive the page
-    // but in this app it's usually a singleton/long-lived provider.
-    // However, it's better to remove the listener.
-    // Since we are using context.read in initState, we should store the reference.
     super.dispose();
   }
 
-  // To properly remove listener, we should store the controller reference
   AnalyticsController? _analyticsController;
 
   @override
@@ -57,12 +62,10 @@ class _SummaryPageState extends State<SummaryPage> {
     if (!mounted) return;
     final error = _analyticsController?.error;
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.show(
+        context,
+        error,
+        type: AppSnackBarType.error,
       );
       _analyticsController?.clearError();
     }
@@ -109,14 +112,34 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () => controller.fetchMonthlySummary(year: selectedYear),
-        color: Theme.of(context).colorScheme.primary,
-        child: summary == null
-            ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
+      body: AppGridBackground(
+        child: RefreshIndicator(
+          onRefresh: () => controller.fetchMonthlySummary(year: selectedYear),
+          color: Theme.of(context).colorScheme.primary,
+        child: controller.error != null
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      controller.error!,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => controller.fetchMonthlySummary(year: selectedYear),
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              )
+            : summary == null
+                ? Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary))
             : CustomScrollView(
                 slivers: [
-                  // Year Selector & Total Summary
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -143,20 +166,18 @@ class _SummaryPageState extends State<SummaryPage> {
                     ),
                   ),
 
-                  // Active Months Header
                   if (activeMonths.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         child: AppHeading(
-                          'AKTIVITAS BULANAN',
+                          'Aktivitas Bulanan',
                           size: AppHeadingSize.caption,
                           isBold: true,
                         ),
                       ),
                     ),
 
-                  // Active Months Grid
                   if (activeMonths.isNotEmpty)
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -203,6 +224,7 @@ class _SummaryPageState extends State<SummaryPage> {
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
               ),
+        ),
       ),
     );
   }
@@ -240,50 +262,56 @@ class _YearlyTotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final double totalIn = summary.fold(0, (sum, m) => sum + m.totalIncome);
     final double totalOut = summary.fold(0, (sum, m) => sum + m.totalExpense);
-    final double net = totalIn - totalOut;
+    final double totalSav = summary.fold(0, (sum, m) => sum + m.totalSavings);
+    final double net = totalIn - totalOut - totalSav;
 
     final bool isPositive = net >= 0;
     
-    // Menggunakan color dari SavaioTheme / Material Theme Anda
     final Color successColor = SavaioTheme.tertiaryOf(context);
     final Color errorColor = Theme.of(context).colorScheme.error;
-    final Color surfaceColor = SavaioTheme.surfaceContainerOf(context);
 
-    // Kalkulasi rasio untuk Visual Bar Indicator
     final double totalFlow = totalIn + totalOut;
     final double inPercentage = totalFlow == 0 ? 0.5 : totalIn / totalFlow;
     final double outPercentage = totalFlow == 0 ? 0.5 : totalOut / totalFlow;
 
+    final symbol = currency == 'USD' ? r'$' : (currency == 'IDR' ? 'Rp' : currency);
+    final formattedNet = SavaioTheme.formatCurrency(net, currency: currency).replaceAll(symbol, '').trim();
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      padding: const EdgeInsets.all(SavaioTheme.spacing2xl),
       decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(28),
+        color: SavaioTheme.primaryOf(context).withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusXl),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
+          color: SavaioTheme.primaryOf(context).withValues(alpha: 0.15),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+            color: SavaioTheme.primaryOf(context).withValues(alpha: 0.05),
+            blurRadius: 32,
+            spreadRadius: -4,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- HEADER & STATUS CHIP SECTION ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              AppHeading(
-                'CASHFLOW BERSIH',
-                size: AppHeadingSize.caption,
-                isBold: true,
+              Text(
+                'Cashflow Bersih',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: SavaioTheme.onSurfaceVariantOf(context),
+                ),
               ),
-              // Modern Status Chip (Surplus/Defisit)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -298,32 +326,55 @@ class _YearlyTotalCard extends StatelessWidget {
                       size: 14,
                     ),
                     const SizedBox(width: 4),
-                    AppHeading(
+                    Text(
                       isPositive ? 'Surplus' : 'Defisit',
-                      size: AppHeadingSize.caption,
-                      isBold: true,
-                      // Uncomment jika AppHeading mendukung property color:
-                      // color: isPositive ? successColor : errorColor, 
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: isPositive ? successColor : errorColor,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: SavaioTheme.spacingL),
 
-          // --- NET AMOUNT (HERO) SECTION ---
-          AppHeading(
-            SavaioTheme.formatCurrency(net, currency: currency),
-            size: AppHeadingSize.h1,
+          FittedBox(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0, right: 6.0),
+                  child: Text(
+                    symbol,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+                Text(
+                  formattedNet,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w800,
+                    color: SavaioTheme.onSurfaceOf(context),
+                    height: 1.1,
+                    letterSpacing: -1.5,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
-          // --- VISUAL PROGRESS BAR SECTION ---
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: SizedBox(
-              height: 8,
+              height: 6,
               child: Row(
                 children: [
                   Expanded(
@@ -331,7 +382,7 @@ class _YearlyTotalCard extends StatelessWidget {
                     child: Container(color: successColor),
                   ),
                   if (totalIn > 0 && totalOut > 0)
-                    Container(width: 2, color: surfaceColor), 
+                    Container(width: 2, color: SavaioTheme.surfaceContainerHighestOf(context)), 
                   Expanded(
                     flex: (outPercentage * 100).toInt(),
                     child: Container(color: errorColor),
@@ -340,32 +391,38 @@ class _YearlyTotalCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // --- STATS (IN & OUT) SECTION ---
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Pemasukan
               Expanded(
-                child: _buildStatItem(
+                child: _buildModernStat(
                   context: context,
                   label: 'Pemasukan',
-                  amountText: SavaioTheme.formatCurrency(totalIn, currency: currency),
+                  amount: totalIn,
+                  currency: currency,
+                  symbol: symbol,
                   color: successColor,
-                  icon: Icons.south_west_rounded,
                 ),
               ),
-              const SizedBox(width: 16),
-              // Pengeluaran
               Expanded(
-                child: _buildStatItem(
+                child: _buildModernStat(
                   context: context,
                   label: 'Pengeluaran',
-                  amountText: SavaioTheme.formatCurrency(totalOut, currency: currency),
+                  amount: totalOut,
+                  currency: currency,
+                  symbol: symbol,
                   color: errorColor,
-                  icon: Icons.north_east_rounded,
-                  isAlignRight: true,
+                ),
+              ),
+              Expanded(
+                child: _buildModernStat(
+                  context: context,
+                  label: 'Tabungan',
+                  amount: totalSav,
+                  currency: currency,
+                  symbol: symbol,
+                  color: Colors.blueAccent,
                 ),
               ),
             ],
@@ -375,76 +432,75 @@ class _YearlyTotalCard extends StatelessWidget {
     );
   }
 
-  // --- HELPER WIDGET ---
-  Widget _buildStatItem({
+  Widget _buildModernStat({
     required BuildContext context,
     required String label,
-    required String amountText,
+    required double amount,
+    required String currency,
+    required String symbol,
     required Color color,
-    required IconData icon,
-    bool isAlignRight = false,
   }) {
+    final formatted = SavaioTheme.formatCurrency(amount, currency: currency).replaceAll(symbol, '').trim();
+
     return Column(
-      crossAxisAlignment: isAlignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isAlignRight) ...[
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-            ],
-            AppHeading(
-              label,
-              size: AppHeadingSize.caption,
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
-            if (isAlignRight) ...[
-              const SizedBox(width: 4),
-              Icon(icon, size: 14, color: color),
-            ],
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: SavaioTheme.onSurfaceVariantOf(context),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 4),
-        AppHeading(
-          amountText,
-          size: AppHeadingSize.h3, // Gunakan size h3/h4 agar cukup untuk menampung nilai "full"
-          isBold: true,
-        ),
-      ],
-    );
-  }
-}
-
-class _YearStat extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-  final String currency;
-  const _YearStat({required this.label, required this.value, required this.color, required this.currency});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: GoogleFonts.inter(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: SavaioTheme.onSurfaceVariantOf(context),
-            letterSpacing: 0.5,
+        const SizedBox(height: 8),
+        FittedBox(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2.0, right: 2.0),
+                child: Text(
+                  symbol,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+              Text(
+                formatted,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: SavaioTheme.onSurfaceOf(context),
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          SavaioTheme.formatCurrencyShorthand(value, currency: currency),
-          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: color),
-        ),
       ],
     );
   }
 }
+
+
 
 class _MonthlySummaryCard extends StatelessWidget {
   final MonthlySummaryModel model;
@@ -508,7 +564,22 @@ class _MonthlySummaryCard extends StatelessWidget {
                 size: AppHeadingSize.h2,
               ),
               Text(
-                'PENGELUARAN',
+                'Pengeluaran',
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: SavaioTheme.onSurfaceVariantOf(context),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              AppHeading(
+                SavaioTheme.formatCurrencyShorthand(model.totalSavings, currency: currency),
+                size: AppHeadingSize.h3,
+                color: Colors.blueAccent,
+              ),
+              Text(
+                'Tabungan',
                 style: GoogleFonts.inter(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
@@ -549,7 +620,7 @@ class _TrendBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusS),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

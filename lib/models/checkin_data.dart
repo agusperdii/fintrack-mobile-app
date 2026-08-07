@@ -1,12 +1,20 @@
+// checkin_data.dart
+// Model data untuk status dan riwayat check-in harian pengguna,
+// termasuk logika perhitungan streak dan histori mingguan dari data check-in.
+
 class CheckInStatus {
   final bool isCheckedInToday;
   final int streakCount;
   final DateTime? lastCheckinDate;
+  final List<bool> history;
+  final int percentile;
 
   CheckInStatus({
     required this.isCheckedInToday,
     required this.streakCount,
     this.lastCheckinDate,
+    this.history = const [false, false, false, false, false, false, false],
+    this.percentile = 0,
   });
 
   factory CheckInStatus.fromJson(Map<String, dynamic> json) {
@@ -20,10 +28,12 @@ class CheckInStatus {
       lastCheckinDate: json['last_checkin_date'] != null
           ? DateTime.tryParse(json['last_checkin_date'].toString())
           : null,
+      history: json['history'] != null ? List<bool>.from(json['history']) : [false, false, false, false, false, false, false],
+      percentile: json['percentile'] as int? ?? 0,
     );
   }
 
-  /// Calculates streak from a list of check-in dates (YYYY-MM-DD)
+  /// Menghitung streak dari daftar tanggal check-in (YYYY-MM-DD)
   factory CheckInStatus.fromStreakJson(List<dynamic> list) {
     if (list.isEmpty) {
       return CheckInStatus(isCheckedInToday: false, streakCount: 0);
@@ -42,7 +52,6 @@ class CheckInStatus {
       isCheckedInToday = true;
     }
 
-    // Calculate streak
     DateTime current = isCheckedInToday ? now : yesterday;
     while (true) {
       final dateStr = "${current.year}-${current.month.toString().padLeft(2, '0')}-${current.day.toString().padLeft(2, '0')}";
@@ -54,10 +63,31 @@ class CheckInStatus {
       }
     }
 
+    // Histori mingguan (7 hari terakhir, index 0 adalah 6 hari lalu, index 6 adalah hari ini)
+    List<bool> history = List.generate(7, (index) {
+      final d = now.subtract(Duration(days: 6 - index));
+      final dStr = "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
+      return dates.contains(dStr);
+    });
+
+    // Percentile perkiraan berdasarkan panjang streak
+    int percentile = 25;
+    if (streakCount >= 30) {
+      percentile = 98;
+    } else if (streakCount >= 14) {
+      percentile = 88;
+    } else if (streakCount >= 7) {
+      percentile = 65;
+    } else if (streakCount >= 3) {
+      percentile = 45;
+    }
+
     return CheckInStatus(
       isCheckedInToday: isCheckedInToday,
       streakCount: streakCount,
       lastCheckinDate: list.isNotEmpty ? DateTime.tryParse(dates.first) : null,
+      history: history,
+      percentile: percentile,
     );
   }
 }
@@ -65,7 +95,8 @@ class CheckInStatus {
 class CheckInRecord {
   final String id;
   final String? userId;
-  final String checkinDate; // YYYY-MM-DD
+  /// Format YYYY-MM-DD
+  final String checkinDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 

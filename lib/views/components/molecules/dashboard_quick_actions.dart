@@ -1,3 +1,7 @@
+// dashboard_quick_actions.dart
+// Widget molecule berisi tiga tombol aksi cepat di dashboard (Income,
+// Scan, Expense) menggunakan AppIconButton.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'app_icon_button.dart';
@@ -22,7 +26,7 @@ class DashboardQuickActions extends StatelessWidget {
         AppIconButton(
           icon: Icons.south_west_rounded,
           label: 'Income',
-          color: SavaioTheme.tertiary,
+          color: SavaioTheme.tertiaryOf(context),
           onTap: onIncomeTap,
         ),
         AppIconButton(
@@ -34,8 +38,9 @@ class DashboardQuickActions extends StatelessWidget {
         AppIconButton(
           icon: Icons.north_east_rounded,
           label: 'Expense',
-          color: SavaioTheme.error,
+          color: SavaioTheme.errorOf(context),
           onTap: onExpenseTap,
+
         ),
       ],
     );

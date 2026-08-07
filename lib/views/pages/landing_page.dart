@@ -1,3 +1,6 @@
+// landing_page.dart
+// Halaman onboarding/landing yang ditampilkan sebelum pengguna login,
+// berisi carousel perkenalan fitur aplikasi dan tombol menuju login/register.
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -6,6 +9,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/pages/login_page.dart';
 import 'package:savaio/views/pages/register_page.dart';
+import 'package:savaio/views/components/atoms/app_grid_background.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 
 class LandingPage extends StatefulWidget {
@@ -64,21 +68,22 @@ class _LandingPageState extends State<LandingPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              SavaioTheme.primaryOf(context).withOpacity(0.15),
-              SavaioTheme.backgroundOf(context),
-              SavaioTheme.backgroundOf(context),
-            ],
-            stops: const [0.0, 0.4, 1.0],
+      body: AppGridBackground(
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                SavaioTheme.primaryOf(context).withValues(alpha: 0.15),
+                Colors.transparent,
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.4, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
+          child: SafeArea(
+            child: Column(
             children: [
               Expanded(
                 child: PageView.builder(
@@ -119,7 +124,7 @@ class _LandingPageState extends State<LandingPage> {
                             color: _currentPage == index
                                 ? SavaioTheme.primaryOf(context)
                                 : SavaioTheme.outlineVariantOf(context)
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(
                               SavaioTheme.radiusFull,
                             ),
@@ -159,7 +164,7 @@ class _LandingPageState extends State<LandingPage> {
                               destination: const LoginPage(),
                             ),
                             child: Text(
-                              'LEWATI',
+                              'Lewati',
                               style: textTheme.labelLarge?.copyWith(
                                 color: SavaioTheme.onSurfaceVariantOf(context),
                                 letterSpacing: 1.2,
@@ -169,7 +174,7 @@ class _LandingPageState extends State<LandingPage> {
                           SizedBox(
                             width: 140,
                             child: AppButton(
-                              label: 'LANJUT',
+                              label: 'Lanjut',
                               icon: Icons.arrow_forward_rounded,
                               onTap: () {
                                 _pageController.nextPage(
@@ -188,6 +193,7 @@ class _LandingPageState extends State<LandingPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -299,7 +305,7 @@ class _OnboardingSlideState extends State<OnboardingSlide>
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: SavaioTheme.surfaceOf(context).withOpacity(0.4),
+                          color: SavaioTheme.surfaceOf(context).withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Column(
@@ -316,7 +322,6 @@ class _OnboardingSlideState extends State<OnboardingSlide>
                             const SizedBox(height: SavaioTheme.spacingM),
                             Text(
                               widget.data.description,
-                              // PERBAIKAN: fontSize dinaikkan ke 15 agar sedikit lebih besar
                               style: widget.textTheme.bodyLarge?.copyWith(
                                 fontSize: 15, 
                                 height: 1.5,

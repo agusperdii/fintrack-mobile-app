@@ -1,4 +1,4 @@
-package com.example.savaio
+package com.perdianaka.savaio
 
 import io.flutter.embedding.android.FlutterActivity
 

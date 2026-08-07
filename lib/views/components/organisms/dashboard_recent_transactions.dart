@@ -1,3 +1,7 @@
+// dashboard_recent_transactions.dart
+// Menampilkan daftar transaksi terbaru di dashboard, termasuk state kosong
+// dan skeleton loading saat data belum tersedia.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/models/app_data.dart';
@@ -33,11 +37,50 @@ class DashboardRecentTransactions extends StatelessWidget {
           _buildSkeleton()
         else if (transactions.isEmpty)
           Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'Belum ada transaksi',
-                style: TextStyle(color: SavaioTheme.onSurfaceVariantOf(context)),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              decoration: BoxDecoration(
+                color: SavaioTheme.surfaceContainerLowOf(context).withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(SavaioTheme.radiusXl),
+                border: Border.all(
+                  color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.5),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.receipt_long_rounded,
+                      color: SavaioTheme.primaryOf(context).withValues(alpha: 0.7),
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Belum ada transaksi',
+                    style: TextStyle(
+                      color: SavaioTheme.onSurfaceOf(context),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Transaksi terbarumu akan muncul di sini',
+                    style: TextStyle(
+                      color: SavaioTheme.onSurfaceVariantOf(context),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           )

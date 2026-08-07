@@ -1,7 +1,12 @@
+// app_progress_bar.dart
+// Widget atom progress bar linear sederhana untuk menampilkan persentase
+// kemajuan (misalnya penggunaan anggaran).
+
 import 'package:flutter/material.dart';
 
 class AppProgressBar extends StatelessWidget {
-  final double value; // 0.0 to 1.0
+  /// Nilai antara 0.0 hingga 1.0.
+  final double value;
   final Color? color;
   final double height;
 

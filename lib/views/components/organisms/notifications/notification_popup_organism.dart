@@ -1,3 +1,7 @@
+// notification_popup_organism.dart
+// Dialog popup notifikasi bergaya modal dengan ikon besar, judul, pesan,
+// dan tombol aksi/dismiss sesuai severity notifikasi.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -21,7 +25,7 @@ class NotificationPopupOrganism extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _getNotificationStyle(notification.severity);
+    final style = _getNotificationStyle(context, notification.severity);
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -32,7 +36,7 @@ class NotificationPopupOrganism extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 390),
             padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
             decoration: BoxDecoration(
-              color: SavaioTheme.surface.withValues(alpha: 0.92),
+              color: SavaioTheme.surfaceOf(context).withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
                 color: style.color.withValues(alpha: 0.18),
@@ -77,7 +81,7 @@ class NotificationPopupOrganism extends StatelessWidget {
                 AppHeading(
                   notification.title,
                   size: AppHeadingSize.h2,
-                  color: SavaioTheme.onSurface,
+                  color: SavaioTheme.onSurfaceOf(context),
                   textAlign: TextAlign.center,
                 ),
 
@@ -89,7 +93,7 @@ class NotificationPopupOrganism extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: SavaioTheme.onSurface.withValues(alpha: 0.68),
+                    color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.68),
                     height: 1.5,
                     letterSpacing: -0.1,
                   ),
@@ -101,7 +105,7 @@ class NotificationPopupOrganism extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: AppButton(
-                      label: actionLabel ?? 'LIHAT SEKARANG',
+                      label: actionLabel ?? 'Lihat Sekarang',
                       onTap: onAction!,
                     ),
                   ),
@@ -111,7 +115,7 @@ class NotificationPopupOrganism extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    label: onAction != null ? 'NANTI SAJA' : 'MENGERTI',
+                    label: onAction != null ? 'Nanti Saja' : 'Mengerti',
                     onTap: onDismiss,
                     variant: AppButtonVariant.ghost,
                   ),
@@ -129,13 +133,13 @@ class NotificationPopupOrganism extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: SavaioTheme.onSurface.withValues(alpha: 0.07),
+                  color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.07),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.close_rounded,
                   size: 20,
-                  color: SavaioTheme.onSurface.withValues(alpha: 0.55),
+                  color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.55),
                 ),
               ),
             ),
@@ -146,26 +150,28 @@ class NotificationPopupOrganism extends StatelessWidget {
   }
 
   static _NotificationPopupStyle _getNotificationStyle(
+    BuildContext context,
     NotificationSeverity severity,
   ) {
     switch (severity) {
       case NotificationSeverity.warning:
-        return const _NotificationPopupStyle(
-          color: Color(0xFFFFC800),
+        return _NotificationPopupStyle(
+          color: SavaioTheme.warningOf(context),
           icon: Icons.warning_rounded,
         );
       case NotificationSeverity.danger:
-        return const _NotificationPopupStyle(
-          color: Color(0xFFFF4B4B),
+        return _NotificationPopupStyle(
+          color: SavaioTheme.errorOf(context),
           icon: Icons.priority_high_rounded,
         );
       case NotificationSeverity.info:
-        return const _NotificationPopupStyle(
-          color: Color(0xFF58CC02),
+        return _NotificationPopupStyle(
+          color: SavaioTheme.successOf(context),
           icon: Icons.check_circle_rounded,
         );
     }
   }
+
 
   static void show(
     BuildContext context,
@@ -185,8 +191,8 @@ class NotificationPopupOrganism extends StatelessWidget {
         },
         onAction: onAction != null
             ? () {
-                onAction();
                 Navigator.pop(context);
+                onAction();
               }
             : null,
         actionLabel: actionLabel,

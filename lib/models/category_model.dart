@@ -1,9 +1,15 @@
+// category_model.dart
+// Model data untuk kategori transaksi (pemasukan/pengeluaran) pengguna,
+// termasuk konversi ke/dari JSON untuk komunikasi dengan API.
+
 class CategoryModel {
   final String id;
   final String? userId;
   final String name;
-  final String type; // 'income' | 'expense'
-  final String icon; // emoji or icon name
+  /// Tipe kategori: 'income' atau 'expense'
+  final String type;
+  /// Emoji atau nama ikon
+  final String icon;
   final String color;
   final bool isDefault;
   final DateTime? createdAt;
@@ -25,7 +31,7 @@ class CategoryModel {
       userId: json['user_id']?.toString(),
       name: json['name']?.toString() ?? '',
       type: json['type']?.toString() ?? 'expense',
-      // API sends 'emoji', legacy code used 'icon'
+      // API mengirim 'emoji', kode lama menggunakan 'icon'
       icon: json['emoji']?.toString() ?? json['icon']?.toString() ?? '📦',
       color: json['color']?.toString() ?? '#81ECFF',
       isDefault: json['is_default'] == true,

@@ -1,3 +1,7 @@
+// transaction_category_grid.dart
+// Grid pemilihan kategori transaksi dengan opsi tambah kategori baru dan
+// hapus kategori custom melalui long-press.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
@@ -139,14 +143,14 @@ class TransactionCategoryGrid extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('BATAL', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            child: Text('Batal', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               onDeleteCategory?.call(cat['id'].toString());
             },
-            child: Text('HAPUS', style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
+            child: Text('Hapus', style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

@@ -1,3 +1,8 @@
+// ocr_scan_page.dart
+// Halaman untuk memindai struk belanja menggunakan OCR/AI, menampilkan hasil
+// ekstraksi data, lalu mengarahkan pengguna ke form transaksi yang sudah
+// terisi otomatis.
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -92,7 +97,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
             AppButton(
               label: 'KONFIRMASI & LANJUT',
               onTap: () {
-                Navigator.pop(context); // Close sheet
+                Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -185,7 +190,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                   ),
                 if (controller.selectedImage == null)
                   AppButton(
-                    label: 'AMBIL FOTO STRUK',
+                    label: 'Ambil Foto Struk',
                     onTap: _showImagePickerOptions,
                   )
                 else
@@ -193,7 +198,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: 'GANTI FOTO',
+                          label: 'Ganti Foto',
                           variant: AppButtonVariant.secondary,
                           onTap: _showImagePickerOptions,
                         ),
@@ -201,7 +206,7 @@ class _OcrScanPageState extends State<OcrScanPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: AppButton(
-                          label: 'MULAI SCAN',
+                          label: 'Mulai Scan',
                           isLoading: controller.isLoading,
                           onTap: _processScan,
                         ),

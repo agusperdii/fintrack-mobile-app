@@ -1,9 +1,13 @@
+// login_page.dart
+// Halaman login pengguna, menangani input email/password dan proses
+// autentikasi (termasuk login via Google) melalui AuthController.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
 import 'package:savaio/views/pages/register_page.dart';
+import 'package:savaio/views/pages/email_verification_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   Future<void> _handleLogin() async {
+    FocusScope.of(context).unfocus();
     final authController = context.read<AuthController>();
 
     final success = await authController.login(
@@ -35,10 +40,35 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // Tangani jika email belum diverifikasi
+    if (authController.error != null && authController.error!.toLowerCase().contains('email not confirmed')) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => EmailVerificationPage(email: _emailController.text.trim())),
+      );
+      return;
+    }
+
     setState(() {
-      // PERBAIKAN: Pesan error yang lebih jelas dan solutif
-      _errorMessage = 'Email atau kata sandi salah. Silakan coba lagi.';
+      _errorMessage = authController.error ?? 'Email atau kata sandi salah. Silakan coba lagi.';
     });
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    FocusScope.of(context).unfocus();
+    final authController = context.read<AuthController>();
+    final success = await authController.loginWithGoogle();
+    if (!mounted) return;
+    
+    if (success) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
+      );
+    } else {
+      setState(() {
+        _errorMessage = authController.error ?? 'Gagal masuk dengan Google.';
+      });
+    }
   }
 
   InputDecoration _inputDecoration(
@@ -113,7 +143,6 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // PERBAIKAN: Judul utama yang menyambut pengguna
                 Text(
                   'Selamat Datang Kembali',
                   style: textTheme.headlineLarge?.copyWith(
@@ -123,7 +152,6 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: SavaioTheme.spacingM),
-                // PERBAIKAN: Sub-judul/ajakan masuk
                 Text(
                   'Silakan masuk untuk melanjutkan ke Savaio',
                   style: textTheme.bodyMedium?.copyWith(
@@ -177,7 +205,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   decoration: _inputDecoration(
                     context,
-                    // PERBAIKAN: Mengubah Password menjadi Kata Sandi
                     labelText: 'Kata Sandi',
                   ),
                   obscureText: true,
@@ -212,7 +239,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         )
                       : Text(
-                          // PERBAIKAN: Mengubah Log In menjadi Masuk
                           'Masuk',
                           style: textTheme.labelLarge?.copyWith(
                             color: SavaioTheme.onPrimaryFixedOf(context),
@@ -220,6 +246,29 @@ class _LoginPageState extends State<LoginPage> {
                             fontSize: 16,
                           ),
                         ),
+                ),
+                const SizedBox(height: SavaioTheme.spacingM),
+                OutlinedButton.icon(
+                  onPressed: authController.isLoading ? null : _handleGoogleLogin,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SavaioTheme.onSurfaceOf(context),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SavaioTheme.spacingL,
+                    ),
+                    side: BorderSide(
+                      color: SavaioTheme.outlineVariantOf(context),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
+                    ),
+                  ),
+                  icon: const Icon(Icons.g_mobiledata, size: 28),
+                  label: Text(
+                    'Lanjutkan dengan Google',
+                    style: textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: SavaioTheme.spacingL),
                 TextButton(
@@ -233,7 +282,6 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         },
                   child: Text(
-                    // PERBAIKAN: Ajakan daftar yang lebih natural
                     'Belum punya akun? Daftar sekarang',
                     style: textTheme.bodyMedium?.copyWith(
                       color: SavaioTheme.primaryOf(context),

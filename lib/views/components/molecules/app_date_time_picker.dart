@@ -1,3 +1,7 @@
+// app_date_time_picker.dart
+// Kumpulan helper statis untuk menampilkan bottom sheet pemilih tanggal,
+// waktu, atau bulan menggunakan Cupertino date picker.
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
@@ -27,7 +31,6 @@ class AppDateTimePicker {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Center(
                 child: Container(
                   width: 40,
@@ -41,8 +44,7 @@ class AppDateTimePicker {
               const SizedBox(height: 24),
               AppHeading(title, size: AppHeadingSize.h3),
               const SizedBox(height: 24),
-              
-              // The Picker
+
               SizedBox(
                 height: 200,
                 child: CupertinoTheme(
@@ -67,7 +69,7 @@ class AppDateTimePicker {
               
               const SizedBox(height: 32),
               AppButton(
-                label: 'KONFIRMASI',
+                label: 'Konfirmasi',
                 onTap: () => Navigator.pop(context, selectedDate),
               ),
               const SizedBox(height: 16),
@@ -80,7 +82,8 @@ class AppDateTimePicker {
 
   static Future<String?> showMonthPicker({
     required BuildContext context,
-    required String initialMonth, // Format: YYYY-MM
+    // Format: YYYY-MM
+    required String initialMonth,
   }) async {
     final now = DateTime.now();
     final parts = initialMonth.split('-');

@@ -1,5 +1,10 @@
+// app_badge.dart
+// Widget atom badge/label kecil dengan beberapa varian warna (success,
+// error, warning, neutral) untuk menampilkan status singkat.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppBadgeVariant { success, error, warning, neutral }
 
@@ -30,7 +35,7 @@ class AppBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusS),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -41,10 +46,10 @@ class AppBadge extends StatelessWidget {
             const SizedBox(width: 4),
           ],
           Text(
-            label.toUpperCase(),
+            label,
             style: GoogleFonts.inter(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
               color: color,
             ),
           ),

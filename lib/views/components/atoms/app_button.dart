@@ -1,3 +1,7 @@
+// app_button.dart
+// Widget atom tombol utama aplikasi dengan beberapa varian tampilan
+// (primary, secondary, error, ghost) serta dukungan state loading dan ikon.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -55,7 +59,7 @@ class AppButton extends StatelessWidget {
         break;
     }
 
-    final double buttonHeight = small ? 44 : 56;
+    final double buttonHeight = small ? 40 : 48;
 
     return SizedBox(
       width: width ?? double.infinity,
@@ -100,13 +104,13 @@ class AppButton extends StatelessWidget {
                   ],
                   Flexible(
                     child: Text(
-                      label.toUpperCase(),
+                      label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        fontSize: small ? 13 : 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                        fontSize: small ? 14 : 15,
                       ),
                     ),
                   ),

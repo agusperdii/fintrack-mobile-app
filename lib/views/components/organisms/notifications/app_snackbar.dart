@@ -1,6 +1,11 @@
+// app_snackbar.dart
+// Snackbar kustom yang tampil sebagai overlay di atas layar dengan animasi
+// slide, mendukung mode minimal, aksi opsional, dan auto-dismiss.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppSnackBarType { success, error, info, warning }
 
@@ -29,19 +34,19 @@ class AppSnackBar extends StatelessWidget {
 
     switch (type) {
       case AppSnackBarType.success:
-        color = Theme.of(context).colorScheme.tertiary;
+        color = SavaioTheme.successOf(context);
         icon = Icons.check_circle_rounded;
         break;
       case AppSnackBarType.error:
-        color = Theme.of(context).colorScheme.error;
+        color = SavaioTheme.errorOf(context);
         icon = Icons.error_rounded;
         break;
       case AppSnackBarType.warning:
-        color = Colors.orange;
+        color = SavaioTheme.warningOf(context);
         icon = Icons.warning_rounded;
         break;
       case AppSnackBarType.info:
-        color = Theme.of(context).colorScheme.primary;
+        color = SavaioTheme.primaryOf(context);
         icon = Icons.info_rounded;
         break;
     }
@@ -67,17 +72,17 @@ class AppSnackBar extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: minimal ? Colors.black.withValues(alpha: 0.1) : color.withValues(alpha: 0.15),
+                  color: minimal ? Colors.white.withValues(alpha: 0.2) : color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: minimal ? Colors.black : color, size: 16),
+                child: Icon(icon, color: minimal ? Colors.white : color, size: 16),
               ),
               const SizedBox(width: 12),
               Flexible(
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: minimal ? Colors.black : Theme.of(context).colorScheme.onSurface,
+                    color: Colors.white,
                     fontSize: minimal ? 12 : 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -96,11 +101,11 @@ class AppSnackBar extends StatelessWidget {
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(100),
+                      borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                     ),
                   ),
                   child: Text(
-                    actionLabel!.toUpperCase(),
+                    actionLabel!,
                     style: TextStyle(
                       color: color,
                       fontSize: 11,
@@ -114,7 +119,7 @@ class AppSnackBar extends StatelessWidget {
                 const SizedBox(width: 4),
                 IconButton(
                   onPressed: onDismiss,
-                  icon: Icon(Icons.close_rounded, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  icon: Icon(Icons.close_rounded, size: 18, color: Colors.white.withValues(alpha: 0.7)),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   visualDensity: VisualDensity.compact,
@@ -138,6 +143,7 @@ class AppSnackBar extends StatelessWidget {
   }) {
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
+    bool isRemoved = false;
     
     entry = OverlayEntry(
       builder: (context) => _SnackBarWrapper(
@@ -145,7 +151,12 @@ class AppSnackBar extends StatelessWidget {
         type: type,
         actionLabel: actionLabel,
         onAction: onAction,
-        onDismiss: () => entry.remove(),
+        onDismiss: () {
+          if (!isRemoved) {
+            isRemoved = true;
+            entry.remove();
+          }
+        },
         duration: duration,
         minimal: minimal,
       ),
@@ -186,22 +197,25 @@ class _SnackBarWrapperState extends State<_SnackBarWrapper> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    
-    // MENGOPTIMALKAN DURASI (Snappy & Responsive)
+
+    // Durasi animasi dibuat singkat agar terasa snappy dan responsif
     _controller = AnimationController(
       duration: Duration(milliseconds: widget.minimal ? 120 : 180),
       reverseDuration: Duration(milliseconds: widget.minimal ? 100 : 140),
       vsync: this,
     );
 
-    // MENGOPTIMALKAN KURVA ANIMASI
+    // Jarak slide awal dikurangi agar tidak terlalu jauh melompat saat masuk,
+    // dan kurva easeOutBack dipakai agar menghasilkan sedikit hentakan premium
+    // tanpa membal terlalu lama, sementara easeInCubic dipakai saat keluar
+    // agar terasa mulus dan cepat
     _offsetAnimation = Tween<Offset>(
-      begin: const Offset(0.0, -1.5), // Jarak slide dikurangi agar tidak terlalu jauh melompat
+      begin: const Offset(0.0, -1.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: widget.minimal ? Curves.easeOutCubic : Curves.easeOutBack, // Menghasilkan sedikit hentakan premium tanpa membal lama
-      reverseCurve: Curves.easeInCubic, // Keluar dengan mulus dan cepat
+      curve: widget.minimal ? Curves.easeOutCubic : Curves.easeOutBack,
+      reverseCurve: Curves.easeInCubic,
     ));
 
     _controller.forward().then((_) {

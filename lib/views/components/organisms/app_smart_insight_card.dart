@@ -1,3 +1,7 @@
+// app_smart_insight_card.dart
+// Kartu insight otomatis yang menampilkan judul dan deskripsi wawasan
+// keuangan dengan warna dan ikon yang menyesuaikan tingkat severity.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
@@ -36,9 +40,16 @@ class AppSmartInsightCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerOf(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+        color: accentColor.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
+        border: Border.all(color: accentColor.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

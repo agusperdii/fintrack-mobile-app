@@ -1,3 +1,7 @@
+// notification_repository.dart
+// Repository untuk mengelola notifikasi pengguna: mengambil daftar,
+// menandai sudah dibaca, dan menghapus notifikasi.
+
 import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/repositories/data_sources/remote/dashboard_remote_data_source.dart';
 

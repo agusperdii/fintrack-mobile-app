@@ -1,3 +1,7 @@
+// auth_remote_data_source.dart
+// Data source yang berkomunikasi langsung dengan endpoint autentikasi di
+// backend (login, register, refresh token, logout, ambil data user).
+
 import '../../../core/constants/api_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../../models/profile_model.dart';
@@ -7,7 +11,7 @@ class AuthRemoteDataSource {
 
   AuthRemoteDataSource(this._client);
 
-  /// POST /auth/login
+  /// POST /auth/login — melakukan proses login pengguna.
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -19,7 +23,7 @@ class AuthRemoteDataSource {
     return data;
   }
 
-  /// POST /auth/register
+  /// POST /auth/register — mendaftarkan pengguna baru.
   Future<Map<String, dynamic>> register({
     required String fullName,
     required String email,
@@ -32,7 +36,7 @@ class AuthRemoteDataSource {
  return data;
   }
 
-  /// POST /auth/refresh
+  /// POST /auth/refresh — memperbarui access token menggunakan refresh token.
   Future<Map<String, dynamic>> refresh({required String refreshToken}) async {
     final data = await _client.post(
       '${ApiConfig.baseUrl}/auth/refresh',
@@ -41,18 +45,18 @@ class AuthRemoteDataSource {
     return data;
   }
 
-  /// POST /auth/logout
+  /// POST /auth/logout — melakukan proses logout pengguna.
   Future<void> logout() async {
     await _client.post('${ApiConfig.baseUrl}/auth/logout', body: {});
   }
 
-  /// GET /auth/me
+  /// GET /auth/me — mengambil data pengguna yang sedang login.
   Future<UserProfile> getMe() async {
     final data = await _client.get('${ApiConfig.baseUrl}/auth/me') as Map<String, dynamic>;
     return UserProfile.fromJson(data);
   }
 
-  /// PATCH /auth/password
+  /// PATCH /auth/password — mengubah kata sandi pengguna.
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -66,13 +70,13 @@ class AuthRemoteDataSource {
     );
   }
 
-  /// GET /users/me
+  /// GET /users/me — mengambil data profil pengguna.
   Future<UserProfile> getProfile() async {
     final data = await _client.get('${ApiConfig.baseUrl}/users/me') as Map<String, dynamic>;
     return UserProfile.fromJson(data);
   }
 
-  /// PATCH /users/me
+  /// PATCH /users/me — memperbarui data profil pengguna.
   Future<UserProfile> updateProfile({
     String? fullName,
     String? avatarUrl,

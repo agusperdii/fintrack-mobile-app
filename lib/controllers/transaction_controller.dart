@@ -1,3 +1,7 @@
+// transaction_controller.dart
+// Controller yang mengelola state dan logika bisnis transaksi (income, expense,
+// savings), termasuk optimistic update, sinkronisasi background ke API, serta
+// rollback saat terjadi kegagalan.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/app_data.dart';
@@ -53,7 +57,7 @@ class TransactionController extends ChangeNotifier {
     }
   }
 
-  /// Drill-down fetch from /summary/{month}/transactions
+  /// Fetch drill-down dari endpoint /summary/{month}/transactions
   Future<void> fetchMonthTransactions(String month, {int page = 1}) async {
     _isLoading = true;
     _error = null;
@@ -76,8 +80,8 @@ class TransactionController extends ChangeNotifier {
     }
   }
 
-  /// Adds a transaction optimistically and returns immediately.
-  /// Synchronization happens in the background.
+  /// Menambahkan transaksi secara optimistic dan langsung return.
+  /// Sinkronisasi ke server dilakukan di background.
   Future<void> createTransactionOptimistic({
     required DashboardController dashboardController,
     required String title,
@@ -88,12 +92,34 @@ class TransactionController extends ChangeNotifier {
     DateTime? date,
     String? receiptId,
     String source = 'manual',
+    String fundSource = 'primary',
+    bool useOverdraft = false,
   }) async {
+    // Validasi tabungan
+    if (type.toLowerCase() == 'savings') {
+      if (fundSource == 'savings') {
+        // TARIK TABUNGAN
+        final totalSavings = dashboardController.data?.totalSavings ?? 0.0;
+        if (amount > totalSavings) {
+          throw Exception('Saldo tabungan tidak mencukupi untuk ditarik.');
+        }
+      } else {
+        // SETOR TABUNGAN
+        final currentBalance = dashboardController.data?.balance ?? 0.0;
+        if (currentBalance <= 0) {
+          throw Exception('Saldo utama habis. Tambahkan pemasukan dahulu sebelum menabung.');
+        }
+        if (amount > currentBalance) {
+          throw Exception('Nominal tabungan melebihi saldo utama.');
+        }
+      }
+    }
+
     final stopwatch = Stopwatch()..start();
     _isAddingTransaction = true;
     _safeNotifyListeners(this);
 
-    // Find category metadata for optimistic UI
+    // Mencari metadata kategori untuk optimistic UI
     Category? optimisticCategory;
     try {
       final catData = sl.budgetController.categories.firstWhere((c) => c['id'] == categoryId);
@@ -105,7 +131,7 @@ class TransactionController extends ChangeNotifier {
         color: catData['color']?.toString() ?? '#81ECFF',
       );
     } catch (_) {
-      // Fallback if category not found locally
+      // Fallback jika kategori tidak ditemukan secara lokal
       optimisticCategory = Category(
         id: categoryId,
         name: 'Transaksi',
@@ -115,13 +141,14 @@ class TransactionController extends ChangeNotifier {
       );
     }
 
-    // Create optimistic transaction
+    final double optimisticAmount = (type.toLowerCase() == 'savings' && fundSource == 'savings') ? -amount : amount;
+
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final newTransaction = Transaction(
       id: tempId,
       title: title,
       description: description ?? '',
-      amount: amount,
+      amount: optimisticAmount,
       categoryId: categoryId,
       receiptId: receiptId,
       source: source,
@@ -130,9 +157,9 @@ class TransactionController extends ChangeNotifier {
       category: optimisticCategory,
     );
 
-    // 1. Optimistic UI update
+    // 1. Update UI secara optimistic
     _transactions = [newTransaction, ...?_transactions];
-    dashboardController.isSyncingTransaction = true; // Start global sync indicator
+    dashboardController.isSyncingTransaction = true;
     dashboardController.applyTransactionOptimistically(
       newTransaction,
       isExpense: type.toLowerCase() == 'expense',
@@ -141,25 +168,24 @@ class TransactionController extends ChangeNotifier {
 
     debugPrint('Optimistic update took: ${stopwatch.elapsedMilliseconds}ms');
 
-    // 2. Start sync
-    try {
-      await _syncInBackground(
-        tempId: tempId,
-        dashboardController: dashboardController,
-        title: title,
-        description: description,
-        amount: amount,
-        categoryId: categoryId,
-        date: date ?? DateTime.now(),
-        receiptId: receiptId,
-        source: source,
-      );
-    } finally {
-      _isAddingTransaction = false;
-      _safeNotifyListeners(this);
-    }
+    // 2. Mulai sinkronisasi di background (fire and forget, tidak di-await)
+    _syncInBackground(
+      tempId: tempId,
+      dashboardController: dashboardController,
+      title: title,
+      description: description,
+      amount: amount,
+      categoryId: categoryId,
+      date: date ?? DateTime.now(),
+      receiptId: receiptId,
+      source: source,
+      fundSource: fundSource,
+      useOverdraft: useOverdraft,
+    );
 
-    // Background Sync (Analytics/Notifications)
+    _isAddingTransaction = false;
+    _safeNotifyListeners(this);
+
     sl.notificationController.fetchAll();
     sl.analyticsController.fetchAll();
   }
@@ -174,9 +200,11 @@ class TransactionController extends ChangeNotifier {
     required DateTime date,
     String? receiptId,
     required String source,
+    required String fundSource,
+    required bool useOverdraft,
   }) async {
     try {
-      // 3. API call with timeout (5 seconds)
+      // 3. Panggil API dengan timeout (5 detik)
       final result = await _repository.createTransaction(
         title: title,
         description: description,
@@ -185,29 +213,34 @@ class TransactionController extends ChangeNotifier {
         date: date,
         receiptId: receiptId,
         source: source,
+        fundSource: fundSource,
+        useOverdraft: useOverdraft,
       ).timeout(const Duration(seconds: 5));
 
       if (result.id.isNotEmpty) {
         debugPrint('Background sync SUCCESS for $tempId');
-        
-        // Update status to synced
-        dashboardController.updateTransactionStatus(tempId, SyncStatus.synced);
-        dashboardController.isSyncingTransaction = false; // Stop global sync indicator early on success
-        
-        // Update local transaction list status
+
+        dashboardController.replaceTransaction(tempId, result);
+        // Matikan indikator sync global lebih awal begitu berhasil (tidak menunggu blok finally)
+        dashboardController.isSyncingTransaction = false;
+
         if (_transactions != null) {
           _transactions = _transactions!.map((tx) {
-            return tx.id == tempId ? tx.copyWith(syncStatus: SyncStatus.synced) : tx;
+            return tx.id == tempId ? result : tx;
           }).toList();
           _safeNotifyListeners(this);
         }
+
+        // Perbarui budget dan dashboard secara realtime setelah transaksi sukses
+        sl.budgetController.fetchAll(silent: true);
+        dashboardController.fetchDashboardData();
       } else {
         throw Exception('Server returned failure');
       }
     } catch (e) {
       debugPrint('Background sync FAILED for $tempId. Error: $e');
 
-      // 4. Update status to failed
+      // 4. Update status jadi failed
       dashboardController.updateTransactionStatus(tempId, SyncStatus.failed);
       if (_transactions != null) {
         _transactions = _transactions!.map((tx) {
@@ -216,16 +249,15 @@ class TransactionController extends ChangeNotifier {
         _safeNotifyListeners(this);
       }
 
-      // Rollback balance if it's a critical error or per user preference
-      // Here we just mark as failed and allow retry or manual rollback
-      // For now, let's rollback automatically to ensure consistency
+      // Idealnya rollback saldo hanya untuk error kritikal atau sesuai preferensi user,
+      // dan cukup ditandai failed agar bisa di-retry/rollback manual. Namun untuk saat
+      // ini rollback dilakukan otomatis demi menjaga konsistensi data.
       dashboardController.rollbackTransaction();
 
-      // Remove the failed transaction from the list
       _transactions = _transactions?.where((tx) => tx.id != tempId).toList();
       _safeNotifyListeners(this);
     } finally {
-      dashboardController.isSyncingTransaction = false; // Stop global sync indicator
+      dashboardController.isSyncingTransaction = false;
     }
   }
 
@@ -238,6 +270,8 @@ class TransactionController extends ChangeNotifier {
     String? categoryId,
     DateTime? date,
     String? receiptId,
+    String? fundSource,
+    bool useOverdraft = false,
   }) async {
     _isUpdatingTransaction = true;
     _error = null;
@@ -253,33 +287,73 @@ class TransactionController extends ChangeNotifier {
     try {
       oldTransaction = _transactions?.firstWhere((t) => t.id == id);
     } catch (_) {}
-
-    if (oldTransaction == null) {
-      _error = 'Transaction not found';
-      _isUpdatingTransaction = false;
-      _safeNotifyListeners(this);
-      // PERBAIKAN
-      // Melempar exception agar blok catch di Form Page bisa menangkapnya
-      throw Exception(_error); 
+    
+    if (oldTransaction == null && dashboardController != null && dashboardController.data != null) {
+      try {
+        oldTransaction = dashboardController.data!.recentTransactions.firstWhere((t) => t.id == id);
+      } catch (_) {}
     }
 
-    // Backup list for rollback
+    oldTransaction ??= Transaction(
+      id: id,
+      title: title ?? '',
+      amount: amount ?? 0.0,
+      date: date ?? DateTime.now(),
+      source: 'manual',
+    );
+
+    // Validasi tabungan
+    if (oldTransaction.type == TransactionType.savings && dashboardController != null && amount != null) {
+      if (fundSource == 'savings' || (fundSource == null && oldTransaction.amount < 0)) {
+        // TARIK TABUNGAN
+        final totalSavings = dashboardController.data?.totalSavings ?? 0.0;
+        double maxWithdrawal = totalSavings;
+        if (oldTransaction.amount < 0) maxWithdrawal += oldTransaction.amount.abs();
+        
+        if (amount > maxWithdrawal) {
+          throw Exception('Saldo tabungan tidak mencukupi untuk ditarik.');
+        }
+      } else {
+        // SETOR TABUNGAN
+        final currentBalance = dashboardController.data?.balance ?? 0.0;
+        double maxAllowed = currentBalance;
+        if (oldTransaction.amount > 0) maxAllowed += oldTransaction.amount;
+
+        if (maxAllowed <= 0 && amount > 0) {
+          throw Exception('Saldo utama habis. Tambahkan pemasukan dahulu sebelum menabung.');
+        }
+        if (amount > maxAllowed) {
+          throw Exception('Nominal tabungan melebihi saldo utama.');
+        }
+      }
+    }
+
+    final double computedAmount = amount ?? oldTransaction.amount.abs();
+    final double optimisticAmount = (oldTransaction.type == TransactionType.savings && fundSource == 'savings')
+        ? -computedAmount
+        : computedAmount;
+
     final previousTransactions =
         _transactions != null ? List<Transaction>.from(_transactions!) : null;
 
-    // Optimistic update
     if (_transactions != null) {
       _transactions = _transactions!.map((tx) {
         if (tx.id != id) return tx;
 
-        return tx.copyWith(
+        final newTx = tx.copyWith(
           title: title ?? tx.title,
           description: description ?? tx.description,
-          amount: amount ?? tx.amount,
+          amount: optimisticAmount,
           categoryId: categoryId ?? tx.categoryId,
           receiptId: receiptId ?? tx.receiptId,
           date: date ?? tx.date,
         );
+        
+        if (dashboardController != null) {
+          dashboardController.applyTransactionUpdateOptimistically(tx, newTx);
+        }
+
+        return newTx;
       }).toList();
 
       _safeNotifyListeners(this);
@@ -294,34 +368,32 @@ class TransactionController extends ChangeNotifier {
         categoryId: categoryId,
         date: date,
         receiptId: receiptId,
+        fundSource: fundSource,
+        useOverdraft: useOverdraft,
       );
 
-      // Replace optimistic data with actual server response
       if (_transactions != null) {
         _transactions = _transactions!.map((tx) {
           return tx.id == id ? updated : tx;
         }).toList();
       }
 
-      // PERBAIKAN
-      // Mengembalikan objek Transaction terbaru
-      return updated; 
-      
+      return updated;
+
     } catch (e) {
       _error = e.toString();
 
-      // Rollback
       _transactions = previousTransactions;
       _safeNotifyListeners(this);
 
-      // PERBAIKAN
       // Melempar error ke UI Form Page agar memunculkan Snackbar merah
-      throw Exception(e); 
+      throw Exception(e);
     } finally {
       _isUpdatingTransaction = false;
 
       if (dashboardController != null) {
         dashboardController.isSyncingTransaction = false;
+        sl.budgetController.fetchAll(silent: true);
         dashboardController.fetchDashboardData();
       }
 
@@ -338,17 +410,15 @@ class TransactionController extends ChangeNotifier {
 
     final previousTransactions = _transactions != null ? List<Transaction>.from(_transactions!) : null;
 
-    // 1. Find the transaction for incremental balance update
+    // 1. Cari transaksinya untuk update saldo secara incremental
     Transaction? deletedTx;
     try {
       deletedTx = _transactions?.firstWhere((t) => t.id == id);
-    } catch (_) {
-      // Not found in current list
-    }
+    } catch (_) {}
 
     final isExpense = deletedTx?.type == TransactionType.expense;
 
-    // 2. Optimistic Update (List & Balance)
+    // 2. Optimistic update (list & saldo)
     if (_transactions != null) {
       _transactions = _transactions!.where((t) => t.id != id).toList();
       _safeNotifyListeners(this);
@@ -362,14 +432,15 @@ class TransactionController extends ChangeNotifier {
       final success = await _repository.deleteTransaction(id);
       if (!success) throw Exception('Failed to delete transaction');
 
-      // NO FULL REFRESH NEEDED - We updated incrementally!
-      // dashboardController?.fetchDashboardData();
+      // Refresh data agar budget harian dan bulanan tetap sinkron
+      sl.budgetController.fetchAll(silent: true);
+      dashboardController?.fetchDashboardData();
 
       return true;
     } catch (e) {
       _error = e.toString();
 
-      // 3. Rollback (List & Balance)
+      // 3. Rollback (list & saldo)
       _transactions = previousTransactions;
       if (dashboardController != null) {
         dashboardController.rollbackTransaction();

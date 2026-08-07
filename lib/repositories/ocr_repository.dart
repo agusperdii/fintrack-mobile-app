@@ -1,3 +1,7 @@
+// ocr_repository.dart
+// Repository untuk fitur OCR struk belanja, meneruskan file gambar ke
+// data source untuk diproses dan diubah menjadi data transaksi.
+
 import 'dart:io';
 import 'package:savaio/repositories/data_sources/ocr_data_source.dart';
 import 'package:savaio/models/ocr_result.dart';

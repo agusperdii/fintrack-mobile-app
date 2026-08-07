@@ -1,3 +1,6 @@
+// notifications_page.dart
+// Halaman daftar notifikasi pengguna, menampilkan filter baca/belum dibaca
+// serta aksi tandai dibaca dan hapus notifikasi melalui NotificationController.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/controllers/notification_controller.dart';
@@ -7,6 +10,7 @@ import 'package:savaio/views/components/organisms/notifications/notification_pop
 import 'package:savaio/views/components/organisms/notifications/notification_toast_organism.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 import 'package:savaio/models/notification_data.dart' as model;
 
@@ -18,7 +22,7 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  // 0 = Semua, 1 = Belum Dibaca
+  // Indeks filter aktif: 0 = Semua, 1 = Belum Dibaca
   int _activeFilterIndex = 0;
 
   @override
@@ -50,7 +54,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- SECTION HEADER & BACA SEMUA ---
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 16, 28, 16),
               child: Row(
@@ -74,7 +77,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             ),
 
-            // --- UX FEATURE: FILTER SEGMENT CHIPS ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24), 
               child: Row(
@@ -95,9 +97,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 16), 
+            const SizedBox(height: 16),
 
-            // --- HANDLING STATES (LOADING, ERROR, EMPTY, LIST) ---
             Expanded(
               child: _buildContent(controller, filteredNotifications),
             ),
@@ -165,7 +166,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
     }
 
-    // 4. Main List View (Optimized Performance)
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 24), 
       physics: const AlwaysScrollableScrollPhysics(),
@@ -180,7 +180,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  // --- UX FEATURE: SWIPE TO DELETE ---
   Widget _buildSwipeableNotificationItem(NotificationController controller, model.NotificationData notif) {
     return Dismissible(
       key: Key(notif.id),
@@ -199,8 +198,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       ),
       onDismissed: (direction) {
         controller.deleteNotification(notif.id);
-        
-        // MENGGUNAKAN APP SNACKBAR KUSTOM ANDA DI SINI
+
         AppSnackBar.show(
           context,
           'Notifikasi berhasil dihapus',
@@ -223,14 +221,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(100),
+              borderRadius: BorderRadius.circular(SavaioTheme.radiusS),
               border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
             ),
             child: Text(
-              'BACA',
+              'Baca',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.primary,
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -265,7 +263,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  // Helper Widget untuk Filter Segmented Chips
   Widget _buildFilterChip({
     required String label,
     required bool isActive,

@@ -1,3 +1,8 @@
+// service_locator.dart
+// Wadah dependency injection sederhana (singleton) yang menginisialisasi dan
+// menyimpan seluruh instance data source, repository, dan controller yang
+// dipakai di aplikasi.
+
 import 'package:savaio/core/network/api_client.dart';
 import 'package:savaio/repositories/data_sources/remote/auth_remote_data_source.dart';
 import 'package:savaio/repositories/data_sources/remote/transaction_remote_data_source.dart';
@@ -8,7 +13,6 @@ import 'package:savaio/repositories/data_sources/remote/category_remote_data_sou
 
 import 'package:savaio/services/notification_supabase_service.dart';
 
-// Domain Repositories
 import 'package:savaio/repositories/transaction_repository.dart';
 import 'package:savaio/repositories/notification_repository.dart';
 import 'package:savaio/repositories/dashboard_repository.dart';
@@ -17,7 +21,6 @@ import 'package:savaio/repositories/profile_repository.dart';
 import 'package:savaio/repositories/analytics_repository.dart';
 import 'package:savaio/repositories/category_repository.dart';
 
-// Domain Controllers
 import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/controllers/notification_controller.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
@@ -48,7 +51,6 @@ class ServiceLocator {
   late final DashboardRemoteDataSource dashboardRemoteDataSource;
   late final CategoryRemoteDataSource categoryRemoteDataSource;
 
-  // Domain Repositories
   late final TransactionRepository transactionRepository;
   late final NotificationRepository notificationRepository;
   late final DashboardRepository dashboardRepository;
@@ -57,7 +59,6 @@ class ServiceLocator {
   late final AnalyticsRepository analyticsRepository;
   late final CategoryRepository categoryRepository;
 
-  // Domain Controllers
   late final TransactionController transactionController;
   late final NotificationController notificationController;
   late final NotificationSupabaseService notificationSupabaseService;
@@ -87,7 +88,6 @@ class ServiceLocator {
     dashboardRemoteDataSource = DashboardRemoteDataSource(apiClient);
     categoryRemoteDataSource = CategoryRemoteDataSource(apiClient);
 
-    // Initialize Domain Repositories
     transactionRepository = TransactionRepository(transactionRemoteDataSource);
     notificationRepository = NotificationRepository(dashboardRemoteDataSource);
     dashboardRepository = DashboardRepository(dashboardRemoteDataSource);
@@ -96,7 +96,6 @@ class ServiceLocator {
     analyticsRepository = AnalyticsRepository(analyticsRemoteDataSource);
     categoryRepository = CategoryRepository(categoryRemoteDataSource);
 
-    // Initialize Domain Controllers
     transactionController = TransactionController(transactionRepository);
     notificationSupabaseService = NotificationSupabaseService();
     notificationController = NotificationController(notificationRepository, notificationSupabaseService);
@@ -106,7 +105,6 @@ class ServiceLocator {
     analyticsService = AnalyticsService();
     analyticsController = AnalyticsController(analyticsRepository, analyticsService);
 
-    // OCR
     ocrDataSource = OcrDataSource(apiClient);
     ocrRepository = OcrRepository(ocrDataSource);
     ocrController = OcrController(ocrRepository);

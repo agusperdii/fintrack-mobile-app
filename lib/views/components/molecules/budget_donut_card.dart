@@ -1,3 +1,7 @@
+// budget_donut_card.dart
+// Widget molecule berbentuk kartu donut chart yang menampilkan ringkasan
+// penggunaan anggaran (budget) dalam bentuk visual lingkaran.
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,7 +53,7 @@ class BudgetDonutCard extends StatelessWidget {
                     startDegreeOffset: -90,
                     sections: [
                       PieChartSectionData(
-                        color: isOver ? SavaioTheme.error : color,
+                        color: isOver ? SavaioTheme.errorOf(context) : color,
                         value: percentage.clamp(0.0, 1.0),
                         radius: 10,
                         showTitle: false,
@@ -69,7 +73,7 @@ class BudgetDonutCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      color: isOver ? SavaioTheme.error : SavaioTheme.onSurfaceOf(context),
+                      color: isOver ? SavaioTheme.errorOf(context) : SavaioTheme.onSurfaceOf(context),
                     ),
                   ),
                 ),
@@ -93,15 +97,16 @@ class BudgetDonutCard extends StatelessWidget {
                 color: SavaioTheme.onSurfaceVariantOf(context),
               ),
               children: [
-                TextSpan(text: prefixText), // Menggunakan teks dinamis
+                TextSpan(text: prefixText),
                 TextSpan(
-                  text: SavaioTheme.formatCurrencyShorthand(difference), // Menggunakan selisih absolut
+                  text: SavaioTheme.formatCurrencyShorthand(difference),
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w900,
-                    color: isOver ? SavaioTheme.error : color,
+                    color: isOver ? SavaioTheme.errorOf(context) : color,
                   ),
                 ),
               ],
+
             ),
           ),
         ],

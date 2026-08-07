@@ -1,3 +1,7 @@
+// notification_toast_organism.dart
+// Toast notifikasi ringkas yang muncul sementara di bagian atas layar dan
+// otomatis hilang setelah beberapa detik.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/models/notification_data.dart';
@@ -21,15 +25,15 @@ class NotificationToastOrganism extends StatelessWidget {
 
     switch (notification.severity) {
       case NotificationSeverity.warning:
-        color = Colors.orange;
+        color = SavaioTheme.warningOf(context);
         icon = Icons.warning_amber_rounded;
         break;
       case NotificationSeverity.danger:
-        color = SavaioTheme.error;
+        color = SavaioTheme.errorOf(context);
         icon = Icons.error_outline_rounded;
         break;
       case NotificationSeverity.info:
-        color = SavaioTheme.primary;
+        color = SavaioTheme.primaryOf(context);
         icon = Icons.info_outline_rounded;
         break;
     }
@@ -42,7 +46,7 @@ class NotificationToastOrganism extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: SavaioTheme.surfaceContainerHighest,
+            color: SavaioTheme.surfaceContainerHighestOf(context),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -77,8 +81,8 @@ class NotificationToastOrganism extends StatelessWidget {
                       notification.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: SavaioTheme.onSurface,
+                      style: TextStyle(
+                        color: SavaioTheme.onSurfaceOf(context),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -89,7 +93,7 @@ class NotificationToastOrganism extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: SavaioTheme.onSurface.withValues(alpha: 0.68),
+                        color: SavaioTheme.onSurfaceOf(context).withValues(alpha: 0.68),
                         fontSize: 11,
                         height: 1.25,
                       ),
@@ -106,7 +110,7 @@ class NotificationToastOrganism extends StatelessWidget {
                     padding: const EdgeInsets.all(4),
                     child: Icon(
                       Icons.close_rounded,
-                      color: SavaioTheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color: SavaioTheme.onSurfaceVariantOf(context).withValues(alpha: 0.7),
                       size: 16,
                     ),
                   ),

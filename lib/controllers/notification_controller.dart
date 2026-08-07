@@ -1,3 +1,6 @@
+// notification_controller.dart
+// Controller yang mengelola state notifikasi pengguna, termasuk pengambilan dari
+// backend, penandaan sudah dibaca, penghapusan, dan penerimaan notifikasi real-time.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/notification_data.dart';
@@ -17,7 +20,7 @@ class NotificationController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  // Stream for UI to listen for real-time popups/banners
+  // Stream untuk UI mendengarkan popup/banner real-time
   final _realtimeNotifController = StreamController<NotificationData>.broadcast();
   Stream<NotificationData> get realtimeNotifications => _realtimeNotifController.stream;
 
@@ -30,13 +33,13 @@ class NotificationController extends ChangeNotifier {
     _wsSubscription = _supabaseService.notifications.listen((notif) {
       debugPrint('[NotificationController] Received real-time notification: ${notif.title}');
       
-      // Check if it's already in the list (prevent duplicates if fetchAll overlaps)
+      // Cek apakah sudah ada di list (mencegah duplikat jika fetchAll tumpang tindih)
       final exists = _notifications.any((n) => n.id == notif.id);
       if (!exists) {
         _notifications = [notif, ..._notifications];
       }
-      
-      // ALWAYS broadcast to UI for immediate popup/toast
+
+      // SELALU broadcast ke UI agar popup/toast langsung muncul
       _realtimeNotifController.add(notif);
       
       notifyListeners();

@@ -1,3 +1,7 @@
+// spending_target_page.dart
+// Halaman untuk membuat atau mengubah target (limit) pengeluaran suatu
+// kategori pada bulan tertentu, beserta status penggunaan dan insight-nya.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +9,7 @@ import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/budget_controller.dart';
 import 'package:savaio/views/components/atoms/glass_card.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 import 'package:savaio/views/components/atoms/app_button.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';
 import 'package:savaio/controllers/auth_controller.dart';
@@ -57,7 +62,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
     final budgets = sl.budgetController.allBudgets;
     
-    // Find precise match for this month
+    // Cari budget yang cocok persis untuk kategori dan bulan ini
     final budget = budgets.firstWhere(
       (b) => b.categoryId == _selectedCategoryId && b.startMonth == _selectedMonth,
       orElse: () => BudgetModel(
@@ -86,15 +91,19 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     final amount = double.tryParse(amountText) ?? 0;
 
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tolong masukkan nominal yang valid di atas 0')),
+      AppSnackBar.show(
+        context,
+        'Tolong masukkan nominal yang valid di atas 0',
+        type: AppSnackBarType.error,
       );
       return;
     }
 
     if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tolong pilih kategori')),
+      AppSnackBar.show(
+        context,
+        'Tolong pilih kategori',
+        type: AppSnackBarType.error,
       );
       return;
     }
@@ -130,7 +139,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
 
     final categories = budgetController.categories.where((c) => c['type'] == 'expense').toList();
     
-    // Find current status for selected category
+    // Cari status target saat ini untuk kategori terpilih (abaikan jika tidak ditemukan)
     SpendingTargetItemVM? currentTarget;
     try {
       final targets = budgetController.getSpendingTargetsForMonth(month: _selectedMonth);
@@ -195,7 +204,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         Expanded(
           flex: 3,
           child: SelectionCard(
-            label: 'BULAN',
+            label: 'Bulan',
             value: _formatMonth(_selectedMonth),
             icon: Icons.calendar_month_rounded,
             onTap: _showMonthPicker,
@@ -205,7 +214,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         Expanded(
           flex: 4,
           child: SelectionCard(
-            label: 'KATEGORI',
+            label: 'Kategori',
             value: budgetController.getCategoryName(_selectedCategoryId),
             icon: budgetController.getCategoryIcon(_selectedCategoryId),
             onTap: () => _showCategoryPicker(categories, budgetController),
@@ -222,7 +231,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
       child: Column(
         children: [
           AppHeading(
-            'LIMIT PENGELUARAN',
+            'Limit Pengeluaran',
             size: AppHeadingSize.caption,
             color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: true,
@@ -285,7 +294,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppHeading('STATUS PENGGUNAAN', size: AppHeadingSize.caption, color: SavaioTheme.primaryOf(context), isBold: true),
+        AppHeading('Status Penggunaan', size: AppHeadingSize.caption, color: SavaioTheme.primaryOf(context), isBold: true),
         SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(24),
@@ -388,7 +397,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         ),
       ),
       child: AppButton(
-        label: isUnchanged ? 'TIDAK ADA PERUBAHAN' : 'SIMPAN PERUBAHAN',
+        label: isUnchanged ? 'Tidak Ada Perubahan' : 'Simpan Perubahan',
         variant: isUnchanged ? AppButtonVariant.secondary : AppButtonVariant.primary,
         onTap: (isUnchanged || _isSavingLocal) ? null : _saveTarget,
       ),
@@ -407,7 +416,7 @@ class _SpendingTargetPageState extends State<SpendingTargetPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: SavaioTheme.primaryOf(context).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
           border: Border.all(color: SavaioTheme.primaryOf(context).withValues(alpha: 0.2)),
         ),
         child: Text(

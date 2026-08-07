@@ -1,3 +1,7 @@
+// transaction_repository.dart
+// Repository untuk mengelola data transaksi pengguna: mengambil daftar,
+// membuat, memperbarui, dan menghapus transaksi.
+
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/repositories/data_sources/remote/transaction_remote_data_source.dart';
 
@@ -18,6 +22,8 @@ class TransactionRepository {
     required DateTime date,
     String? receiptId,
     String source = 'manual',
+    String fundSource = 'primary',
+    bool useOverdraft = false,
   }) {
     return _remoteDataSource.createTransaction(
       title: title,
@@ -27,6 +33,8 @@ class TransactionRepository {
       date: date,
       receiptId: receiptId,
       source: source,
+      fundSource: fundSource,
+      useOverdraft: useOverdraft,
     );
   }
 
@@ -38,6 +46,8 @@ class TransactionRepository {
     String? categoryId,
     DateTime? date,
     String? receiptId,
+    String? fundSource,
+    bool useOverdraft = false,
   }) {
     return _remoteDataSource.updateTransaction(
       id: id,
@@ -47,6 +57,8 @@ class TransactionRepository {
       categoryId: categoryId,
       date: date,
       receiptId: receiptId,
+      fundSource: fundSource,
+      useOverdraft: useOverdraft,
     );
   }
 

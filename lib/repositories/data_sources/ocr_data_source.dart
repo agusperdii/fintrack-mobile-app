@@ -1,3 +1,8 @@
+// ocr_data_source.dart
+// Data source yang berkomunikasi langsung dengan endpoint receipts di
+// backend untuk fitur OCR struk belanja (upload, ambil hasil, konfirmasi
+// jadi transaksi, dan hapus struk).
+
 import 'dart:io';
 import '../../../core/constants/api_config.dart';
 import '../../../core/network/api_client.dart';
@@ -8,7 +13,7 @@ class OcrDataSource {
 
   OcrDataSource(this._apiClient);
 
-  /// POST /receipts — upload receipt image for OCR processing
+  /// POST /receipts — mengunggah gambar struk untuk diproses OCR.
   Future<OcrResult> uploadReceipt(File file) async {
     final data = await _apiClient.uploadFile(
       '${ApiConfig.baseUrl}/receipts',
@@ -17,25 +22,26 @@ class OcrDataSource {
     return OcrResult.fromJson(data as Map<String, dynamic>);
   }
 
-  /// GET /receipts/{id} — poll for OCR result
+  /// GET /receipts/{id} — polling hasil OCR.
   Future<OcrResult> getReceipt(String id) async {
     final data = await _apiClient.get('${ApiConfig.baseUrl}/receipts/$id');
     return OcrResult.fromJson(data as Map<String, dynamic>);
   }
 
-  /// GET /receipts — list all receipts
+  /// GET /receipts — mengambil daftar seluruh struk.
   Future<List<OcrResult>> getReceipts() async {
     final data = await _apiClient.get('${ApiConfig.baseUrl}/receipts');
     final list = data as List? ?? [];
     return list.map((r) => OcrResult.fromJson(r as Map<String, dynamic>)).toList();
   }
 
-  /// POST /receipts/{id}/confirm — create transaction from OCR data
+  /// POST /receipts/{id}/confirm — membuat transaksi dari data hasil OCR.
+  /// Format tanggal: YYYY-MM-DD.
   Future<OcrConfirmResult> confirmReceipt(
     String receiptId, {
     required String title,
     required double amount,
-    required String date, // YYYY-MM-DD
+    required String date,
     String? categoryId,
     String? description,
   }) async {
@@ -54,7 +60,7 @@ class OcrDataSource {
     return OcrConfirmResult.fromJson(data as Map<String, dynamic>);
   }
 
-  /// DELETE /receipts/{id}
+  /// DELETE /receipts/{id} — menghapus struk.
   Future<void> deleteReceipt(String id) async {
     await _apiClient.delete('${ApiConfig.baseUrl}/receipts/$id');
   }

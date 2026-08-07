@@ -1,8 +1,12 @@
+// app_theme.dart
+// Mendefinisikan token desain aplikasi (spacing, radius, durasi animasi,
+// palet warna mode terang/gelap) serta membangun ThemeData Material untuk
+// digunakan di seluruh aplikasi.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SavaioTheme {
-  // Spacing
   static const double spacingXs = 4.0;
   static const double spacingS = 8.0;
   static const double spacingM = 12.0;
@@ -12,22 +16,19 @@ class SavaioTheme {
   static const double spacing3xl = 48.0;
   static const double spacing4xl = 64.0;
 
-  // Radius
   static const double radiusXs = 4.0;
   static const double radiusS = 8.0;
   static const double radiusM = 12.0;
   static const double radiusL = 16.0;
   static const double radiusXl = 24.0;
   static const double radius2xl = 32.0;
-  static const double radiusFull = 9999.0;
+  static const double radiusFull = 16.0;
 
-  // Animation
   static const Duration durationFast = Duration(milliseconds: 200);
   static const Duration durationNormal = Duration(milliseconds: 300);
   static const Duration durationSlow = Duration(milliseconds: 500);
   static const Curve curveDefault = Curves.easeInOutCubic;
 
- // Dark Mode Colors
 static const Color background = Color(0xFF0D0D0D);
 static const Color surface = Color(0xFF0D0D0D);
 
@@ -43,6 +44,7 @@ static const Color secondary = Color(0xFFE6C766);
 static const Color tertiary = Color(0xFFF4E3A1);
 
 static const Color success = Color(0xFF6EE7B7);
+static const Color warning = Color(0xFFFFC800);
 
 static const Color error = Color(0xFFFF6B6B);
 static const Color errorDim = Color(0xFFE04B4B);
@@ -56,7 +58,6 @@ static const Color onPrimaryFixed = Color(0xFF1A1A1A);
 static const Color outline = Color(0xFF8A8A8A);
 static const Color outlineVariant = Color(0xFF3A3A3A);
 
-// Light Mode Colors
 static const Color lightBackground = Color(0xFFFAFAFA);
 static const Color lightSurface = Color(0xFFFFFFFF);
 
@@ -72,6 +73,7 @@ static const Color lightSecondary = Color(0xFF8A6A00);
 static const Color lightTertiary = Color(0xFF6F5600);
 
 static const Color lightSuccess = Color(0xFF047857);
+static const Color lightWarning = Color(0xFFD97706);
 
 static const Color lightError = Color(0xFFBA1A1A);
 static const Color lightErrorDim = Color(0xFF93000A);
@@ -151,6 +153,9 @@ static const Color lightOutlineVariant = Color(0xFFD0D0D0);
 
   static Color errorOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? error : lightError;
+
+  static Color warningOf(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? warning : lightWarning;
 
   static LinearGradient primaryGradientOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark

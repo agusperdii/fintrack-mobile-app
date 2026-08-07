@@ -1,3 +1,8 @@
+// api_client.dart
+// Wrapper HTTP client untuk komunikasi dengan backend, menangani pemasangan
+// header autentikasi, retry otomatis saat token kedaluwarsa, unwrap response
+// standar FastAPI, dan pemetaan status code ke exception yang sesuai.
+
 import 'dart:async' as async;
 import 'dart:convert';
 import 'dart:developer';
@@ -62,8 +67,8 @@ class ApiClient {
     return _requestWithRetry(url, () => _client.delete(Uri.parse(url), headers: _baseHeaders));
   }
 
-  /// Upload a file using multipart/form-data.
-  /// Returns the unwrapped data after the server responds.
+  /// Mengunggah file menggunakan multipart/form-data.
+  /// Mengembalikan data yang sudah di-unwrap setelah server merespons.
   Future<dynamic> uploadFile(
     String url,
     File file, {
@@ -116,7 +121,7 @@ class ApiClient {
           }
         }
         
-        // Only force logout if we were actually authenticated
+        // Paksa logout hanya jika sebelumnya memang sudah terautentikasi
         if (_authController.isAuthenticated) {
           await _authController.forceLogout();
         }
@@ -131,7 +136,8 @@ class ApiClient {
     throw ServerException('Request failed after retries');
   }
 
-  /// Unwraps FastAPI standard response: {success: true, data: ...} or {success: false, message: ...}
+  /// Membongkar (unwrap) response standar FastAPI: {success: true, data: ...}
+  /// atau {success: false, message: ...}
   dynamic _processResponse(http.Response response) {
     log('API Response [${response.statusCode}]: ${response.request?.url}');
 
@@ -178,8 +184,8 @@ class ApiClient {
     }
   }
 
-  /// Unwrap {success: true, data: ...} → return data directly.
-  /// Throw ApiErrorException for {success: false, message: ...}.
+  /// Unwrap {success: true, data: ...} → langsung mengembalikan data.
+  /// Melempar ApiErrorException untuk {success: false, message: ...}.
   dynamic _unwrap(dynamic raw) {
     if (raw == null) return null;
     if (raw is! Map) return raw;
@@ -191,7 +197,7 @@ class ApiClient {
       }
       return map['data'];
     }
-    // Legacy: no success wrapper — return raw
+    // Legacy: tanpa wrapper success — kembalikan raw apa adanya
     return raw;
   }
 

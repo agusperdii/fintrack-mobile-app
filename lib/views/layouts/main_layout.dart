@@ -1,3 +1,8 @@
+// main_layout.dart
+// Layout utama aplikasi yang membungkus halaman dashboard, analisa, summary,
+// dan profil dengan bottom navigation, floating action button, serta
+// penanganan notifikasi real-time (popup, banner, toast).
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -58,6 +63,17 @@ class _MainLayoutState extends State<MainLayout> {
             "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
         await sl.transactionController.fetchTransactions(month: currentMonth);
+
+        // [RACE CONDITION FIX]
+        // Jika notifikasi popup (seperti Welcome Popup) keburu dibuat di database SEBELUM
+        // WebSocket terhubung, maka fetchAll() akan mengambilnya. Kita tangkap di sini.
+        final missedPopup = sl.notificationController.latestUnreadPopup;
+        if (missedPopup != null) {
+          // Beri sedikit jeda agar animasi perpindahan layar (kalau ada) selesai
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) _handleNotification(missedPopup);
+          });
+        }
       });
     }
   }
@@ -70,63 +86,111 @@ class _MainLayoutState extends State<MainLayout> {
     }
 
     _notifSubscription?.cancel();
-    _notifSubscription =
-        sl.notificationController.realtimeNotifications.listen((notif) {
-      if (!mounted) return;
+    _notifSubscription = sl.notificationController.realtimeNotifications.listen(_handleNotification);
+  }
 
-      final isBudgetNotif =
-          notif.type == NotificationType.budgetReached ||
-          notif.type == NotificationType.budgetExceeded;
+  void _handleNotification(NotificationData notif) {
+    if (!mounted) return;
 
-      switch (notif.presentation) {
-        case NotificationPresentation.popup:
-          NotificationPopupOrganism.show(
-            context,
-            notif,
-            onRead: () => sl.notificationController.markAsRead(notif.id),
-            actionLabel: isBudgetNotif ? 'LIHAT BUDGET' : null,
-            onAction: isBudgetNotif
-                ? () {
-                    sl.notificationController.markAsRead(notif.id);
+    final isBudgetNotif =
+        notif.type == NotificationType.budgetReached ||
+        notif.type == NotificationType.budgetExceeded;
 
-                    final categoryId =
-                        notif.metadata?['category_id']?.toString();
-                    final month = notif.metadata?['month']?.toString();
+    final nudgeCode = notif.metadata?['nudge_code']?.toString();
+    final isSavingHabitNudge = nudgeCode == 'N01_SAVING_HABIT_NUDGE';
+    final isBudgetPlanningNudge = nudgeCode == 'N06_BUDGET_PLANNING_NUDGE';
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SpendingTargetPage(
-                          initialCategoryId: categoryId,
-                          initialMonth: month,
-                        ),
-                      ),
-                    );
-                  }
-                : null,
-          );
-          break;
+    String? actionLabel;
+    VoidCallback? onAction;
 
-        case NotificationPresentation.banner:
-          NotificationBannerOrganism.show(
-            context,
-            notif,
-            onRead: () => sl.notificationController.markAsRead(notif.id),
-          );
-          break;
+    if (isBudgetNotif) {
+      actionLabel = 'Lihat Budget';
+      onAction = () {
+        sl.notificationController.markAsRead(notif.id);
 
-        case NotificationPresentation.toast:
-          NotificationToastOrganism.show(
-            context,
-            notif,
-            onTap: () => sl.notificationController.markAsRead(notif.id),
-          );
-          break;
+        final categoryId = notif.metadata?['category_id']?.toString();
+        final month = notif.metadata?['month']?.toString();
 
-        case NotificationPresentation.badge:
-          break;
-      }
-    });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SpendingTargetPage(
+              initialCategoryId: categoryId,
+              initialMonth: month,
+            ),
+          ),
+        );
+      };
+    } else if (isSavingHabitNudge) {
+      actionLabel = 'Tabung Sekarang';
+      onAction = () {
+        sl.notificationController.markAsRead(notif.id);
+        final suggestedAmount = double.tryParse(notif.metadata?['suggested_saving_amount']?.toString() ?? '0');
+        
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TransactionFormPage(
+              initialType: 'Savings',
+              initialAmount: suggestedAmount,
+              initialTitle: 'Alokasi Tabungan (10%)',
+              initialCategory: 'Tabungan',
+            ),
+          ),
+        );
+      };
+    } else if (isBudgetPlanningNudge) {
+      actionLabel = 'Atur Budget';
+      onAction = () {
+        sl.notificationController.markAsRead(notif.id);
+        final categoryId = notif.metadata?['category_id']?.toString();
+        
+        final now = DateTime.now();
+        final currentMonth = sl.dashboardController.data?.targetPeriod ??
+            "${now.year}-${now.month.toString().padLeft(2, '0')}";
+        
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SpendingTargetPage(
+              initialCategoryId: categoryId,
+              initialMonth: currentMonth,
+            ),
+          ),
+        );
+      };
+    }
+
+    switch (notif.presentation) {
+      case NotificationPresentation.popup:
+        NotificationPopupOrganism.show(
+          context,
+          notif,
+          onRead: () => sl.notificationController.markAsRead(notif.id),
+          actionLabel: actionLabel,
+          onAction: onAction,
+        );
+        break;
+
+      case NotificationPresentation.banner:
+        NotificationBannerOrganism.show(
+          context,
+          notif,
+          onRead: () => sl.notificationController.markAsRead(notif.id),
+        );
+        break;
+
+      case NotificationPresentation.toast:
+        NotificationToastOrganism.show(
+          context,
+          notif,
+          onTap: () => sl.notificationController.markAsRead(notif.id),
+        );
+        break;
+
+      case NotificationPresentation.badge:
+        break;
+    }
   }
 
   @override

@@ -1,3 +1,7 @@
+// notification_supabase_service.dart
+// Mengelola koneksi realtime ke Supabase untuk mendengarkan perubahan data
+// pada tabel notifications dan meneruskannya sebagai stream ke aplikasi.
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

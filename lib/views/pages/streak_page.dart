@@ -1,3 +1,7 @@
+// streak_page.dart
+// Halaman yang menampilkan progres streak check-in harian pengguna,
+// tier/level pengguna, tracker mingguan, dan perbandingan sosial.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
@@ -68,14 +72,18 @@ class StreakPage extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tier = _determineUserTier(streakCount);
 
-    final listDays = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
-    final checkInHistory = [true, true, true, false, true, false, false];
+    final listDays = List.generate(7, (index) {
+      final d = DateTime.now().subtract(Duration(days: 6 - index));
+      const idnDays = ['', 'S', 'S', 'R', 'K', 'J', 'S', 'M'];
+      return idnDays[d.weekday];
+    });
+    final checkInHistory = status?.history ?? List.filled(7, false);
 
-    // Dummy social comparison
-    final int percentile = 78;
+    // Perbandingan sosial: pengguna dianggap di atas rata-rata jika persentil >= 50
+    final int percentile = status?.percentile ?? 0;
     final bool aboveAverage = percentile >= 50;
 
-    // UI Standard Tokens for Consistency
+    // Token ukuran standar agar tampilan antar kartu tetap konsisten
     const double cardRadius = SavaioTheme.radiusXl;
     const double innerPadding = SavaioTheme.spacingXl;
     const double elementSpacing = SavaioTheme.spacingXl;
@@ -92,7 +100,6 @@ class StreakPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= 1. MAIN STREAK CARD (HERO ELEMENT) =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
@@ -159,7 +166,6 @@ class StreakPage extends StatelessWidget {
             ),
             const SizedBox(height: elementSpacing),
 
-            // ================= 2. USER TIER CARD =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(innerPadding),
@@ -259,7 +265,6 @@ class StreakPage extends StatelessWidget {
             ),
             const SizedBox(height: elementSpacing),
 
-            // ================= 3. WEEKLY TRACKER =================
             Container(
               padding: const EdgeInsets.all(innerPadding),
               decoration: BoxDecoration(
@@ -306,7 +311,6 @@ class StreakPage extends StatelessWidget {
             ),
             const SizedBox(height: elementSpacing),
 
-            // ================= 4. SOCIAL COMPARISON =================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(innerPadding),

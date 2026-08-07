@@ -1,3 +1,6 @@
+// profile_controller.dart
+// Controller yang mengelola state dan logika bisnis untuk profil pengguna,
+// termasuk pengambilan data profil, pembaruan profil, dan penggantian password.
 import 'package:flutter/material.dart';
 import 'package:savaio/models/profile_model.dart';
 import 'package:savaio/repositories/profile_repository.dart';

@@ -46,3 +46,12 @@ app.*.map.json
 
 *.md
 !README.md
+
+# AI & Assistants
+.claude/
+.gemini/
+skills-lock.json
+.cursorrules
+.cursor/
+.cline/
+.continue/

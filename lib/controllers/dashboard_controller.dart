@@ -1,9 +1,12 @@
+// dashboard_controller.dart
+// Controller yang mengelola state data dashboard utama (saldo, ringkasan transaksi,
+// status check-in) beserta logika optimistic update untuk transaksi.
 import 'package:flutter/material.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/checkin_data.dart';
 import 'package:savaio/repositories/dashboard_repository.dart';
 
-// Reuse the same safe notification helpers from transaction_controller.
+// Menggunakan kembali helper notifikasi aman yang sama dari transaction_controller.
 void _safeNotifyListeners(ChangeNotifier notifier) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
@@ -21,9 +24,9 @@ class DashboardController extends ChangeNotifier {
   bool _isLoading = false;
   bool _isSyncingTransaction = false;
   bool _isBalanceVisible = true;
+  bool _isShowingSavingsBalance = false;
   String? _error;
 
-  // Snapshot for rollback
   AppData? _previousDataSnapshot;
 
   AppData? get data => _data;
@@ -31,10 +34,16 @@ class DashboardController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isSyncingTransaction => _isSyncingTransaction;
   bool get isBalanceVisible => _isBalanceVisible;
+  bool get isShowingSavingsBalance => _isShowingSavingsBalance;
   String? get error => _error;
 
   void toggleBalanceVisibility() {
     _isBalanceVisible = !_isBalanceVisible;
+    notifyListeners();
+  }
+
+  void toggleBalanceType() {
+    _isShowingSavingsBalance = !_isShowingSavingsBalance;
     notifyListeners();
   }
 
@@ -63,47 +72,129 @@ class DashboardController extends ChangeNotifier {
     }
   }
 
-  /// Optimistically applies a transaction to the local dashboard state.
+  /// Menerapkan transaksi secara optimistic ke state dashboard lokal.
   void applyTransactionOptimistically(Transaction tx, {bool isExpense = true}) {
     if (_data == null) return;
 
-    // Save snapshot for potential rollback
     _previousDataSnapshot = _data;
 
-    final newIncome = isExpense ? _data!.totalIncome : _data!.totalIncome + tx.amount;
-    final newExpense = isExpense ? _data!.totalExpense + tx.amount : _data!.totalExpense;
+    double newIncome = _data!.totalIncome;
+    double newExpense = _data!.totalExpense;
+    double newSavings = _data!.totalSavings;
+    double newTodaySpent = _data!.todaySpent;
+
+    if (tx.type == TransactionType.income) {
+      newIncome += tx.amount;
+    } else if (tx.type == TransactionType.savings) {
+      newSavings += tx.amount;
+    } else {
+      newExpense += tx.amount;
+      final now = DateTime.now();
+      if (tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day) {
+        newTodaySpent += tx.amount;
+      }
+    }
 
     _data = _data!.copyWith(
-      balance: newIncome - newExpense,
+      balance: newIncome - newExpense - newSavings,
       totalIncome: newIncome,
       totalExpense: newExpense,
+      totalSavings: newSavings,
+      todaySpent: newTodaySpent,
       recentTransactions: [tx, ..._data!.recentTransactions],
     );
 
     _safeNotifyListeners(this);
   }
 
-  /// Optimistically removes a transaction from the local dashboard state.
+  /// Menghapus transaksi secara optimistic dari state dashboard lokal.
   void applyTransactionRemovalOptimistically(Transaction tx, {bool isExpense = true}) {
     if (_data == null) return;
 
-    // Save snapshot for potential rollback
     _previousDataSnapshot = _data;
 
-    final newIncome = isExpense ? _data!.totalIncome : _data!.totalIncome - tx.amount;
-    final newExpense = isExpense ? _data!.totalExpense - tx.amount : _data!.totalExpense;
+    double newIncome = _data!.totalIncome;
+    double newExpense = _data!.totalExpense;
+    double newSavings = _data!.totalSavings;
+    double newTodaySpent = _data!.todaySpent;
+
+    if (tx.type == TransactionType.income) {
+      newIncome -= tx.amount;
+    } else if (tx.type == TransactionType.savings) {
+      newSavings -= tx.amount;
+    } else {
+      newExpense -= tx.amount;
+      final now = DateTime.now();
+      if (tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day) {
+        newTodaySpent -= tx.amount;
+      }
+    }
 
     _data = _data!.copyWith(
-      balance: newIncome - newExpense,
+      balance: newIncome - newExpense - newSavings,
       totalIncome: newIncome,
       totalExpense: newExpense,
+      totalSavings: newSavings,
+      todaySpent: newTodaySpent,
       recentTransactions: _data!.recentTransactions.where((t) => t.id != tx.id).toList(),
     );
 
     _safeNotifyListeners(this);
   }
 
-  /// Updates a transaction's status and potentially its ID.
+  /// Memperbarui transaksi secara optimistic di state dashboard lokal.
+  void applyTransactionUpdateOptimistically(Transaction oldTx, Transaction newTx) {
+    if (_data == null) return;
+
+    _previousDataSnapshot = _data;
+
+    double newIncome = _data!.totalIncome;
+    double newExpense = _data!.totalExpense;
+    double newSavings = _data!.totalSavings;
+    double newTodaySpent = _data!.todaySpent;
+    final now = DateTime.now();
+
+    // Kurangi dengan nilai lama
+    if (oldTx.type == TransactionType.income) {
+      newIncome -= oldTx.amount;
+    } else if (oldTx.type == TransactionType.savings) {
+      newSavings -= oldTx.amount;
+    } else {
+      newExpense -= oldTx.amount;
+      if (oldTx.date.year == now.year && oldTx.date.month == now.month && oldTx.date.day == now.day) {
+        newTodaySpent -= oldTx.amount;
+      }
+    }
+
+    // Tambahkan dengan nilai baru
+    if (newTx.type == TransactionType.income) {
+      newIncome += newTx.amount;
+    } else if (newTx.type == TransactionType.savings) {
+      newSavings += newTx.amount;
+    } else {
+      newExpense += newTx.amount;
+      if (newTx.date.year == now.year && newTx.date.month == now.month && newTx.date.day == now.day) {
+        newTodaySpent += newTx.amount;
+      }
+    }
+
+    final updatedTransactions = _data!.recentTransactions.map((tx) {
+      return tx.id == oldTx.id ? newTx : tx;
+    }).toList();
+
+    _data = _data!.copyWith(
+      balance: newIncome - newExpense - newSavings,
+      totalIncome: newIncome,
+      totalExpense: newExpense,
+      totalSavings: newSavings,
+      todaySpent: newTodaySpent,
+      recentTransactions: updatedTransactions,
+    );
+
+    _safeNotifyListeners(this);
+  }
+
+  /// Memperbarui status transaksi dan kemungkinan ID-nya.
   void updateTransactionStatus(String id, SyncStatus status, {String? newId}) {
     if (_data == null) return;
 
@@ -121,7 +212,7 @@ class DashboardController extends ChangeNotifier {
     _safeNotifyListeners(this);
   }
 
-  /// Replaces an optimistic (temp-ID) transaction with the real one from the API.
+  /// Mengganti transaksi optimistic (temp-ID) dengan transaksi asli dari API.
   void replaceTransaction(String tempId, Transaction realTx) {
     if (_data == null) return;
 
@@ -133,7 +224,7 @@ class DashboardController extends ChangeNotifier {
     _safeNotifyListeners(this);
   }
 
-  /// Reverts the dashboard state to the previous snapshot.
+  /// Mengembalikan state dashboard ke snapshot sebelumnya.
   void rollbackTransaction() {
     if (_previousDataSnapshot != null) {
       _data = _previousDataSnapshot;

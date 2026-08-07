@@ -1,3 +1,7 @@
+// app_trend_line_chart.dart
+// Chart garis tren pengeluaran (mingguan/bulanan) dengan toggle periode,
+// label sumbu yang diformat ringkas, dan tooltip nilai saat disentuh.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/controllers/auth_controller.dart';
@@ -35,24 +39,33 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
       colorScheme.secondary,
     ];
     
-    // 1. Kalkulasi Min & Max yang lebih aman
     final values = widget.trendPoints.map((p) => p.y).toList();
-    // Beri ruang 20% di atas agar titik tertinggi tidak menabrak batas atas chart
+    // Beri ruang 20% di atas nilai tertinggi agar titik tertinggi tidak menabrak batas atas chart
     final maxY = values.isEmpty ? 100000.0 : (values.reduce((a, b) => a > b ? a : b) * 1.2);
-    // Best Practice UI/UX untuk chart pengeluaran: selalu mulai dari 0 sebagai baseline
-    const double minY = 0.0; 
+    // Selalu mulai dari 0 sebagai baseline, sesuai praktik umum untuk chart pengeluaran
+    const double minY = 0.0;
 
-    // 2. Interval Dinamis
-    // Membagi chart menjadi 4 bagian horizontal secara dinamis. 
-    // Ini memastikan sumbu Y hanya akan me-render maksimal 5 label (0%, 25%, 50%, 75%, 100%)
-    // sehingga TIDAK AKAN PERNAH terjadi tabrakan label.
+    // Sumbu Y dibagi menjadi 4 interval dinamis agar maksimal hanya 5 label yang
+    // dirender (0%, 25%, 50%, 75%, 100%) sehingga label tidak akan pernah bertabrakan
     double interval = maxY > 0 ? (maxY / 4) : 25000.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerOf(context),
+        color: SavaioTheme.primaryOf(context).withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: SavaioTheme.primaryOf(context).withValues(alpha: 0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: SavaioTheme.primaryOf(context).withValues(alpha: 0.05),
+            blurRadius: 32,
+            spreadRadius: -4,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +91,7 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: SavaioTheme.surfaceContainerOf(context),
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                   border: Border.all(
                     color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.2),
                   ),
@@ -127,7 +140,8 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                           return FlLine(
                             color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.2),
                             strokeWidth: 1,
-                            dashArray: [4, 4], // Opsional: Garis putus-putus terlihat lebih elegan
+                            // Garis putus-putus dipilih agar tampilan grid terlihat lebih elegan
+                            dashArray: [4, 4],
                           );
                         },
                       ),
@@ -138,13 +152,13 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 48, // Ruang yang cukup untuk format ringkas
+                            // Ruang yang cukup untuk menampung label format ringkas (mis. "1.2jt")
+                            reservedSize: 48,
                             interval: interval,
                             getTitlesWidget: (value, meta) {
                               // Jangan tampilkan label ganda pada posisi yang sama
                               if (value == maxY && value != meta.max) return const SizedBox.shrink();
 
-                              // 3. Formatting yang lebih bersih
                               String text;
                               if (value >= 1000000000) {
                                 text = '${(value / 1000000000).toStringAsFixed(1)}M';
@@ -166,7 +180,8 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                                   child: Text(
                                     text,
                                     style: TextStyle(
-                                      fontSize: 11, // Sedikit diperbesar dari 10 ke 11 untuk legibilitas
+                                      // Fontsize 11 dipilih agar label tetap mudah dibaca
+                                      fontSize: 11,
                                       color: SavaioTheme.onSurfaceVariantOf(context),
                                     ),
                                     maxLines: 1,
@@ -231,7 +246,8 @@ class _AppTrendLineChartState extends State<AppTrendLineChart> {
                         LineChartBarData(
                           spots: widget.trendPoints.map((p) => FlSpot(p.x, p.y)).toList(),
                           isCurved: true,
-                          curveSmoothness: 0.35, // Membuat kurva sedikit lebih natural
+                          // Nilai 0.35 dipilih agar kurva terlihat sedikit lebih natural
+                          curveSmoothness: 0.35,
                           gradient: LinearGradient(colors: gradientColors),
                           barWidth: 3,
                           isStrokeCapRound: true,
@@ -285,10 +301,11 @@ class _CompactToggleButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: SavaioTheme.durationFast,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), // Hitbox diperbesar sedikit
+        // Padding sedikit diperbesar agar area sentuh (hitbox) lebih nyaman
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? SavaioTheme.surfaceContainerHighOf(context) : Colors.transparent,
-          borderRadius: BorderRadius.circular(100),
+          borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
           boxShadow: isActive ? [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
@@ -304,7 +321,8 @@ class _CompactToggleButton extends StatelessWidget {
                 ? Theme.of(context).colorScheme.primary
                 : SavaioTheme.onSurfaceVariantOf(context),
             fontSize: 12,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.w500, // Medium untuk inaktif agar tidak terlalu tipis
+            // Weight medium untuk state inaktif agar teks tidak terlihat terlalu tipis
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ),

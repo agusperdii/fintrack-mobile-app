@@ -1,3 +1,7 @@
+// app_section_header.dart
+// Widget molecule header judul untuk sebuah section, dilengkapi opsi
+// tombol aksi (misalnya "Lihat Semua") di sisi kanan.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 

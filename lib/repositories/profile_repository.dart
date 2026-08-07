@@ -1,3 +1,7 @@
+// profile_repository.dart
+// Repository untuk mengelola data profil pengguna: ambil profil (dengan
+// cache), perbarui profil, dan ubah kata sandi.
+
 import 'package:savaio/models/profile_model.dart';
 import 'package:savaio/repositories/data_sources/remote/auth_remote_data_source.dart';
 

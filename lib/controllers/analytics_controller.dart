@@ -1,3 +1,6 @@
+// analytics_controller.dart
+// Controller yang mengelola state dan logika bisnis untuk fitur analitik keuangan,
+// termasuk agregasi data pengeluaran, ringkasan bulanan, tren mingguan, dan ekspor laporan.
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/constants/api_config.dart';
@@ -13,7 +16,7 @@ import 'package:savaio/controllers/transaction_controller.dart';
 import 'package:savaio/views/view_models/analysis_view_model.dart';
 import 'package:savaio/core/utils/parser_utils.dart';
 
-/// Helper class to aggregate expenses from real transaction data
+/// Kelas helper untuk mengagregasi data pengeluaran dari data transaksi asli.
 class ExpenseAggregation {
   final double totalSpent;
   final Map<String, double> byCategory;
@@ -28,7 +31,7 @@ class ExpenseAggregation {
   });
 }
 
-/// Validates if a string is in YYYY-MM format
+/// Memvalidasi apakah string memiliki format YYYY-MM.
 bool _isValidMonth(String? month) {
   if (month == null || month.isEmpty) return false;
   final parts = month.split('-');
@@ -38,7 +41,7 @@ bool _isValidMonth(String? month) {
   return year != null && monthNum != null && monthNum >= 1 && monthNum <= 12;
 }
 
-/// Gets current month in YYYY-MM format
+/// Mengambil bulan saat ini dalam format YYYY-MM.
 String _getCurrentMonth() {
   final now = DateTime.now();
   return '${now.year}-${now.month.toString().padLeft(2, '0')}';
@@ -58,7 +61,6 @@ class AnalyticsController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  // Production-grade Caching
   AnalysisPageVM? _cachedVM;
   String? _lastCacheKey;
 
@@ -74,24 +76,21 @@ class AnalyticsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Aggregates real transaction data for the analysis page (Fallback)
+  /// Mengagregasi data transaksi asli untuk halaman analisis (fallback).
   ExpenseAggregation _aggregateTransactions({
     required TransactionController transactions,
     required String month,
   }) {
     final allTransactions = transactions.transactions ?? [];
 
-    // Filter expense transactions for the current month
     final expenseTransactions = allTransactions.where((t) {
       final isExpense = t.type == TransactionType.expense;
       final isInMonth = t.date.toIso8601String().startsWith(month);
       return isExpense && isInMonth;
     }).toList();
 
-    // Calculate total spent
     final totalSpent = expenseTransactions.fold<double>(0.0, (sum, t) => sum + t.amount);
 
-    // Aggregate by category
     final byCategory = <String, double>{};
     for (final t in expenseTransactions) {
       final key = t.category?.id ?? '';
@@ -100,13 +99,12 @@ class AnalyticsController extends ChangeNotifier {
       }
     }
 
-    // Calculate daily values for the month
     final now = DateTime.now();
     final year = int.tryParse(month.split('-').first) ?? now.year;
     final monthNum = int.tryParse(month.split('-').last) ?? now.month;
     final daysInMonth = DateTime(year, monthNum + 1, 0).day;
 
-    // Initialize daily values (index = day - 1)
+    // Inisialisasi nilai harian (index = hari - 1)
     final dailyTotals = List.filled(daysInMonth, 0.0);
     for (final t in expenseTransactions) {
       final dateOnly = t.date.toIso8601String().split('T').first.split(' ').first;
@@ -152,8 +150,8 @@ class AnalyticsController extends ChangeNotifier {
     }
   }
 
-  /// Thin controller method that delegates logic to AnalyticsService
-  /// Primarily uses API data, fallbacks to local data if needed
+  /// Method controller yang tipis, mendelegasikan logika ke AnalyticsService.
+  /// Mengutamakan data dari API, dengan fallback ke data lokal jika diperlukan.
   AnalysisPageVM buildAnalysisPageVM({
     required bool isWeekly,
     required DashboardController dashboard,
@@ -162,7 +160,6 @@ class AnalyticsController extends ChangeNotifier {
   }) {
     final dashboardData = dashboard.data;
 
-    // 1. Get current period
     String currentMonth;
     final backendMonth = dashboardData?.targetPeriod;
     if (!_isValidMonth(backendMonth)) {
@@ -171,7 +168,6 @@ class AnalyticsController extends ChangeNotifier {
       currentMonth = backendMonth!;
     }
 
-    // 2. Cache check
     final totalTxCount = transactions.transactions?.length ?? 0;
     final cacheKey = '$currentMonth-$isWeekly-$totalTxCount-${_rawAnalyticsData.hashCode}';
 
@@ -179,18 +175,16 @@ class AnalyticsController extends ChangeNotifier {
       return _cachedVM!;
     }
 
-    // 3. Extract data from raw API response (Priority)
     final apiData = _rawAnalyticsData;
-    
+
     if (apiData != null && apiData.containsKey('summary')) {
-      // USE API DATA
       final summary = apiData['summary'] as Map<String, dynamic>;
       final period = apiData['period'] as Map<String, dynamic>;
       final monthlyTrend = apiData['monthlyTrend'] as List? ?? apiData['monthly_trend'] as List? ?? [];
       final expensesByCategory = apiData['expensesByCategory'] as List? ?? apiData['expenses_by_category'] as List? ?? [];
       final budgetComparison = apiData['budgetComparison'] as List? ?? apiData['budget_comparison'] as List? ?? [];
 
-      // Find an overall budget if possible, or use 0
+      // Cari budget keseluruhan jika ada, jika tidak akan bernilai null
       BudgetModel? overallBudget;
       try {
         overallBudget = budget.allBudgets.firstWhere((b) => b.startMonth == currentMonth);
@@ -230,7 +224,6 @@ class AnalyticsController extends ChangeNotifier {
         hasData: ParserUtils.toDouble(summary['totalExpense'] ?? summary['total_expense']) > 0,
       );
     } else {
-      // FALLBACK TO LOCAL AGGREGATION
       final expenseData = _aggregateTransactions(
         transactions: transactions,
         month: currentMonth,
@@ -257,8 +250,7 @@ class AnalyticsController extends ChangeNotifier {
         budgetTargets: budgetTargets,
         realByCategory: expenseData.byCategory,
       );
-      
-      // Fallback spending breakdown
+
       final spendingBreakdown = expenseData.byCategory.entries.map((e) {
         final catName = budget.getCategoryName(e.key);
         final catIcon = budget.getCategoryIcon(e.key);
@@ -327,7 +319,8 @@ class AnalyticsController extends ChangeNotifier {
       _monthlySummary = summary.months;
       _summaryCurrency = summary.currency;
       invalidateCache();
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('fetchMonthlySummary ERROR: $e\n$stack');
       _error = e.toString();
     } finally {
       _isLoading = false;

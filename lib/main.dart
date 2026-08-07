@@ -1,3 +1,6 @@
+// main.dart
+// Entry point aplikasi Savaio: inisialisasi environment, Supabase, Firebase
+// Messaging, dependency injection (service locator), dan widget root MyApp.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,6 +13,17 @@ import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/controllers/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (Platform.isAndroid) {
+    await Firebase.initializeApp();
+    debugPrint("Handling a background message: ${message.messageId}");
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +36,30 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   sl.setup(prefs);
+  
+  if (Platform.isAndroid) {
+    await Firebase.initializeApp();
+    
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    // Jangan tampilkan banner sistem saat aplikasi berada di foreground
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: false,
+      badge: true,
+      sound: false,
+    );
+  }
+
   runApp(const MyApp());
 }
 

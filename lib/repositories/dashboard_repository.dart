@@ -1,3 +1,7 @@
+// dashboard_repository.dart
+// Repository untuk data dashboard utama dan status check-in harian
+// pengguna, dengan fallback ke cache lokal saat request ke server gagal.
+
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/checkin_data.dart';
 import 'package:savaio/repositories/data_sources/remote/dashboard_remote_data_source.dart';

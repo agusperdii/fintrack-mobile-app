@@ -1,3 +1,7 @@
+// app_profile_menu_item.dart
+// Widget molecule item menu pada halaman profil, berupa baris dengan
+// ikon, judul, dan trailing widget/panah navigasi.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
 

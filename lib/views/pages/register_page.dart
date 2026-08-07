@@ -1,9 +1,13 @@
+// register_page.dart
+// Halaman pendaftaran akun baru, menangani validasi input form dan proses
+// registrasi (termasuk registrasi via Google) melalui AuthController.
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/controllers/auth_controller.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/layouts/main_layout.dart';
 import 'package:savaio/views/pages/login_page.dart';
+import 'package:savaio/views/pages/email_verification_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -30,6 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
+    FocusScope.of(context).unfocus();
     if (_fullNameController.text.trim().isEmpty) {
       setState(() => _errorMessage = 'Nama lengkap wajib diisi.');
       return;
@@ -61,9 +66,8 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainLayout()),
-        (route) => false,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => EmailVerificationPage(email: _emailController.text.trim())),
       );
       return;
     }
@@ -71,6 +75,24 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       _errorMessage = 'Pendaftaran gagal. Email mungkin sudah terdaftar.';
     });
+  }
+
+  Future<void> _handleGoogleRegister() async {
+    FocusScope.of(context).unfocus();
+    final authController = context.read<AuthController>();
+    final success = await authController.loginWithGoogle();
+    if (!mounted) return;
+    
+    if (success) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
+      );
+    } else {
+      setState(() {
+        _errorMessage = authController.error ?? 'Gagal mendaftar dengan Google.';
+      });
+    }
   }
 
   InputDecoration _inputDecoration(
@@ -274,6 +296,29 @@ class _RegisterPageState extends State<RegisterPage> {
                           fontSize: 16,
                         ),
                       ),
+              ),
+              const SizedBox(height: SavaioTheme.spacingM),
+              OutlinedButton.icon(
+                onPressed: authController.isLoading ? null : _handleGoogleRegister,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: SavaioTheme.onSurfaceOf(context),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: SavaioTheme.spacingL,
+                  ),
+                  side: BorderSide(
+                    color: SavaioTheme.outlineVariantOf(context),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
+                  ),
+                ),
+                icon: const Icon(Icons.g_mobiledata, size: 28),
+                label: Text(
+                  'Daftar dengan Google',
+                  style: textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
               const SizedBox(height: SavaioTheme.spacingL),
               TextButton(

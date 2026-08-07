@@ -1,3 +1,7 @@
+// profile_page.dart
+// Halaman profil pengguna: menampilkan info akun, pengaturan preferensi
+// tema, navigasi ke target pengeluaran, edit profil, dan aksi logout.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';

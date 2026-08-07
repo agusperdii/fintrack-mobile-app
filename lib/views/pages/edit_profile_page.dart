@@ -1,3 +1,7 @@
+// edit_profile_page.dart
+// Halaman untuk mengedit nama lengkap pengguna, memvalidasi input, lalu
+// menyimpan perubahan melalui ProfileController.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -94,11 +98,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 backgroundColor: SavaioTheme.primary,
                 foregroundColor: SavaioTheme.onPrimaryFixed,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusL)),
               ),
               child: _isSaving
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.onPrimaryFixed))
-                  : Text('SIMPAN', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  : Text('Simpan', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

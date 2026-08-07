@@ -1,3 +1,7 @@
+// category_repository.dart
+// Repository untuk mengelola data kategori transaksi (ambil daftar,
+// membuat, dan menghapus kategori).
+
 import 'package:savaio/models/category_model.dart';
 import 'package:savaio/repositories/data_sources/remote/category_remote_data_source.dart';
 

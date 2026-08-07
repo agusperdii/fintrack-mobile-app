@@ -1,10 +1,15 @@
+// app_icon_container.dart
+// Widget atom kontainer ikon berbentuk lingkaran atau kotak membulat,
+// mendukung ikon IconData maupun emoji serta warna solid atau gradient.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 
 enum AppIconShape { circle, rounded }
 
 class AppIconContainer extends StatelessWidget {
-  final dynamic icon; // Can be IconData or String (emoji)
+  /// Bisa berupa IconData atau String (emoji).
+  final dynamic icon;
   final Color? color;
   final Gradient? gradient;
   final double size;

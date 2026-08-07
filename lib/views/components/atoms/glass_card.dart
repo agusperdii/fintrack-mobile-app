@@ -1,3 +1,7 @@
+// glass_card.dart
+// Widget atom kartu dengan efek glassmorphism (blur transparan) yang
+// digunakan sebagai container visual pada berbagai layar.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 

@@ -1,3 +1,7 @@
+// app_heading.dart
+// Widget atom teks judul/heading dengan beberapa ukuran standar (h1, h2,
+// h3, subtitle, caption) untuk menjaga konsistensi tipografi.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

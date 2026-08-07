@@ -1,3 +1,6 @@
+// theme_controller.dart
+// Controller yang mengelola state tema aplikasi (light/dark/system) beserta
+// penyimpanan preferensi tema pengguna ke local storage.
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

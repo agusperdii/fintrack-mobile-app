@@ -1,3 +1,7 @@
+// app_avatar.dart
+// Widget atom untuk menampilkan foto profil pengguna berbentuk lingkaran,
+// dengan opsi border gradient di sekelilingnya.
+
 import 'package:flutter/material.dart';
 
 class AppAvatar extends StatelessWidget {

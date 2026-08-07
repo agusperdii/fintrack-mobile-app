@@ -1,3 +1,7 @@
+// app_category_pie_chart.dart
+// Chart pie interaktif yang menampilkan distribusi pengeluaran per kategori
+// beserta legend dan efek highlight saat segmen chart disentuh.
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -28,13 +32,25 @@ class _AppCategoryPieChartState extends State<AppCategoryPieChart> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: SavaioTheme.surfaceContainerOf(context),
+        color: SavaioTheme.primaryOf(context).withValues(alpha: 0.03),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: SavaioTheme.primaryOf(context).withValues(alpha: 0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: SavaioTheme.primaryOf(context).withValues(alpha: 0.05),
+            blurRadius: 32,
+            spreadRadius: -4,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         children: [
           AppHeading(
-            'DISTRIBUSI PENGELUARAN',
+            'Distribusi Pengeluaran',
             size: AppHeadingSize.caption,
             color: SavaioTheme.onSurfaceVariantOf(context),
             isBold: true,

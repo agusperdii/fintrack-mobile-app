@@ -1,3 +1,6 @@
+// auth_controller.dart
+// Controller yang menangani autentikasi pengguna (login, register, OTP, Google
+// Sign-In) serta pengelolaan sesi/token dan sinkronisasi FCM token ke backend.
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,6 +8,11 @@ import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/core/constants/api_config.dart';
 import 'package:savaio/core/network/api_client.dart';
 import 'package:savaio/core/network/exceptions.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
 
 class AuthController extends ChangeNotifier {
   static const _accessKey = 'access_token';
@@ -44,12 +52,32 @@ class AuthController extends ChangeNotifier {
     if (raw != null) {
       try { _user = jsonDecode(raw) as Map<String, dynamic>; } catch (_) {}
     }
-    
-    // Load landing page preference
+
     _hasSeenLanding = sl.prefs.getBool('has_seen_landing') ?? false;
     
     _isInitialized = true;
     notifyListeners();
+
+    if (Platform.isAndroid) {
+      FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
+        _syncFCMToken(fcmToken);
+      });
+    }
+    
+    if (_token != null) {
+      _syncFCMToken();
+    }
+
+    // Mendengarkan perubahan Supabase Auth untuk keperluan deep linking
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final session = data.session;
+      final event = data.event;
+      if (session != null && event == AuthChangeEvent.signedIn) {
+        if (_token == null) {
+          exchangeSupabaseToken(session.accessToken);
+        }
+      }
+    });
   }
 
   Future<void> setHasSeenLanding(bool value) async {
@@ -58,16 +86,19 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// POST /auth/register
-  Future<bool> register(String fullName, String email, String password) async {
+  /// Tukar Token Supabase ke Backend Savaio
+  Future<bool> exchangeSupabaseToken(String supabaseToken) async {
     _isLoading = true; _error = null; notifyListeners();
     try {
       final data = await _unauthClient().post(
-        '${ApiConfig.baseUrl}/auth/register',
-        body: {'full_name': fullName, 'email': email, 'password': password},
+        '${ApiConfig.baseUrl}/auth/supabase-login',
+        body: {'access_token': supabaseToken},
       );
       _applyTokens(data);
       await _saveSession();
+      
+      _syncFCMToken();
+      
       _isLoading = false; notifyListeners();
       return _token != null;
     } on ApiErrorException catch (e) {
@@ -77,20 +108,104 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// POST /auth/login
+  /// Supabase Register (dengan email konfirmasi via OTP)
+  Future<bool> register(String fullName, String email, String password) async {
+    _isLoading = true; _error = null; notifyListeners();
+    try {
+      await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+        data: {'full_name': fullName},
+      );
+      _isLoading = false; notifyListeners();
+      // Belum dapat token, arahkan ke halaman verifikasi email
+      return true;
+    } catch (e) {
+      _error = e.toString(); _isLoading = false; notifyListeners(); return false;
+    }
+  }
+
+  /// Verifikasi Email menggunakan OTP 6 Digit
+  Future<bool> verifyEmailOTP(String email, String otp) async {
+    _isLoading = true; _error = null; notifyListeners();
+    try {
+      final response = await Supabase.instance.client.auth.verifyOTP(
+        type: OtpType.signup,
+        token: otp,
+        email: email,
+      );
+      if (response.session != null) {
+        return await exchangeSupabaseToken(response.session!.accessToken);
+      }
+      _isLoading = false; notifyListeners();
+      return false;
+    } catch (e) {
+      _error = e.toString(); _isLoading = false; notifyListeners(); return false;
+    }
+  }
+
+  /// Supabase Login (Email)
   Future<bool> login(String email, String password) async {
     _isLoading = true; _error = null; notifyListeners();
     try {
-      final data = await _unauthClient().post(
-        '${ApiConfig.baseUrl}/auth/login',
-        body: {'email': email, 'password': password},
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
       );
-      _applyTokens(data);
-      await _saveSession();
+      if (response.session != null) {
+        return await exchangeSupabaseToken(response.session!.accessToken);
+      }
       _isLoading = false; notifyListeners();
-      return _token != null;
-    } on ApiErrorException catch (e) {
-      _error = e.message; _isLoading = false; notifyListeners(); return false;
+      return false;
+    } catch (e) {
+      _error = e.toString(); _isLoading = false; notifyListeners(); return false;
+    }
+  }
+
+  bool _isGoogleSignInInitialized = false;
+
+  /// Supabase Login (Google Native)
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true; _error = null; notifyListeners();
+    try {
+      if (!_isGoogleSignInInitialized) {
+        final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
+        final iosClientId = dotenv.env['GOOGLE_IOS_CLIENT_ID'] ?? '';
+        await GoogleSignIn.instance.initialize(
+          serverClientId: webClientId.isNotEmpty ? webClientId : null,
+          clientId: iosClientId.isNotEmpty ? iosClientId : null,
+        );
+        _isGoogleSignInInitialized = true;
+      }
+      
+      GoogleSignInAccount? googleUser;
+      try {
+        googleUser = await GoogleSignIn.instance.authenticate();
+      } catch (e) {
+        _isLoading = false; notifyListeners();
+        // Pengguna membatalkan atau terjadi error saat Google Sign In
+        return false;
+      }
+
+      
+      final googleAuth = googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw 'Missing Google Auth Token';
+      }
+
+      final response = await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+      );
+      
+      if (response.session != null) {
+         return await exchangeSupabaseToken(response.session!.accessToken);
+      }
+      
+      _isLoading = false; notifyListeners();
+      return false;
     } catch (e) {
       _error = e.toString(); _isLoading = false; notifyListeners(); return false;
     }
@@ -101,6 +216,9 @@ class AuthController extends ChangeNotifier {
     try {
       await ApiClient(authController: this)
           .post('${ApiConfig.baseUrl}/auth/logout', body: {});
+    } catch (_) {}
+    try {
+      await Supabase.instance.client.auth.signOut();
     } catch (_) {}
     await _clearSession(resetLanding: resetLanding);
   }
@@ -126,7 +244,7 @@ class AuthController extends ChangeNotifier {
       return _token != null;
     } catch (e) {
       debugPrint('Token refresh failed: $e');
-      // If refresh fails, it's safer to clear everything to prevent loading loops
+      // Jika refresh gagal, lebih aman menghapus semua sesi agar tidak terjadi loading loop
       await forceLogout();
       return false;
     }
@@ -159,6 +277,21 @@ class AuthController extends ChangeNotifier {
   }
 
   ApiClient _unauthClient() => ApiClient(authController: this);
+
+  Future<void> _syncFCMToken([String? token]) async {
+    if (!isAuthenticated || !Platform.isAndroid) return;
+    try {
+      final fcmToken = token ?? await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await ApiClient(authController: this).patch(
+          '${ApiConfig.baseUrl}/users/me',
+          body: {'fcm_token': fcmToken},
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to sync FCM token: $e');
+    }
+  }
 
   void clearError() { _error = null; notifyListeners(); }
 }

@@ -1,3 +1,7 @@
+// analysis_view_model.dart
+// Kumpulan view model (VM) yang merepresentasikan data siap-tampil untuk halaman
+// analisis (analysis page), seperti tren, breakdown kategori, dan insight.
+
 class TrendPoint {
   final double x;
   final double y;
@@ -21,7 +25,8 @@ class AnalysisInsight {
   final String title;
   final String description;
   final String? buttonLabel;
-  final String severity; // info, warning, danger
+  /// Nilai yang mungkin: info, warning, danger
+  final String severity;
 
   AnalysisInsight({
     required this.title,
@@ -96,12 +101,14 @@ class CategoryVM {
   final double progress;
   final String limitText;
   final String statusText;
-  final String accentColorHex; // Platform-neutral color representation
+  /// Representasi warna dalam bentuk hex agar netral terhadap platform
+  final String accentColorHex;
   final bool isOver;
   final bool isBudgetExists;
-  final dynamic icon; 
+  final dynamic icon;
   final String rawCategoryName;
-  final String status; // active, warning, exceeded
+  /// Nilai yang mungkin: active, warning, exceeded
+  final String status;
 
   CategoryVM({
     required this.categoryId,

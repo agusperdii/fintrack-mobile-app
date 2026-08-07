@@ -1,3 +1,7 @@
+// parser_utils.dart
+// Kumpulan helper statis untuk mengonversi nilai dinamis (dari respons API)
+// ke tipe data yang aman digunakan (double, int, string ternormalisasi).
+
 class ParserUtils {
   static double toDouble(dynamic value) {
     if (value == null) return 0.0;

@@ -1,6 +1,10 @@
+// weekly_pulse_model.dart
+// Model data untuk ringkasan aktivitas mingguan (weekly pulse) pengguna,
+// mencakup pengeluaran harian, peringatan budget, dan notifikasi terkini.
+
 import '../core/utils/parser_utils.dart';
 
-/// Weekly pulse from GET /analytics?month=YYYY-MM → data.weeklyPulse
+/// Weekly pulse dari GET /analytics?month=YYYY-MM → data.weeklyPulse
 class WeeklyPulseModel {
   final List<WeeklySpendingDay> weeklySpending;
   final BudgetAlert? budgetAlert;

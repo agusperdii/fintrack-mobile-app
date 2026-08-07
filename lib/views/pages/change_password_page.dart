@@ -1,10 +1,14 @@
+// change_password_page.dart
+// Halaman untuk mengganti password pengguna, memvalidasi input (kolom wajib
+// diisi, panjang minimal, dan konfirmasi cocok) sebelum memanggil
+// ProfileController untuk memperbarui password.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
-// Tambahkan import AppSnackBar di bawah ini (sesuaikan dengan path proyek Anda)
-import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart'; 
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -61,7 +65,6 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     if (mounted) {
       setState(() => _isSaving = false);
       if (success) {
-        // MENGGUNAKAN APPSNACKBAR KUSTOM
         AppSnackBar.show(
           context,
           'Password berhasil diganti',
@@ -115,11 +118,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 backgroundColor: SavaioTheme.primary,
                 foregroundColor: SavaioTheme.onPrimaryFixed,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SavaioTheme.radiusL)),
               ),
               child: _isSaving
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.onPrimaryFixed))
-                  : Text('UPDATE PASSWORD', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  : Text('Update Password', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

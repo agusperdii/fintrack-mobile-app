@@ -1,3 +1,7 @@
+// app_header.dart
+// AppBar kustom aplikasi yang mendukung mode transparan, tombol back, avatar,
+// dan ikon notifikasi dengan badge jumlah belum dibaca.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_avatar.dart';
@@ -137,7 +141,8 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: SavaioTheme.spacingXl),
         ] else if (showBackButton || avatarUrl != null || leading != null)
-          const SizedBox(width: 48), // Balance the leading widget for centering
+          // Menyeimbangkan lebar leading widget agar title tetap center
+          const SizedBox(width: 48),
       ],
     );
   }

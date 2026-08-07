@@ -1,16 +1,19 @@
+// app_data.dart
+// Kumpulan model data (Category, Transaction, dan view-model dashboard)
+// yang merepresentasikan data aplikasi utama beserta konversi ke/dari JSON.
+
 import '../../core/utils/parser_utils.dart';
 
-enum TransactionType { income, expense }
+enum TransactionType { income, expense, savings }
 
 enum SyncStatus { idle, pending, syncing, synced, failed }
-
-// ─── Category ─────────────────────────────────────────────────────────────────
 
 class Category {
   final String id;
   final String? userId;
   final String name;
-  final String type; // 'income' | 'expense'
+  /// Tipe kategori: 'income' atau 'expense'
+  final String type;
   final String emoji;
   final String color;
   final bool isDefault;
@@ -52,8 +55,6 @@ class Category {
       };
 }
 
-// ─── Transaction ──────────────────────────────────────────────────────────────
-
 class Transaction {
   final String id;
   final String? userId;
@@ -63,7 +64,8 @@ class Transaction {
   final String? description;
   final double amount;
   final DateTime date;
-  final String source; // 'manual' | 'ocr'
+  /// Sumber transaksi: 'manual' atau 'ocr'
+  final String source;
   final bool isConfirmed;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -87,9 +89,12 @@ class Transaction {
     this.syncStatus = SyncStatus.synced,
   });
 
-  /// Derive type from nested category
-  TransactionType get type =>
-      category?.type == 'income' ? TransactionType.income : TransactionType.expense;
+  /// Menentukan tipe transaksi berdasarkan kategori yang terkait
+  TransactionType get type {
+    if (category?.type == 'income') return TransactionType.income;
+    if (category?.type == 'savings') return TransactionType.savings;
+    return TransactionType.expense;
+  }
 
   String get categoryKey => ParserUtils.normalizeCategory(category?.name ?? '');
 
@@ -118,9 +123,9 @@ class Transaction {
     );
   }
 
-  /// Serialize to API request body (for POST/PATCH)
+  /// Serialisasi ke body request API (untuk POST/PATCH)
   Map<String, dynamic> toRequestJson() {
-    // Format date as ISO 8601 with timezone offset for Jakarta (+07:00)
+    // Format tanggal ISO 8601 dengan offset zona waktu Jakarta (+07:00)
     final offset = '+07:00';
     final isoDate = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}$offset';
     return {
@@ -168,8 +173,6 @@ class Transaction {
   }
 }
 
-// ─── AnalysisData ─────────────────────────────────────────────────────────────
-
 class AnalysisData {
   final String label;
   final double amount;
@@ -190,8 +193,6 @@ class AnalysisData {
   }
 }
 
-// ─── Dashboard sub-models ─────────────────────────────────────────────────────
-
 class CheckInStatusVM {
   final bool isCheckedInToday;
   final int streakCount;
@@ -199,9 +200,9 @@ class CheckInStatusVM {
   CheckInStatusVM({required this.isCheckedInToday, required this.streakCount});
 
   factory CheckInStatusVM.fromJson(Map<String, dynamic> json) {
-    // The caller passes either the full dashboard response (with checkInStatus wrapper)
-    // or the unwrapped checkInStatus sub-object directly.
-    // Accept both camelCase (dashboard/summary) and snake_case (dedicated endpoint).
+    // Caller bisa mengirim seluruh response dashboard (dengan wrapper checkInStatus)
+    // atau langsung sub-object checkInStatus yang sudah di-unwrap.
+    // Menerima kedua format: camelCase (dashboard/summary) dan snake_case (endpoint khusus).
     final s = json['checkInStatus'] as Map<String, dynamic>? ??
         json['check_in_status'] as Map<String, dynamic>? ??
         json;
@@ -317,24 +318,23 @@ class WeeklyPulseVM {
 
   List<double> get values => weeklySpending.map((e) => e.amount).toList();
 
-  /// Aligns weekly spending to the current week (Monday to Sunday)
-  /// Matches the SEN-MIN labels in the UI.
+  /// Menyelaraskan data pengeluaran mingguan ke minggu berjalan (Senin sampai Minggu)
+  /// Sesuai dengan label SEN-MIN pada UI.
   List<double> get thisWeekValues {
     if (weeklySpending.isEmpty) return [0, 0, 0, 0, 0, 0, 0];
-    
+
     final now = DateTime.now();
-    // Monday = 1, ..., Sunday = 7
+    // Senin = 1, ..., Minggu = 7
     final currentWeekday = now.weekday;
-    
-    // Calculate the date of Monday of this week
+
     final monday = now.subtract(Duration(days: currentWeekday - 1));
-    
+
     return List.generate(7, (index) {
       final targetDate = monday.add(Duration(days: index));
       final dateStr = "${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}-${targetDate.day.toString().padLeft(2, '0')}";
-      
+
       try {
-        // Find entry that starts with YYYY-MM-DD
+        // Mencari entri yang diawali dengan YYYY-MM-DD
         return weeklySpending.firstWhere((s) => s.day.startsWith(dateStr)).amount;
       } catch (_) {
         return 0.0;
@@ -343,8 +343,8 @@ class WeeklyPulseVM {
   }
 
   factory WeeklyPulseVM.fromJson(Map<String, dynamic> json) {
-    // Caller already passes the weeklyPulse sub-object (already unwrapped).
-    // Accept camelCase (dashboard/summary) and snake_case field names.
+    // Caller sudah mengirim sub-object weeklyPulse (sudah di-unwrap).
+    // Menerima nama field camelCase (dashboard/summary) dan snake_case.
     final rawSpending = json['weeklySpending'] as List? ??
         json['weekly_spending'] as List? ?? [];
     final rawNotifs = json['recentNotifications'] as List? ??
@@ -369,40 +369,75 @@ class WeeklyPulseVM {
   }
 }
 
-// ─── AppData ──────────────────────────────────────────────────────────────────
+class InsightsVM {
+  final String title;
+  final String description;
+  final String ctaText;
+  final String ctaAction;
+
+  InsightsVM({
+    required this.title,
+    required this.description,
+    this.ctaText = 'Lihat Summary',
+    this.ctaAction = 'open_summary',
+  });
+
+  factory InsightsVM.fromJson(Map<String, dynamic> json) {
+    return InsightsVM(
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      ctaText: json['cta_text']?.toString() ?? json['ctaText']?.toString() ?? 'Lihat Summary',
+      ctaAction: json['cta_action']?.toString() ?? json['ctaAction']?.toString() ?? 'open_summary',
+    );
+  }
+}
 
 class AppData {
   final double balance;
+  final double totalSavings;
   final double totalIncome;
   final double totalExpense;
+  final double todaySpent;
   final CheckInStatusVM? checkInStatus;
+  final InsightsVM? insights;
   final List<Transaction> recentTransactions;
   final WeeklyPulseVM? weeklyPulse;
-  final String? targetPeriod; // YYYY-MM format from /dashboard/summary
+  /// Format YYYY-MM, dari endpoint /dashboard/summary
+  final String? targetPeriod;
 
   AppData({
     required this.balance,
+    this.totalSavings = 0.0,
     required this.totalIncome,
     required this.totalExpense,
+    this.todaySpent = 0.0,
     this.checkInStatus,
+    this.insights,
     required this.recentTransactions,
     this.weeklyPulse,
     this.targetPeriod,
   });
 
   factory AppData.fromJson(Map<String, dynamic> json) {
-    // GET /dashboard/summary response: { success: true, data: { ... } }
-    // The caller already unwraps via _unwrap, so 'data' is the raw object.
-    // Accept snake_case (API) keys.
+    // Response GET /dashboard/summary: { success: true, data: { ... } }
+    // Caller sudah melakukan unwrap lewat _unwrap, sehingga 'data' adalah objek mentahnya.
+    // Menerima key snake_case (API).
     return AppData(
       balance: ParserUtils.toDouble(json['balance']),
+      totalSavings: ParserUtils.toDouble(
+          json['totalSavings'] ?? json['total_savings'] ?? 0),
       totalIncome: ParserUtils.toDouble(
           json['totalIncome'] ?? json['total_income'] ?? 0),
       totalExpense: ParserUtils.toDouble(
           json['totalExpense'] ?? json['total_expense'] ?? 0),
+      todaySpent: ParserUtils.toDouble(
+          json['todaySpent'] ?? json['today_spent'] ?? 0),
       checkInStatus: json['checkInStatus'] != null || json['check_in_status'] != null
           ? CheckInStatusVM.fromJson(
               (json['checkInStatus'] ?? json['check_in_status']) as Map<String, dynamic>)
+          : null,
+      insights: json['insights'] != null
+          ? InsightsVM.fromJson(json['insights'] as Map<String, dynamic>)
           : null,
       recentTransactions: (json['recentTransactions'] as List? ??
               json['recent_transactions'] as List? ??
@@ -419,18 +454,24 @@ class AppData {
 
   AppData copyWith({
     double? balance,
+    double? totalSavings,
     double? totalIncome,
     double? totalExpense,
+    double? todaySpent,
     CheckInStatusVM? checkInStatus,
+    InsightsVM? insights,
     List<Transaction>? recentTransactions,
     WeeklyPulseVM? weeklyPulse,
     String? targetPeriod,
   }) {
     return AppData(
       balance: balance ?? this.balance,
+      totalSavings: totalSavings ?? this.totalSavings,
       totalIncome: totalIncome ?? this.totalIncome,
       totalExpense: totalExpense ?? this.totalExpense,
+      todaySpent: todaySpent ?? this.todaySpent,
       checkInStatus: checkInStatus ?? this.checkInStatus,
+      insights: insights ?? this.insights,
       recentTransactions: recentTransactions ?? this.recentTransactions,
       weeklyPulse: weeklyPulse ?? this.weeklyPulse,
       targetPeriod: targetPeriod ?? this.targetPeriod,

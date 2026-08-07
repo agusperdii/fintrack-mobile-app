@@ -1,3 +1,7 @@
+// app_icon_button.dart
+// Widget molecule tombol berbentuk ikon bulat/rounded dengan label di
+// bawahnya, mendukung varian warna normal maupun gradient.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_icon_container.dart';

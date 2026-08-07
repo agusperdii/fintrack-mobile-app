@@ -1,3 +1,7 @@
+// budget_repository.dart
+// Repository untuk mengelola data budget/anggaran pengguna, termasuk
+// pengambilan target belanja dengan fallback ke cache saat offline.
+
 import 'package:savaio/models/budget_model.dart';
 import 'package:savaio/repositories/data_sources/remote/budget_remote_data_source.dart';
 

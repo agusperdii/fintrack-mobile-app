@@ -1,3 +1,7 @@
+// app_greeting_header.dart
+// Widget molecule header sapaan pengguna beserta badge status anggaran
+// (aman, hati-hati, atau over budget) di halaman dashboard.
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -5,7 +9,8 @@ import 'package:savaio/views/components/atoms/app_heading.dart';
 
 class AppGreetingHeader extends StatelessWidget {
   final String userName;
-  final String budgetStatus; // 'active' (Aman), 'warning' (Hati-hati), 'exceeded' (Over Budget)
+  /// Nilai valid: 'active' (Aman), 'warning' (Hati-hati), 'exceeded' (Over Budget).
+  final String budgetStatus;
 
   const AppGreetingHeader({
     super.key, 
@@ -31,15 +36,15 @@ class AppGreetingHeader extends StatelessWidget {
 
     switch (budgetStatus) {
       case 'exceeded':
-        color = SavaioTheme.error;
-        label = 'OVER BUDGET';
+        color = SavaioTheme.errorOf(context);
+        label = 'Over Budget';
         break;
       case 'warning':
-        color = Colors.orange;
+        color = SavaioTheme.warningOf(context);
         label = 'HATI-HATI';
         break;
       default:
-        color = SavaioTheme.tertiary;
+        color = SavaioTheme.tertiaryOf(context);
         label = 'AMAN';
         break;
     }

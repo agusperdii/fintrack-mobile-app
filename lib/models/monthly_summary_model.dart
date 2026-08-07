@@ -1,11 +1,18 @@
+// monthly_summary_model.dart
+// Model data untuk ringkasan keuangan bulanan dan tahunan pengguna,
+// termasuk drill-down transaksi per bulan dan data paginasi.
+
 import '../core/utils/parser_utils.dart';
 import 'app_data.dart';
 
 class MonthlySummaryModel {
-  final String month; // YYYY-MM
-  final String label; // e.g. "May 2026"
+  /// Format YYYY-MM
+  final String month;
+  /// Contoh format: "May 2026"
+  final String label;
   final double totalIncome;
   final double totalExpense;
+  final double totalSavings;
   final double netCashflow;
   final double savingRate;
   final int transactionCount;
@@ -19,6 +26,7 @@ class MonthlySummaryModel {
     required this.label,
     required this.totalIncome,
     required this.totalExpense,
+    required this.totalSavings,
     required this.netCashflow,
     required this.savingRate,
     required this.transactionCount,
@@ -34,6 +42,7 @@ class MonthlySummaryModel {
       label: json['label']?.toString() ?? '',
       totalIncome: ParserUtils.toDouble(json['totalIncome'] ?? json['total_income'] ?? 0),
       totalExpense: ParserUtils.toDouble(json['totalExpense'] ?? json['total_expense'] ?? 0),
+      totalSavings: ParserUtils.toDouble(json['totalSavings'] ?? json['total_savings'] ?? 0),
       netCashflow: ParserUtils.toDouble(json['netCashflow'] ?? json['net_cashflow'] ?? 0),
       savingRate: ParserUtils.toDouble(json['savingRate'] ?? json['saving_rate'] ?? 0),
       transactionCount: (json['transactionCount'] as num? ??
@@ -87,7 +96,7 @@ class TopCategory {
   }
 }
 
-/// Full summary response from GET /summary?year=YYYY
+/// Response ringkasan lengkap dari GET /summary?year=YYYY
 class YearSummary {
   final int year;
   final String currency;
@@ -110,7 +119,7 @@ class YearSummary {
   }
 }
 
-/// Month drill-down from GET /summary/{month}/transactions
+/// Drill-down bulan dari GET /summary/{month}/transactions
 class MonthTransactions {
   final String month;
   final String label;
@@ -147,12 +156,14 @@ class MonthTransactions {
 class MonthSummary {
   final double totalIncome;
   final double totalExpense;
+  final double totalSavings;
   final double netCashflow;
   final int transactionCount;
 
   MonthSummary({
     required this.totalIncome,
     required this.totalExpense,
+    required this.totalSavings,
     required this.netCashflow,
     required this.transactionCount,
   });
@@ -161,6 +172,7 @@ class MonthSummary {
     return MonthSummary(
       totalIncome: ParserUtils.toDouble(json['totalIncome'] ?? json['total_income'] ?? 0),
       totalExpense: ParserUtils.toDouble(json['totalExpense'] ?? json['total_expense'] ?? 0),
+      totalSavings: ParserUtils.toDouble(json['totalSavings'] ?? json['total_savings'] ?? 0),
       netCashflow: ParserUtils.toDouble(json['netCashflow'] ?? json['net_cashflow'] ?? 0),
       transactionCount: (json['transactionCount'] as num? ??
               json['transaction_count'] as num? ??

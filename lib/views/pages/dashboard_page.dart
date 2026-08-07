@@ -1,3 +1,8 @@
+// dashboard_page.dart
+// Halaman utama (beranda) aplikasi: menampilkan saldo, aksi cepat,
+// ringkasan budget, konsistensi menabung, dan transaksi terbaru pengguna.
+
+import 'package:savaio/views/components/molecules/budget_donut_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:savaio/core/theme/app_theme.dart';
@@ -5,17 +10,14 @@ import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/controllers/dashboard_controller.dart';
 import 'package:savaio/controllers/profile_controller.dart';
 import 'package:savaio/controllers/budget_controller.dart';
-import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/components/organisms/app_balance_card.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
-import 'package:savaio/views/components/organisms/app_weekly_pulse_chart.dart';
 import 'package:savaio/views/components/organisms/dashboard_recent_transactions.dart';
 import 'package:savaio/views/components/molecules/dashboard_quick_actions.dart';
 import 'package:savaio/views/components/molecules/app_greeting_header.dart';
-import 'package:savaio/views/components/molecules/budget_donut_card.dart';
-import 'package:savaio/views/components/molecules/consistency_card.dart';
 import 'package:savaio/views/pages/notifications_page.dart';
+import 'package:savaio/views/components/molecules/consistency_card.dart';
 import 'package:savaio/views/pages/all_transactions_page.dart';
 import 'package:savaio/views/pages/transaction_detail_page.dart';
 import 'package:savaio/views/pages/ocr_scan_page.dart';
@@ -25,7 +27,7 @@ import 'package:savaio/views/pages/spending_target_page.dart';
 import 'package:savaio/views/pages/summary_page.dart';
 import 'package:savaio/views/components/organisms/notifications/notification_popup_organism.dart';
 import 'package:savaio/views/components/molecules/daily_checkin_card.dart';
-import 'package:savaio/views/components/molecules/app_section_header.dart';
+import 'package:savaio/views/components/atoms/app_grid_background.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -47,13 +49,16 @@ class _DashboardPageState extends State<DashboardPage> {
       if (notification != null && mounted) {
         final isBudgetNotif = notification.type == NotificationType.budgetReached || 
                              notification.type == NotificationType.budgetExceeded;
+                             
+        final nudgeCode = notification.metadata?['nudge_code']?.toString();
+        final isSavingHabitNudge = nudgeCode == 'N01_SAVING_HABIT_NUDGE';
         
-        NotificationPopupOrganism.show(
-          context, 
-          notification, 
-          onRead: () => sl.notificationController.markAsRead(notification.id),
-          actionLabel: isBudgetNotif ? 'LIHAT BUDGET' : null,
-          onAction: isBudgetNotif ? () {
+        String? actionLabel;
+        VoidCallback? onAction;
+
+        if (isBudgetNotif) {
+          actionLabel = 'Lihat Budget';
+          onAction = () {
             sl.notificationController.markAsRead(notification.id);
             final categoryId = notification.metadata?['category_id']?.toString();
             final month = notification.metadata?['month']?.toString();
@@ -66,7 +71,33 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
             );
-          } : null,
+          };
+        } else if (isSavingHabitNudge) {
+          actionLabel = 'Tabung Sekarang';
+          onAction = () {
+            sl.notificationController.markAsRead(notification.id);
+            final suggestedAmount = double.tryParse(notification.metadata?['suggested_saving_amount']?.toString() ?? '0');
+            
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionFormPage(
+                  initialType: 'Savings',
+                  initialAmount: suggestedAmount,
+                  initialTitle: 'Alokasi Tabungan (10%)',
+                  initialCategory: 'Tabungan',
+                ),
+              ),
+            );
+          };
+        }
+        
+        NotificationPopupOrganism.show(
+          context, 
+          notification, 
+          onRead: () => sl.notificationController.markAsRead(notification.id),
+          actionLabel: actionLabel,
+          onAction: onAction,
         );
       }
     });
@@ -105,35 +136,33 @@ class _DashboardPageState extends State<DashboardPage> {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         // UX: Idealnya gunakan Shimmer Loading di sini untuk retensi persepsi performa
-        body: const Center(child: CircularProgressIndicator(color: SavaioTheme.primary)),
+        body: Center(child: CircularProgressIndicator(color: SavaioTheme.primaryOf(context))),
       );
     }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        color: SavaioTheme.primary,
-        backgroundColor: SavaioTheme.surfaceContainerHigh,
-        child: SingleChildScrollView(
+      body: AppGridBackground(
+        child: RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: SavaioTheme.primaryOf(context),
+          backgroundColor: SavaioTheme.surfaceContainerHighOf(context),
+          child: SingleChildScrollView(
           // UX: Padding dikurangi sedikit agar konten terasa lebih lega di layar kecil
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Alert / Actionable Nudge (Di atas agar langsung terlihat)
               if (checkInStatus?.isCheckedInToday == false) ...[
                 const DailyCheckInCard(),
                 const SizedBox(height: 20),
               ],
 
-              // 2. Main Hero Section (Saldo)
               const _DashboardBalanceSection(),
               const SizedBox(height: 20),
 
-              // 3. Quick Actions (Primary Actions)
               DashboardQuickActions(
                 onIncomeTap: () => _navigateToAddTransaction(type: 'Income'),
                 onExpenseTap: () => _navigateToAddTransaction(type: 'Expense'),
@@ -147,26 +176,33 @@ class _DashboardPageState extends State<DashboardPage> {
               const _DashboardBudgetSection(),
               const SizedBox(height: 28),
               ConsistencyCard(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SummaryPage()),
-                ),
+                title: context.select<DashboardController, String>((c) => c.data?.insights?.title ?? 'Kamu Sangat Konsisten!'),
+                description: context.select<DashboardController, String>((c) => c.data?.insights?.description ?? 'Yuk mulai kumpulkan streak pertamamu!'),
+                ctaText: context.select<DashboardController, String>((c) => c.data?.insights?.ctaText ?? 'Lihat Summary'),
+                onTap: () {
+                  final action = context.read<DashboardController>().data?.insights?.ctaAction ?? 'open_summary';
+                  if (action == 'open_budget') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SpendingTargetPage()));
+                  } else if (action == 'add_expense') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const TransactionFormPage(initialType: 'Expense')));
+                  } else if (action == 'open_streak') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const StreakPage()));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SummaryPage()));
+                  }
+                },
               ),
               const SizedBox(height: 28),
 
-              // 5. Recent Activity (Kontekstual)
               const _DashboardRecentTransactionsSection(),
 
-              // 6. Analytics (Di bawah karena butuh waktu untuk dicerna)
-
               // UX: Memberikan ruang aman untuk navigasi bawah atau FAB
-              const SizedBox(height: 50), 
+              const SizedBox(height: 120), 
             ],
           ),
         ),
+        ),
       ),
-      // UX Suggestion: Pertimbangkan menggunakan FloatingActionButton (FAB)
-      // untuk menambah transaksi agar bisa diakses walau di-scroll ke bawah.
     );
   }
 
@@ -175,7 +211,6 @@ class _DashboardPageState extends State<DashboardPage> {
     final streakCount = context.select<DashboardController, int>((c) => c.checkInStatus?.streakCount ?? 0);
     final isSyncing = context.select<DashboardController, bool>((c) => c.isSyncingTransaction);
     
-    // Determine overall budget status
     final budgetStatuses = context.select<BudgetController, List>((c) => c.budgetStatuses);
     String overallStatus = 'active';
     if (budgetStatuses.any((s) => s.status == 'exceeded')) {
@@ -195,13 +230,13 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       actions: [
         if (isSyncing)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.only(right: 12.0),
+              padding: const EdgeInsets.only(right: 12.0),
               child: SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primary),
+                child: CircularProgressIndicator(strokeWidth: 2, color: SavaioTheme.primaryOf(context)),
               ),
             ),
           ),
@@ -213,7 +248,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: SavaioTheme.surfaceContainerHigh.withValues(alpha: 0.5),
+                  color: SavaioTheme.surfaceContainerHighOf(context).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(SavaioTheme.radiusM),
                 ),
                 child: IconButton(
@@ -242,7 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       shape: BoxShape.circle,
-                      border: Border.all(color: SavaioTheme.background, width: 2),
+                      border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
                     ),
                     constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
@@ -275,16 +310,16 @@ class _DashboardBalanceSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balance = context.select<DashboardController, double>((c) => c.data?.balance ?? 0.0);
+    final savingsBalance = context.select<DashboardController, double>((c) => c.data?.totalSavings ?? 0.0);
     final income = context.select<DashboardController, double>((c) => c.data?.totalIncome ?? 0.0);
     final expense = context.select<DashboardController, double>((c) => c.data?.totalExpense ?? 0.0);
     final hasData = context.select<DashboardController, bool>((c) => c.data != null);
 
     return AppBalanceCard(
       balance: balance,
+      savingsBalance: savingsBalance,
       income: income,
       expense: expense,
-      // UX Fix: Hapus aksi tap di sini jika sudah ada di DashboardQuickActions
-      // Pastikan widget AppBalanceCard Anda mendukung parameter null untuk fungsi ini.
       onIncomeTap: null, 
       onExpenseTap: null,
       isLoading: !hasData,
@@ -328,12 +363,9 @@ class _DashboardBudgetSection extends StatelessWidget {
     final dashboardController = context.watch<DashboardController>();
     
     final monthlyBudget = budgetController.totalMonthlyBudget;
-    final monthlySpent = budgetController.totalMonthlySpent;
+    final monthlySpent = dashboardController.data?.totalExpense ?? budgetController.totalMonthlySpent;
     
-    final weeklyPulse = dashboardController.data?.weeklyPulse;
-    final todaySpent = weeklyPulse?.weeklySpending.isNotEmpty == true 
-        ? weeklyPulse!.weeklySpending.last.amount 
-        : 0.0;
+    final todaySpent = dashboardController.data?.todaySpent ?? 0.0;
         
     final now = DateTime.now();
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -342,20 +374,22 @@ class _DashboardBudgetSection extends StatelessWidget {
     return Row(
       children: [
         Expanded(
+          // UX Fix: Judul disingkat agar tidak overflow
           child: BudgetDonutCard(
-            title: 'Bulanan', // UX Fix: Singkat judul agar tidak overflow
+            title: 'Bulanan',
             spent: monthlySpent,
             total: monthlyBudget,
-            color: SavaioTheme.primary,
+            color: SavaioTheme.primaryOf(context),
           ),
         ),
-        const SizedBox(width: 16), // UX Fix: Jarak dikurangi agar proporsional
+        // UX Fix: Jarak dikurangi agar proporsional
+        const SizedBox(width: 16),
         Expanded(
           child: BudgetDonutCard(
             title: 'Harian',
             spent: todaySpent,
             total: dailyBudget,
-            color: SavaioTheme.secondary,
+            color: SavaioTheme.secondaryOf(context),
           ),
         ),
       ],

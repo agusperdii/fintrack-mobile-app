@@ -1,3 +1,7 @@
+// budget_model.dart
+// Model data untuk merepresentasikan anggaran (budget) bulanan pengguna,
+// termasuk konversi ke/dari JSON untuk komunikasi dengan API.
+
 import '../core/utils/parser_utils.dart';
 import 'app_data.dart';
 
@@ -6,7 +10,8 @@ class BudgetModel {
   final String? userId;
   final String? categoryId;
   final double amount;
-  final String startMonth; // YYYY-MM
+  /// Format YYYY-MM
+  final String startMonth;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final Category? category;
@@ -44,14 +49,14 @@ class BudgetModel {
     );
   }
 
-  /// For POST /budgets upsert request
+  /// Untuk request upsert POST /budgets
   Map<String, dynamic> toRequestJson() => {
         'category_id': categoryId,
         'amount': amount,
         'start_month': startMonth,
       };
 
-  /// For PATCH /budgets/{id} request
+  /// Untuk request PATCH /budgets/{id}
   Map<String, dynamic> toPatchJson() => {
         if (amount > 0) 'amount': amount,
         'start_month': startMonth,
@@ -82,7 +87,7 @@ class BudgetModel {
   }
 }
 
-/// Budget status response from GET /budgets/status
+/// Response status budget dari GET /budgets/status
 class BudgetStatusVM {
   final String id;
   final String categoryId;
@@ -92,7 +97,8 @@ class BudgetStatusVM {
   final double spent;
   final double remaining;
   final double percentageUsed;
-  final String status; // 'active' | 'warning' | 'exceeded'
+  /// Status: 'active', 'warning', atau 'exceeded'
+  final String status;
 
   BudgetStatusVM({
     required this.id,

@@ -1,7 +1,11 @@
+// notification_banner_organism.dart
+// Banner notifikasi yang dapat ditampilkan inline (dalam list) maupun
+// mengambang (floating overlay) dengan animasi slide masuk.
+
 import 'package:flutter/material.dart';
-import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/models/notification_data.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/core/theme/app_theme.dart';
 
 
 class NotificationBannerOrganism extends StatefulWidget {
@@ -50,15 +54,15 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
 
     switch (widget.notification.severity) {
       case NotificationSeverity.warning:
-        color = Colors.orange;
+        color = SavaioTheme.warningOf(context);
         icon = Icons.warning_amber_rounded;
         break;
       case NotificationSeverity.danger:
-        color = Theme.of(context).colorScheme.error;
+        color = SavaioTheme.errorOf(context);
         icon = Icons.error_outline_rounded;
         break;
       case NotificationSeverity.info:
-        color = Theme.of(context).colorScheme.primary;
+        color = SavaioTheme.primaryOf(context);
         icon = Icons.info_outline_rounded;
         break;
     }
@@ -73,10 +77,17 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surfaceContainerHigh, // abu tua seperti notif WhatsApp
+      color: widget.notification.isRead 
+          ? Theme.of(context).colorScheme.surfaceContainerHigh.withValues(alpha: 0.5)
+          : Theme.of(context).colorScheme.surfaceContainerHigh,
       borderRadius: BorderRadius.circular(widget.isFloating ? 14 : 12),
+      border: !widget.notification.isRead 
+          ? Border(left: BorderSide(color: color, width: 4))
+          : null,
     ),
-    child: Row(
+    child: Opacity(
+      opacity: widget.notification.isRead ? 0.6 : 1.0,
+      child: Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
@@ -111,7 +122,7 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
                       child: Icon(
                         Icons.close,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                 ],
@@ -121,8 +132,8 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
                 widget.notification.title,
                 size: AppHeadingSize.subtitle,
                 color: widget.notification.isRead
-                    ? Colors.white.withValues(alpha: 0.55)
-                    : Colors.white,
+                    ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)
+                    : Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(height: 2),
               Text(
@@ -131,8 +142,8 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: widget.notification.isRead
-                      ? Colors.white.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.72),
+                      ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6)
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   height: 1.3,
                 ),
@@ -156,9 +167,10 @@ class _NotificationBannerOrganismState extends State<NotificationBannerOrganism>
         if (!widget.isFloating)
           Icon(
             Icons.chevron_right_rounded,
-            color: Colors.white.withValues(alpha: 0.25),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
           ),
-      ],
+        ],
+      ),
     ),
   ),
 );

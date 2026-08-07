@@ -1,14 +1,19 @@
+// ocr_result.dart
+// Model data untuk hasil OCR (Optical Character Recognition) pada struk belanja,
+// termasuk data yang diekstrak dan hasil konfirmasi menjadi transaksi.
+
 import '../../core/utils/parser_utils.dart';
 
-/// OCR receipt result from GET /receipts/{receipt_id}
-/// and parsed_data from POST /receipts
+/// Hasil OCR struk dari GET /receipts/{receipt_id}
+/// dan parsed_data dari POST /receipts
 class OcrResult {
   final String id;
   final String? userId;
   final String fileUrl;
   final String? ocrText;
   final ParsedReceiptData? parsedData;
-  final String status; // 'processing' | 'completed' | 'failed' | 'confirmed'
+  /// Status: 'processing', 'completed', 'failed', atau 'confirmed'
+  final String status;
   final String? errorMessage;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -51,11 +56,11 @@ class OcrResult {
   bool get isConfirmed => status == 'confirmed';
 }
 
-/// Data extracted by OCR from a receipt
 class ParsedReceiptData {
   final String? title;
   final double? amount;
-  final String? date; // YYYY-MM-DD
+  /// Format YYYY-MM-DD
+  final String? date;
   final String? categoryId;
   final String? categorySuggestion;
   final String? merchantName;
@@ -84,7 +89,7 @@ class ParsedReceiptData {
   }
 }
 
-/// Result from POST /receipts/{receipt_id}/confirm
+/// Hasil dari POST /receipts/{receipt_id}/confirm
 class OcrConfirmResult {
   final OcrResult receipt;
   final OcrTransaction transaction;
@@ -99,7 +104,7 @@ class OcrConfirmResult {
   }
 }
 
-/// Transaction created from OCR confirmation
+/// Transaksi yang dibuat dari hasil konfirmasi OCR
 class OcrTransaction {
   final String id;
   final String title;

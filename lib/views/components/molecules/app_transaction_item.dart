@@ -1,3 +1,7 @@
+// app_transaction_item.dart
+// Widget molecule untuk menampilkan satu baris item transaksi (judul,
+// kategori, waktu, nominal) beserta status sinkronisasinya.
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -22,35 +26,52 @@ class AppTransactionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isExpense = transaction.type == TransactionType.expense;
+    final isSavings = transaction.type == TransactionType.savings;
     final budgetController = context.watch<BudgetController>();
     
-    // Use emoji from category object if available, otherwise fallback to budgetController lookup by id
-    final categoryIcon = transaction.category?.emoji ?? 
+    final isSavingsWithdrawal = isSavings && transaction.amount < 0;
+    final isAutoWithdrawal = isSavingsWithdrawal && transaction.source.toLowerCase() == 'system';
+    
+    // Gunakan emoji dari objek category jika tersedia, jika tidak gunakan
+    // hasil lookup dari budgetController berdasarkan id
+    final categoryIcon = transaction.category?.emoji ??
                         budgetController.getCategoryIcon(transaction.categoryId);
     
-    final accentColor = isExpense ? colorScheme.error : colorScheme.tertiary;
+    final accentColor = isSavingsWithdrawal
+        ? colorScheme.error
+        : (isExpense 
+            ? colorScheme.error 
+            : (isSavings ? SavaioTheme.successOf(context) : colorScheme.tertiary));
 
-    // Handle background sync status feedback
+    // Status untuk feedback proses sinkronisasi data di background
     final isPending = transaction.syncStatus == SyncStatus.pending;
     final isSyncing = transaction.syncStatus == SyncStatus.syncing;
     final isFailed = transaction.syncStatus == SyncStatus.failed;
     final isSynced = transaction.syncStatus == SyncStatus.synced;
     
     final contentOpacity = (!isSynced) ? 0.6 : 1.0;
+    final isTemp = transaction.id.startsWith('temp_');
 
     String formattedSubtitle = transaction.date.toIso8601String();
     try {
       final dateTime = transaction.date;
       final categoryName = transaction.category?.name ?? budgetController.getCategoryName(transaction.categoryId);
-      formattedSubtitle = '${DateFormat('HH:mm').format(dateTime)} • $categoryName';
+      if (isAutoWithdrawal) {
+        formattedSubtitle = '${DateFormat('HH:mm').format(dateTime)} • Tabungan ➔ Utama';
+      } else if (isSavings && transaction.amount > 0) {
+        formattedSubtitle = '${DateFormat('HH:mm').format(dateTime)} • Utama ➔ Tabungan';
+      } else {
+        formattedSubtitle = '${DateFormat('HH:mm').format(dateTime)} • $categoryName';
+      }
     } catch (e) {
-      // Fallback if parsing fails
+      // Fallback jika parsing gagal
     }
 
     return Opacity(
       opacity: contentOpacity,
       child: InkWell(
-        onTap: !isSynced ? null : onTap, // Disable interaction unless fully synced
+        // Izinkan tap pada transaksi penarikan (withdrawal)
+        onTap: (isTemp || !isSynced) ? null : onTap,
         borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
         child: Container(
           padding: const EdgeInsets.symmetric(
@@ -61,18 +82,22 @@ class AppTransactionItem extends StatelessWidget {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(SavaioTheme.radiusL),
             border: Border.all(
-              color: isFailed ? colorScheme.error.withValues(alpha: 0.5) : colorScheme.outlineVariant.withValues(alpha: 0.3),
+              color: isFailed 
+                  ? colorScheme.error.withValues(alpha: 0.5) 
+                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
             children: [
               AppIconContainer(
-                icon: isFailed ? Icons.sync_problem_rounded : categoryIcon,
-                color: isFailed ? colorScheme.error : colorScheme.surfaceContainerHighest,
+                icon: isFailed ? Icons.sync_problem_rounded : (isAutoWithdrawal ? Icons.auto_awesome_rounded : categoryIcon),
+                color: isFailed || isSavingsWithdrawal 
+                    ? colorScheme.error 
+                    : (isSavings ? SavaioTheme.successOf(context) : colorScheme.surfaceContainerHighest),
                 shape: AppIconShape.rounded,
                 size: 48,
-                opacity: 1.0,
-                iconColor: isFailed ? colorScheme.onError : accentColor,
+                opacity: (isSavingsWithdrawal || isSavings) ? 0.15 : 1.0,
+                iconColor: isFailed || isSavingsWithdrawal ? colorScheme.error : accentColor,
               ),
               const SizedBox(width: SavaioTheme.spacingM),
               Expanded(
@@ -114,11 +139,15 @@ class AppTransactionItem extends StatelessWidget {
                 ),
               ),
               Text(
-                '${isExpense ? "-" : "+"}${SavaioTheme.formatCurrency(transaction.amount, currency: context.watch<AuthController>().currency)}',
+                isAutoWithdrawal
+                    ? '➔ ${SavaioTheme.formatCurrency(transaction.amount.abs(), currency: context.watch<AuthController>().currency)}'
+                    : '${isExpense ? "-" : (isSavingsWithdrawal ? "-" : (isSavings ? "+" : "+"))}${SavaioTheme.formatCurrency(transaction.amount.abs(), currency: context.watch<AuthController>().currency)}',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
-                  color: isFailed ? colorScheme.error : colorScheme.onSurface,
+                  color: isFailed 
+                      ? colorScheme.error 
+                      : (isSavingsWithdrawal ? colorScheme.error : (isSavings ? SavaioTheme.successOf(context) : colorScheme.onSurface)),
                 ),
               ),
             ],

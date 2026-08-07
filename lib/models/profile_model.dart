@@ -1,3 +1,7 @@
+// profile_model.dart
+// Model data untuk profil pengguna (User Profile), termasuk preferensi
+// seperti currency, timezone, dan locale, serta konversi ke/dari JSON.
+
 class UserProfile {
   final String id;
   final String fullName;
@@ -44,7 +48,7 @@ class UserProfile {
     );
   }
 
-  /// Serialize to PATCH /users/me request body
+  /// Serialisasi ke body request PATCH /users/me
   Map<String, dynamic> toRequestJson() => {
         'full_name': fullName,
         if (avatarUrl != null) 'avatar_url': avatarUrl,

@@ -1,3 +1,7 @@
+// spending_target_list_page.dart
+// Halaman daftar target pengeluaran (budget) per kategori untuk bulan
+// terpilih, lengkap dengan status sinkronisasi dan progres tiap kategori.
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -212,7 +216,7 @@ class _SpendingTargetCardState extends State<SpendingTargetCard> {
       _oldProgress = oldWidget.vm.progress;
     }
     
-    // Success feedback
+    // Tampilkan feedback sukses saat status sinkronisasi baru saja berubah menjadi synced
     if (oldWidget.vm.syncStatus != SyncStatus.synced && widget.vm.syncStatus == SyncStatus.synced) {
       _triggerSuccessCheck();
     }

@@ -1,3 +1,7 @@
+// all_transactions_page.dart
+// Halaman daftar seluruh transaksi pengguna, dengan filter jenis dan bulan
+// serta ringkasan total per bulan.
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +12,7 @@ import 'package:savaio/core/utils/service_locator.dart';
 import 'package:savaio/models/app_data.dart';
 import 'package:savaio/models/monthly_summary_model.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
+import 'package:savaio/views/components/organisms/notifications/app_snackbar.dart';
 import 'package:savaio/views/components/molecules/app_transaction_item.dart';
 import 'package:savaio/views/components/organisms/app_header.dart';
 import 'package:savaio/views/pages/transaction_detail_page.dart';
@@ -60,12 +65,10 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
     final error = _analyticsController?.error;
     if (error == null) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(error),
-        backgroundColor: SavaioTheme.errorOf(context),
-        behavior: SnackBarBehavior.floating,
-      ),
+    AppSnackBar.show(
+      context,
+      error,
+      type: AppSnackBarType.error,
     );
 
     _analyticsController?.clearError();
@@ -112,6 +115,11 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
 
       if (_selectedType == 'expense' &&
           transaction.type != TransactionType.expense) {
+        return false;
+      }
+
+      if (_selectedType == 'savings' &&
+          transaction.type != TransactionType.savings) {
         return false;
       }
 
@@ -219,6 +227,14 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
                   selected: _selectedType == 'expense',
                   onTap: () {
                     setState(() => _selectedType = 'expense');
+                  },
+                ),
+                const SizedBox(width: SavaioTheme.spacingXs),
+                _TypeChip(
+                  label: 'Tabungan',
+                  selected: _selectedType == 'savings',
+                  onTap: () {
+                    setState(() => _selectedType = 'savings');
                   },
                 ),
                 const Spacer(),
@@ -413,42 +429,62 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  child: _SummaryItem(
-                    label: 'Masuk',
-                    value: summary.totalIncome,
-                    color: SavaioTheme.tertiaryOf(context),
-                    currency: currency,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: _SummaryItem(
+                        label: 'Masuk',
+                        value: summary.totalIncome,
+                        color: SavaioTheme.tertiaryOf(context),
+                        currency: currency,
+                      ),
+                    ),
+                    Flexible(
+                      child: _SummaryItem(
+                        label: 'Keluar',
+                        value: summary.totalExpense,
+                        color: SavaioTheme.errorOf(context),
+                        currency: currency,
+                      ),
+                    ),
+                  ],
                 ),
-                Flexible(
-                  child: _SummaryItem(
-                    label: 'Keluar',
-                    value: summary.totalExpense,
-                    color: SavaioTheme.errorOf(context),
-                    currency: currency,
-                  ),
-                ),
-                Flexible(
-                  child: _SummaryItem(
-                    label: 'Kas',
-                    value: summary.netCashflow,
-                    color: summary.netCashflow >= 0
-                        ? SavaioTheme.primaryOf(context)
-                        : SavaioTheme.errorOf(context),
-                    currency: currency,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: _SummaryItem(
+                        label: 'Tabungan',
+                        value: summary.totalSavings,
+                        color: Colors.blueAccent,
+                        currency: currency,
+                      ),
+                    ),
+                    Flexible(
+                      child: _SummaryItem(
+                        label: 'Kas',
+                        value: summary.netCashflow,
+                        color: summary.netCashflow >= 0
+                            ? SavaioTheme.primaryOf(context)
+                            : SavaioTheme.errorOf(context),
+                        currency: currency,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: SavaioTheme.spacingS),
+          // Tinggi dibuat lebih besar karena berdampingan dengan kolom ringkasan.
           Container(
             width: 1,
-            height: 24,
+            height: 48,
             color: SavaioTheme.outlineVariantOf(context).withValues(alpha: 0.25),
           ),
           const SizedBox(width: SavaioTheme.spacingS),
@@ -613,7 +649,7 @@ class _ExportButton extends StatelessWidget {
             ),
             const SizedBox(width: SavaioTheme.spacingXs),
             Text(
-              'LAPORAN',
+              'Laporan',
               style: textTheme.labelSmall?.copyWith(
                 color: SavaioTheme.primaryOf(context),
                 fontWeight: FontWeight.w800,

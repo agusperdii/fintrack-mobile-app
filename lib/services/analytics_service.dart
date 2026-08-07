@@ -1,3 +1,8 @@
+// analytics_service.dart
+// Berisi logika untuk mengubah data mentah dari API atau state lokal menjadi
+// view model analitik (breakdown pengeluaran, tren, insight, dsb) yang siap
+// ditampilkan di layar analisis.
+
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/core/utils/parser_utils.dart';
 import 'package:savaio/models/budget_model.dart';
@@ -310,7 +315,7 @@ class AnalyticsService {
       return AnalysisInsight(
         title: 'Rekomendasi Pintar',
         description: 'Belum cukup data transaksi untuk menyusun rekomendasi finansial.',
-        buttonLabel: 'ANALISIS HEMAT',
+        buttonLabel: 'Analisis Hemat',
         severity: 'info',
       );
     }
@@ -328,12 +333,12 @@ class AnalyticsService {
         .toList();
 
     String description;
-    String buttonLabel = 'ANALISIS HEMAT';
+    String buttonLabel = 'Analisis Hemat';
     String severity = 'info';
 
     if (overBudgetCategories.isNotEmpty) {
       description = 'Pos ${overBudgetCategories.first} melebihi budget! Konsumsi tertinggi ada di $topCategory ($topPercentage%).';
-      buttonLabel = 'SESUAIKAN BUDGET';
+      buttonLabel = 'Sesuaikan Budget';
       severity = 'danger';
     } else {
       final closeToBudget = budgetTargets.where((t) => t.progress > 0.8 && t.isBudgetExists).toList();

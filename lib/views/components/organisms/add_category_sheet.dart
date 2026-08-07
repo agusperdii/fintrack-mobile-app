@@ -1,3 +1,7 @@
+// add_category_sheet.dart
+// Bottom sheet untuk menambahkan kategori transaksi baru (pemasukan atau
+// pengeluaran) dengan input emoji dan nama kategori.
+
 import 'package:flutter/material.dart';
 import 'package:savaio/core/theme/app_theme.dart';
 import 'package:savaio/views/components/atoms/app_heading.dart';
@@ -86,7 +90,7 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
           ),
           const SizedBox(height: 24),
           AppButton(
-            label: 'TAMBAH KATEGORI',
+            label: 'Tambah Kategori',
             onTap: () {
               if (_nameController.text.isNotEmpty && _emojiController.text.isNotEmpty) {
                 widget.onAdd(_nameController.text, _emojiController.text);

@@ -1,3 +1,7 @@
+// budget_controller.dart
+// Controller yang menangani logika bisnis dan state untuk fitur anggaran (budget)
+// bulanan pengguna, termasuk pengambilan, pembaruan optimistic, dan sinkronisasi
+// data budget serta kategori ke backend.
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:savaio/models/budget_model.dart';
@@ -18,7 +22,8 @@ class SpendingTargetItemVM {
   final bool isOver;
   final model.SyncStatus syncStatus;
   final bool isBudgetExists;
-  final String status; // active, warning, exceeded
+  /// Nilai yang mungkin: active, warning, exceeded
+  final String status;
 
   SpendingTargetItemVM({
     required this.categoryId,
@@ -65,7 +70,6 @@ class BudgetController extends ChangeNotifier {
   bool _isInitialLoaded = false;
   String? _error;
 
-  // Debounce and Concurrency management
   final Map<String, Timer> _debounceTimers = {};
   final Map<String, int> _lastWriteId = {};
 
@@ -84,7 +88,6 @@ class BudgetController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Helper Key Generator - Uses standard normalization
   String _budgetKey(String categoryId, String? month) =>
       '${categoryId.toLowerCase()}|${month?.toLowerCase() ?? 'all'}';
 
@@ -110,7 +113,8 @@ class BudgetController extends ChangeNotifier {
     } else {
       _allBudgets.add(item);
     }
-    _allBudgets = [..._allBudgets]; // Ensure immutability
+    // Buat list baru agar referensi berubah (menjaga immutability untuk deteksi perubahan)
+    _allBudgets = [..._allBudgets];
   }
 
   Future<void> fetchAll({bool silent = false, String? month}) async {
@@ -137,7 +141,7 @@ class BudgetController extends ChangeNotifier {
       final fetchedCategories = results[1] as List<CategoryModel>;
       _budgetStatuses = results[2] as List<BudgetStatusVM>;
       
-      // Merge logic: Preserve local pending/syncing/failed items
+      // Logika merge: pertahankan item lokal yang berstatus pending/syncing/failed
       _mergeBudgets(serverBudgets);
       
       _categories = fetchedCategories.map((cat) => <String, dynamic>{
@@ -164,21 +168,20 @@ class BudgetController extends ChangeNotifier {
   }
 
   void _mergeBudgets(List<BudgetModel> serverBudgets) {
-    // Keep local items that are in non-idle/synced states
+    // Pertahankan item lokal yang belum idle/synced
     final localPending = _allBudgets.where(
       (b) => b.syncStatus != model.SyncStatus.idle && b.syncStatus != model.SyncStatus.synced
     ).toList();
 
     final Map<String, BudgetModel> mergedMap = {};
-    
-    // 1. Add server data
+
     for (var b in serverBudgets) {
       if (b.categoryId != null) {
         mergedMap[_budgetKey(b.categoryId!, b.startMonth)] = b;
       }
     }
-    
-    // 2. Overwrite with local pending (Last local write wins)
+
+    // Timpa dengan data lokal pending (write lokal terakhir yang menang)
     for (var b in localPending) {
        if (b.categoryId != null) {
         mergedMap[_budgetKey(b.categoryId!, b.startMonth)] = b;
@@ -192,15 +195,14 @@ class BudgetController extends ChangeNotifier {
     required String month, 
   }) {
     final List<SpendingTargetItemVM> items = [];
-    
-    // Only show expense categories for budgeting
+
+    // Hanya kategori expense yang relevan untuk fitur budgeting
     final expenseCategories = _categories.where((c) => c['type'] == 'expense').toList();
 
     for (var cat in expenseCategories) {
       final id = cat['id'] as String;
       final name = cat['name'] as String;
-      
-      // Check if we have status from API for this category
+
       BudgetStatusVM? status;
       try {
         status = _budgetStatuses.firstWhere((s) => s.categoryId == id && s.startMonth == month);
@@ -220,16 +222,17 @@ class BudgetController extends ChangeNotifier {
           status: status.status,
         ));
       } else {
-        // Fallback for categories without a budget yet or not in status list
+        // Fallback untuk kategori yang belum punya budget atau tidak ada di status list
         final budget = _findBudget(id, month);
         final targetAmount = budget?.amount ?? 0.0;
-        
+
         items.add(SpendingTargetItemVM(
           categoryId: id,
           categoryName: name,
           emoji: cat['icon'] as String,
           target: targetAmount,
-          spent: 0.0, // We don't know spent if not in status list (handled by backend usually)
+          // Nilai spent tidak diketahui jika tidak ada di status list (biasanya ditangani backend)
+          spent: 0.0,
           progress: 0.0,
           isOver: false,
           syncStatus: budget?.syncStatus ?? model.SyncStatus.idle,
@@ -258,7 +261,6 @@ class BudgetController extends ChangeNotifier {
     _upsertBudget(updatedBudget);
     notifyListeners();
 
-    // Debounced Sync
     _debounceTimers[key]?.cancel();
     _debounceTimers[key] = Timer(const Duration(milliseconds: 500), () {
       _syncSpendingTargetInBackground(
@@ -293,7 +295,7 @@ class BudgetController extends ChangeNotifier {
       if (success) {
         _updateSyncStatus(categoryId, startMonth, model.SyncStatus.synced);
         _error = null;
-        // Refresh status after successful save to get updated spent/remaining
+        // Refresh status setelah penyimpanan berhasil untuk mendapatkan data spent/remaining terbaru
         _budgetRepository.getBudgetStatus(month: startMonth).then((statusList) {
           _budgetStatuses = statusList;
           notifyListeners();
@@ -362,7 +364,6 @@ class BudgetController extends ChangeNotifier {
 
   Future<bool> deleteCategory(String id) async {
     try {
-      // Find category to check if it's default
       final cat = _categories.firstWhere((c) => c['id'] == id);
       if (cat['isDefault'] == true) {
         _error = 'Kategori default tidak bisa dihapus';

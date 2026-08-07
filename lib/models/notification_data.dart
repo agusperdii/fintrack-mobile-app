@@ -1,3 +1,9 @@
+// notification_data.dart
+// Model data untuk notifikasi dalam aplikasi (badge, banner, popup, toast),
+// termasuk parsing tipe, severity, presentation, dan metadata dari JSON.
+
+import 'dart:convert';
+
 enum NotificationType {
   budgetReached,
   budgetExceeded,
@@ -8,6 +14,7 @@ enum NotificationType {
   info,
   streak,
   success,
+  nudge,
 }
 
 enum NotificationSeverity { info, warning, danger }
@@ -42,6 +49,21 @@ class NotificationData {
   });
 
   factory NotificationData.fromJson(Map<String, dynamic> json) {
+    // metadata bisa berasal dari field 'metadata' (API) atau 'extra_data' (langsung dari Supabase DB realtime)
+    final rawMetadata = json['metadata'] ?? json['extra_data'];
+    Map<String, dynamic>? parsedMetadata;
+    
+    if (rawMetadata is Map) {
+      parsedMetadata = Map<String, dynamic>.from(rawMetadata);
+    } else if (rawMetadata is String && rawMetadata.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawMetadata);
+        if (decoded is Map) {
+          parsedMetadata = Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {}
+    }
+
     return NotificationData(
       id: json['id']?.toString() ?? '',
       userId: json['user_id']?.toString(),
@@ -50,7 +72,7 @@ class NotificationData {
       message: json['message']?.toString() ?? '',
       severity: _parseSeverity(json['severity']?.toString()),
       presentation: _parsePresentation(json['presentation']?.toString()),
-      metadata: json['metadata'] as Map<String, dynamic>?,
+      metadata: parsedMetadata,
       isRead: json['is_read'] == true,
       readAt: json['read_at'] != null
           ? DateTime.tryParse(json['read_at'].toString())
@@ -77,6 +99,8 @@ class NotificationData {
         return NotificationType.streak;
       case 'success':
         return NotificationType.success;
+      case 'nudge':
+        return NotificationType.nudge;
       default:
         return NotificationType.info;
     }
