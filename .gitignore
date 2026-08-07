@@ -44,6 +44,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Secrets - do not commit real Firebase/Google config
+/android/app/google-services.json
+/ios/Runner/GoogleService-Info.plist
+
 *.md
 !README.md
 
